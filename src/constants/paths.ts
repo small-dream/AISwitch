@@ -3,7 +3,9 @@
  * 由 FileSystemPort 实现负责平台差异转换（ARCHITECTURE §2.3 D3）。
  */
 export const PATHS = {
+  claudeDir: '.claude',
   claudeSettings: '.claude/settings.json',
+  codexDir: '.codex',
   codexConfig: '.codex/config.toml',
   codexAuth: '.codex/auth.json',
   appDir: '.jakeaitools',

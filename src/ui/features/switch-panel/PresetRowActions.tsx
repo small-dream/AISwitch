@@ -5,7 +5,6 @@ import { useSwitchPreset } from '@/hooks/use-switch'
 import { toastError, toastSuccess } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
 import { Button } from '@/ui/components/Button'
-import { ConnectivityButton } from './ConnectivityButton'
 
 function useRemoveAction(preset: Preset) {
   const removeMutation = useRemovePreset()
@@ -22,18 +21,9 @@ function useRemoveAction(preset: Preset) {
   return { removeMutation, remove }
 }
 
-/** 预设操作区：应用 / 编辑 / 删除（删除为两段式确认） */
-export function PresetRowActions({
-  preset,
-  onEdit,
-}: {
-  preset: Preset
-  onEdit: (preset: Preset) => void
-}) {
+function useApplyAction(preset: Preset) {
   const switchMutation = useSwitchPreset()
-  const { removeMutation, remove } = useRemoveAction(preset)
-
-  const handleApply = () => {
+  const apply = () => {
     switchMutation.mutate(
       { tool: preset.tool, presetId: preset.id },
       {
@@ -46,11 +36,30 @@ export function PresetRowActions({
       }
     )
   }
+  return { switchMutation, apply }
+}
+
+/** 预设操作区：测试 / 应用 / 编辑 / 删除（删除为两段式确认）；测试结果展示在信息列 */
+export function PresetRowActions({
+  preset,
+  testPending,
+  onTest,
+  onEdit,
+}: {
+  preset: Preset
+  testPending: boolean
+  onTest: () => void
+  onEdit: (preset: Preset) => void
+}) {
+  const { switchMutation, apply } = useApplyAction(preset)
+  const { removeMutation, remove } = useRemoveAction(preset)
 
   return (
     <div className="flex shrink-0 items-center gap-2">
-      <ConnectivityButton preset={preset} />
-      <Button size="sm" disabled={switchMutation.isPending} onClick={handleApply}>
+      <Button size="sm" variant="secondary" disabled={testPending} onClick={onTest}>
+        {testPending ? '测试中…' : '测试'}
+      </Button>
+      <Button size="sm" disabled={switchMutation.isPending} onClick={apply}>
         {switchMutation.isPending ? '切换中…' : '应用'}
       </Button>
       <Button

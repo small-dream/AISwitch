@@ -1,15 +1,18 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "主窗口最小权限：配置三目录读写 + VS Code 目录只读探测 + 连通性测试 HTTP（ARCHITECTURE §7）",
+  "description": "主窗口最小权限：配置三目录读写（含目录自身）+ VS Code 目录只读探测 + 连通性测试 HTTP（ARCHITECTURE §7）",
   "windows": ["main"],
   "permissions": [
     "core:default",
     {
       "identifier": "fs:allow-exists",
       "allow": [
+        { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools" },
         { "path": "$HOME/.jakeaitools/**" },
         { "path": "$HOME/.vscode/**" },
         { "path": "$HOME/.vscode-insiders/**" }
@@ -18,24 +21,33 @@
     {
       "identifier": "fs:allow-read-text-file",
       "allow": [
+        { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools" },
         { "path": "$HOME/.jakeaitools/**" }
       ]
     },
     {
       "identifier": "fs:allow-write-text-file",
       "allow": [
+        { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools" },
         { "path": "$HOME/.jakeaitools/**" }
       ]
     },
     {
       "identifier": "fs:allow-read-dir",
       "allow": [
+        { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools" },
         { "path": "$HOME/.jakeaitools/**" },
         { "path": "$HOME/.vscode/**" },
         { "path": "$HOME/.vscode-insiders/**" }
@@ -44,24 +56,33 @@
     {
       "identifier": "fs:allow-mkdir",
       "allow": [
+        { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools" },
         { "path": "$HOME/.jakeaitools/**" }
       ]
     },
     {
       "identifier": "fs:allow-remove",
       "allow": [
+        { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools" },
         { "path": "$HOME/.jakeaitools/**" }
       ]
     },
     {
       "identifier": "fs:allow-rename",
       "allow": [
+        { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools" },
         { "path": "$HOME/.jakeaitools/**" }
       ]
     },

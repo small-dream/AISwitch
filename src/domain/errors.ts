@@ -36,5 +36,9 @@ export function toAppError(
   if (error instanceof Error) {
     return new AppError(fallbackCode, message, { ...context, cause: error.message })
   }
+  if (typeof error === 'string' && error.length > 0) {
+    // Tauri 插件命令失败时常以字符串拒绝
+    return new AppError(fallbackCode, message, { ...context, cause: error })
+  }
   return new AppError('E_UNKNOWN', message, context)
 }
