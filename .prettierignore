@@ -1,0 +1,6 @@
+dist
+coverage
+node_modules
+src-tauri
+pnpm-lock.yaml
+scripts/app-icon.png

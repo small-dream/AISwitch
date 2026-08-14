@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "主窗口默认能力；Phase 2 将按 ARCHITECTURE §7 收紧 fs scope",
+  "windows": ["main"],
+  "permissions": ["core:default", "fs:default", "dialog:default", "shell:default"]
+}
