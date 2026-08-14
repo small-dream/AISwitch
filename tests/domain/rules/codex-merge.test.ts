@@ -19,7 +19,9 @@ describe('mergeCodexConfig', () => {
 
     expect(merged.model).toBe(preset.model)
     expect(merged.model_provider).toBe(injected)
+    expect(merged.model_providers?.[injected]?.name).toBe(preset.providerName)
     expect(merged.model_providers?.[injected]?.base_url).toBe(preset.baseUrl)
+    expect(merged.model_providers?.[injected]?.wire_api).toBe('responses')
     expect(merged.model_providers?.[injected]?.experimental_bearer_token).toBe(preset.apiKey)
     expect(merged.model_providers?.openai).toEqual({ name: 'OpenAI', wire_api: 'responses' })
   })
