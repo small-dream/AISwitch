@@ -18,7 +18,9 @@ export function StatusCards() {
   const { data: presence } = useVscodePresence()
 
   if (isLoading) {
-    return <Card className="p-6 text-sm text-zinc-400">正在探测本机 Claude Code / Codex 环境…</Card>
+    return (
+      <Card className="p-6 text-sm text-app-muted">正在探测本机 Claude Code / Codex 环境…</Card>
+    )
   }
 
   return (
@@ -49,18 +51,18 @@ function ToolStatusCard({
           <StatusDot status={status.status} />
           <span className="font-medium">{meta.label}</span>
         </div>
-        <span className="text-xs text-zinc-500">{STATUS_TEXT[status.status]}</span>
+        <span className="text-xs text-app-muted">{STATUS_TEXT[status.status]}</span>
       </div>
       <div className="mt-3 space-y-1">
-        <p className="truncate font-mono text-xs text-zinc-300">{status.activeModel ?? '—'}</p>
-        <p className="truncate text-xs text-zinc-500">
+        <p className="truncate font-mono text-xs text-app">{status.activeModel ?? '—'}</p>
+        <p className="truncate text-xs text-app-muted">
           {status.activeProviderName ?? meta.configPath}
         </p>
         {status.status === 'not-configured' ? (
           vscodeDetected ? (
             <Badge tone="success">检测到 VS Code 插件，切换后即可生效</Badge>
           ) : (
-            <p className="text-[11px] leading-4 text-zinc-600">
+            <p className="text-[11px] leading-4 text-app-faint">
               首次切换将自动创建全局配置，VS Code 插件方式使用同样生效
             </p>
           )

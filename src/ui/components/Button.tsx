@@ -10,9 +10,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: 'bg-indigo-500 text-white hover:bg-indigo-400',
-  secondary: 'border border-zinc-700 bg-zinc-800/60 text-zinc-200 hover:bg-zinc-800',
-  danger: 'bg-red-500/90 text-white hover:bg-red-500',
+  primary: 'bg-indigo-600 text-white hover:bg-indigo-500',
+  secondary: 'border border-app-border-strong bg-app-sunken text-app hover:bg-app-hover',
+  danger: 'bg-red-600 text-white hover:bg-red-500',
 }
 
 const SIZE_CLASSES: Record<Size, string> = {

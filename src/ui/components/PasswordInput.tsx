@@ -18,7 +18,7 @@ export function PasswordInput({ className, ...rest }: InputProps) {
         onClick={() => {
           setVisible((current) => !current)
         }}
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1 text-xs text-zinc-400 hover:text-zinc-200"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1 text-xs text-app-muted hover:text-app"
       >
         {visible ? '隐藏' : '显示'}
       </button>

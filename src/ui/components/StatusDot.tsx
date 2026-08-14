@@ -3,9 +3,9 @@ import clsx from 'clsx'
 import type { ToolInstallStatus } from '@/domain/entities/preset'
 
 const COLOR_BY_STATUS: Record<ToolInstallStatus, string> = {
-  installed: 'bg-emerald-400',
-  'not-configured': 'bg-zinc-600',
-  unknown: 'bg-amber-400',
+  installed: 'bg-emerald-500',
+  'not-configured': 'bg-zinc-500',
+  unknown: 'bg-amber-500',
 }
 
 export function StatusDot({ status }: { status: ToolInstallStatus }) {

@@ -15,10 +15,10 @@ function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
   const restore = useRestoreBackup(tool)
   const remove = useRemoveBackup(tool)
   return (
-    <li className="flex items-center justify-between gap-2 rounded-md border border-zinc-800 bg-zinc-900/60 px-3 py-2">
+    <li className="flex items-center justify-between gap-2 rounded-md border border-app-border bg-app-sunken px-3 py-2">
       <div className="min-w-0">
-        <p className="truncate font-mono text-xs text-zinc-300">{entry.basename}</p>
-        <p className="text-[11px] text-zinc-500">{formatTimestamp(entry.timestamp)}</p>
+        <p className="truncate font-mono text-xs text-app">{entry.basename}</p>
+        <p className="text-[11px] text-app-muted">{formatTimestamp(entry.timestamp)}</p>
       </div>
       <div className="flex shrink-0 gap-1.5">
         <Button
@@ -80,7 +80,7 @@ export function BackupsDialog({ tool, onClose }: { tool: TargetTool; onClose: ()
       role="dialog"
       aria-modal="true"
     >
-      <div className="flex max-h-[80vh] w-full max-w-md flex-col rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+      <div className="flex max-h-[80vh] w-full max-w-md flex-col rounded-xl border border-app-border bg-app-card p-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-base font-semibold">{TOOL_META[tool].label} · 备份管理</h2>
           <Button size="sm" variant="secondary" onClick={onClose}>
@@ -112,10 +112,10 @@ function BackupList({
   isLoading: boolean
 }) {
   if (isLoading) {
-    return <p className="py-6 text-center text-sm text-zinc-500">加载中…</p>
+    return <p className="py-6 text-center text-sm text-app-muted">加载中…</p>
   }
   if (entries.length === 0) {
-    return <p className="py-6 text-center text-sm text-zinc-500">暂无备份</p>
+    return <p className="py-6 text-center text-sm text-app-muted">暂无备份</p>
   }
   return (
     <ul className="flex-1 space-y-2 overflow-y-auto">

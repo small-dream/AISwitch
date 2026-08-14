@@ -6,10 +6,10 @@ import { useConnectivityTest } from '@/hooks/use-connectivity-test'
 import { Button } from '@/ui/components/Button'
 
 const RESULT_META: Record<ConnectivityStatus, { text: string; className: string }> = {
-  ok: { text: '', className: 'text-emerald-400' },
-  'invalid-key': { text: 'Key 无效', className: 'text-red-400' },
-  unreachable: { text: '无法连通', className: 'text-amber-400' },
-  unsupported: { text: '不支持探测', className: 'text-zinc-400' },
+  ok: { text: '', className: 'text-app-ok-text' },
+  'invalid-key': { text: 'Key 无效', className: 'text-app-danger-text' },
+  unreachable: { text: '无法连通', className: 'text-app-warn-text' },
+  unsupported: { text: '不支持探测', className: 'text-app-faint' },
 }
 
 /** 连通性测试按钮 + 内联结果（US-06） */

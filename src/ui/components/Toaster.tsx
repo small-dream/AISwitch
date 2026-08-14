@@ -21,8 +21,8 @@ export function Toaster() {
           className={clsx(
             'cursor-pointer rounded-lg border px-4 py-3 text-sm shadow-lg',
             toast.kind === 'success'
-              ? 'border-emerald-700 bg-emerald-950/95 text-emerald-200'
-              : 'border-red-800 bg-red-950/95 text-red-200'
+              ? 'border-app-ok-border bg-app-ok-bg text-app-ok-text'
+              : 'border-app-danger-border bg-app-danger-bg text-app-danger-text'
           )}
         >
           {toast.message}

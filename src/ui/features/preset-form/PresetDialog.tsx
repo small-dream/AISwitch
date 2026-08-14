@@ -64,7 +64,7 @@ export function PresetDialog({
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+      <div className="w-full max-w-md rounded-xl border border-app-border bg-app-card p-6">
         <h2 className="mb-4 text-base font-semibold">{title}</h2>
         <PresetForm
           preset={preset}

@@ -1,10 +1,17 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <title>JakeAITools</title>
+    <script>
+      // 首帧前应用主题，避免亮色闪烁（与 theme-store 的存储键一致）
+      document.documentElement.classList.toggle(
+        'dark',
+        (localStorage.getItem('jake.theme') ?? 'dark') !== 'light'
+      )
+    </script>
   </head>
   <body>
     <div id="root"></div>

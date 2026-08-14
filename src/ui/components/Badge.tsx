@@ -4,9 +4,9 @@ import type { ReactNode } from 'react'
 type Tone = 'default' | 'success' | 'warning'
 
 const TONE_CLASSES: Record<Tone, string> = {
-  default: 'border-zinc-700 bg-zinc-800/60 text-zinc-300',
-  success: 'border-emerald-800 bg-emerald-950/60 text-emerald-300',
-  warning: 'border-amber-800 bg-amber-950/60 text-amber-300',
+  default: 'border-app-border bg-app-sunken text-app-muted',
+  success: 'border-app-ok-border bg-app-ok-bg text-app-ok-text',
+  warning: 'border-app-warn-border bg-app-warn-bg text-app-warn-text',
 }
 
 export function Badge({ tone = 'default', children }: { tone?: Tone; children: ReactNode }) {

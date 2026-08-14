@@ -106,6 +106,8 @@ export interface ConfigTarget {
 
 **D6 · 托盘数据流（US-08）**：业务数据仅存 TS 侧——前端经 `tray_update` 命令推送预设快照、Rust（`src-tauri/src/tray.rs`）只做菜单装配；托盘点击经 `tray://switch` 事件回到前端，复用 `SwitchService` 单一切换链路。Rust 不持有业务状态，切换语义与主窗口完全一致。
 
+**D7 · 主题令牌体系（US-15）**：UI 一律使用语义工具类（`bg-app-*` / `text-app-*` / `border-app-*`，定义于 `src/styles/global.css` 的 `@theme`），**禁止硬编码 zinc-_/emerald-_ 等色值**（StatusDot 等双主题通用色除外）；暗色主题通过 `.dark` 作用域整体覆盖同名变量实现，主题选择持久化于 localStorage 并在首帧前应用（防闪烁）。
+
 ## 3. 目录结构
 
 ```text

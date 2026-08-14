@@ -1,13 +1,64 @@
 @import 'tailwindcss';
 
+/*
+ * 语义色彩令牌（ARCHITECTURE D7）：
+ * 组件一律使用 bg-app-* / text-app-* / border-app-* 等语义工具类，
+ * 禁止硬编码 zinc-*；主题切换只覆盖 .dark 下的变量，不逐组件改色。
+ */
 @theme {
   --font-sans:
     'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  /* 亮色（默认）：zinc 系 */
+  --color-app-bg: #fafafa;
+  --color-app-card: #ffffff;
+  --color-app-sunken: #f4f4f5;
+  --color-app-hover: #e4e4e7;
+  --color-app-input: #ffffff;
+  --color-app-tab-active: #e4e4e7;
+  --color-app-border: #e4e4e7;
+  --color-app-border-strong: #d4d4d8;
+  --color-app: #18181b;
+  --color-app-muted: #52525b;
+  --color-app-faint: #a1a1aa;
+  --color-app-ok-text: #047857;
+  --color-app-ok-bg: #ecfdf5;
+  --color-app-ok-border: #6ee7b7;
+  --color-app-warn-text: #b45309;
+  --color-app-warn-bg: #fffbeb;
+  --color-app-warn-border: #fcd34d;
+  --color-app-danger-text: #b91c1c;
+  --color-app-danger-bg: #fef2f2;
+  --color-app-danger-border: #fca5a5;
+}
+
+.dark {
+  /* 暗色 */
+  --color-app-bg: #09090b;
+  --color-app-card: #18181b;
+  --color-app-sunken: #1f1f23;
+  --color-app-hover: #27272a;
+  --color-app-input: #101012;
+  --color-app-tab-active: #3f3f46;
+  --color-app-border: #27272a;
+  --color-app-border-strong: #3f3f46;
+  --color-app: #f4f4f5;
+  --color-app-muted: #a1a1aa;
+  --color-app-faint: #52525b;
+  --color-app-ok-text: #a7f3d0;
+  --color-app-ok-bg: #052e2b;
+  --color-app-ok-border: #065f46;
+  --color-app-warn-text: #fde68a;
+  --color-app-warn-bg: #422006;
+  --color-app-warn-border: #92400e;
+  --color-app-danger-text: #fecaca;
+  --color-app-danger-bg: #450a0a;
+  --color-app-danger-border: #b91c1c;
 }
 
 body {
-  background-color: var(--color-zinc-950);
-  color: var(--color-zinc-100);
+  background-color: var(--color-app-bg);
+  color: var(--color-app);
   -webkit-font-smoothing: antialiased;
 }

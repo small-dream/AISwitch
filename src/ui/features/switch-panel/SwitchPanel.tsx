@@ -20,7 +20,7 @@ function ToolTabs({
   onChange: (tool: TargetTool) => void
 }) {
   return (
-    <div className="mb-4 flex gap-1 rounded-lg bg-zinc-800/50 p-1">
+    <div className="mb-4 flex gap-1 rounded-lg bg-app-sunken p-1">
       {TARGET_TOOLS.map((tool) => (
         <button
           key={tool}
@@ -30,7 +30,7 @@ function ToolTabs({
           }}
           className={clsx(
             'flex-1 rounded-md px-3 py-1.5 text-sm transition-colors',
-            activeTool === tool ? 'bg-zinc-700 text-white' : 'text-zinc-400 hover:text-zinc-200'
+            activeTool === tool ? 'bg-app-tab-active text-app' : 'text-app-muted hover:text-app'
           )}
         >
           {TOOL_META[tool].label}

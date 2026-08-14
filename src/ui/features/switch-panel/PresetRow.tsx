@@ -11,15 +11,15 @@ export function PresetRow({
   onEdit: (preset: Preset) => void
 }) {
   return (
-    <li className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-3">
+    <li className="rounded-lg border border-app-border bg-app-sunken p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="truncate font-medium">{preset.name}</span>
             <Badge>{preset.providerName}</Badge>
           </div>
-          <p className="mt-1 truncate font-mono text-xs text-zinc-400">{preset.model}</p>
-          <p className="mt-0.5 font-mono text-[11px] text-zinc-600">{maskApiKey(preset.apiKey)}</p>
+          <p className="mt-1 truncate font-mono text-xs text-app-muted">{preset.model}</p>
+          <p className="mt-0.5 font-mono text-[11px] text-app-faint">{maskApiKey(preset.apiKey)}</p>
         </div>
         <PresetRowActions preset={preset} onEdit={onEdit} />
       </div>

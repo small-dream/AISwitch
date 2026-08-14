@@ -25,10 +25,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <div
           role="alert"
-          className="flex h-screen flex-col items-center justify-center gap-3 bg-zinc-950 p-8 text-center"
+          className="flex h-screen flex-col items-center justify-center gap-3 bg-app-bg p-8 text-center"
         >
-          <h1 className="text-lg font-semibold text-zinc-100">界面出现异常</h1>
-          <p className="max-w-md text-sm text-zinc-400">{this.state.error.message}</p>
+          <h1 className="text-lg font-semibold text-app">界面出现异常</h1>
+          <p className="max-w-md text-sm text-app-muted">{this.state.error.message}</p>
           <button
             type="button"
             onClick={() => {

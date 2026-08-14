@@ -13,7 +13,7 @@ export function PresetList({
   const { data: presets, isLoading } = usePresets()
 
   if (isLoading) {
-    return <p className="py-8 text-center text-sm text-zinc-500">加载中…</p>
+    return <p className="py-8 text-center text-sm text-app-muted">加载中…</p>
   }
 
   const items = (presets ?? []).filter((preset) => preset.tool === tool)
