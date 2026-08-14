@@ -8,7 +8,7 @@ import { PresetRepository } from '@/adapters/presets/preset-repository'
 import { registerTarget } from '@/adapters/target-registry'
 import { detectVscodeExtensions } from '@/adapters/vscode/vscode-detector'
 import { readClaudeSettings } from '@/adapters/claude/reader'
-import { readCodexAuth, readCodexConfig } from '@/adapters/codex/reader'
+import { readCodexAuth, readCodexConfig, readCodexModels } from '@/adapters/codex/reader'
 import { BackupService } from '@/services/backup-service'
 import { ConnectivityService } from '@/services/connectivity-service'
 import { ImportService } from '@/services/import-service'
@@ -38,6 +38,7 @@ export const importService = new ImportService({
   readClaude: () => readClaudeSettings(tauriFs),
   readCodexConfig: () => readCodexConfig(tauriFs),
   readCodexAuth: () => readCodexAuth(tauriFs),
+  readCodexModels: () => readCodexModels(tauriFs),
 })
 export const backupService = new BackupService(new BackupManager(tauriFs))
 export const vscodePresenceService = {

@@ -3,10 +3,12 @@ import { CODEX_AUTH_KEYS, CODEX_CONFIG_KEYS } from '@/constants/config-keys'
 import { PATHS } from '@/constants/paths'
 import { AppError } from '@/domain/errors'
 import type { Preset, ToolStatus } from '@/domain/entities/preset'
+import { withCatalogKey } from '@/domain/rules/codex-catalog'
 import { codexProviderLabel, mergeCodexAuth, mergeCodexConfig } from '@/domain/rules/codex-merge'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import type { ApplyResult, ConfigTarget } from '@/types/config-target'
 import type { FileSystemPort } from '@/types/fs-port'
+import { syncCodexCatalog, verifyCodexCatalog } from './catalog-sync'
 import { readCodexAuth, readCodexConfig } from './reader'
 import { writeCodexAuth, writeCodexConfig } from './writer'
 import { isRecord } from '@/utils/guards'
@@ -56,7 +58,8 @@ async function verifyCodex(fs: FileSystemPort, preset: Preset): Promise<boolean>
       return false
     }
     const auth = await readCodexAuth(fs)
-    return isRecord(auth) && auth[CODEX_AUTH_KEYS.apiKey] === preset.apiKey
+    const authOk = isRecord(auth) && auth[CODEX_AUTH_KEYS.apiKey] === preset.apiKey
+    return authOk && (await verifyCodexCatalog(fs, preset, config))
   } catch {
     return false
   }
@@ -66,6 +69,7 @@ async function safeRollback(backups: BackupManager): Promise<void> {
   try {
     await backups.restoreLatest('codex', PATHS.codexConfig)
     await backups.restoreLatest('codex', PATHS.codexAuth)
+    await backups.restoreLatest('codex', PATHS.codexModels)
   } catch (error) {
     console.error('自动回滚失败，请从备份目录手动恢复', error)
   }
@@ -91,7 +95,8 @@ export function createCodexTarget(fs: FileSystemPort): ConfigTarget {
       const auth = await readCodexAuth(fs)
       await backups.backup('codex', PATHS.codexConfig)
       await backups.backup('codex', PATHS.codexAuth)
-      await writeCodexConfig(fs, mergeCodexConfig(config ?? {}, preset))
+      const keyAction = await syncCodexCatalog(fs, backups, preset)
+      await writeCodexConfig(fs, withCatalogKey(mergeCodexConfig(config ?? {}, preset), keyAction))
       await writeCodexAuth(fs, mergeCodexAuth(auth, preset))
       if (!(await verifyCodex(fs, preset))) {
         await safeRollback(backups)
@@ -107,6 +112,7 @@ export function createCodexTarget(fs: FileSystemPort): ConfigTarget {
     async rollback() {
       const restoredConfig = await backups.restoreLatest('codex', PATHS.codexConfig)
       await backups.restoreLatest('codex', PATHS.codexAuth)
+      await backups.restoreLatest('codex', PATHS.codexModels)
       return restoredConfig
     },
   }

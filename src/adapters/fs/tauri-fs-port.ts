@@ -1,3 +1,4 @@
+import { homeDir as tauriHomeDir } from '@tauri-apps/api/path'
 import {
   BaseDirectory,
   exists,
@@ -14,6 +15,9 @@ const HOME = BaseDirectory.Home
 
 /** 生产环境 FileSystemPort 实现：Tauri fs 插件，相对 HOME 解析路径 */
 export const tauriFs: FileSystemPort = {
+  homeDir() {
+    return tauriHomeDir()
+  },
   async exists(path) {
     return exists(path, { baseDir: HOME })
   },

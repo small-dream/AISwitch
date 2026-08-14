@@ -66,8 +66,8 @@ export function PresetDialog({
       role="dialog"
       aria-modal="true"
     >
-      <div className="w-full max-w-md rounded-xl border border-app-border bg-app-card p-6">
-        <h2 className="mb-4 text-base font-semibold">{title}</h2>
+      <div className="flex max-h-[calc(100vh-8rem)] w-full max-w-md flex-col rounded-xl border border-app-border bg-app-card p-6">
+        <h2 className="mb-4 shrink-0 text-base font-semibold">{title}</h2>
         <PresetForm
           preset={preset}
           draft={draft}

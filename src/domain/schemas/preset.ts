@@ -15,6 +15,8 @@ export const presetSchema = z.object({
   model: z.string().min(1).max(100),
   /** 仅 claude-code 使用 */
   smallFastModel: z.string().min(1).max(100).optional(),
+  /** 仅 codex 使用：models.json 目录条目（opaque 透传，结构与 Codex 版本耦合，不做字段校验） */
+  modelMetadata: z.record(z.string(), z.unknown()).optional(),
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 })

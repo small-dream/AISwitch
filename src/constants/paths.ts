@@ -8,6 +8,7 @@ export const PATHS = {
   codexDir: '.codex',
   codexConfig: '.codex/config.toml',
   codexAuth: '.codex/auth.json',
+  codexModels: '.codex/models.json',
   appDir: '.jakeaitools',
   presetsFile: '.jakeaitools/presets.json',
   backupsDir: '.jakeaitools/backups',

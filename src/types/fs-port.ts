@@ -3,6 +3,8 @@
  * 所有路径均为相对 HOME 的正斜杠路径；生产实现走 Tauri fs 插件，测试注入内存替身。
  */
 export interface FileSystemPort {
+  /** 用户主目录绝对路径（用于写入需要绝对路径的托管配置，如 Codex model_catalog_json） */
+  homeDir(): Promise<string>
   exists(path: string): Promise<boolean>
   readTextFile(path: string): Promise<string>
   writeTextFile(path: string, contents: string): Promise<void>

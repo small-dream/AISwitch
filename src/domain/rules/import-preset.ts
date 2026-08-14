@@ -5,6 +5,7 @@ import {
   CODEX_CONFIG_KEYS,
 } from '@/constants/config-keys'
 import type { PresetInput } from '@/domain/entities/preset'
+import { findCatalogEntry } from '@/domain/rules/codex-catalog'
 import type { ClaudeSettings } from '@/domain/schemas/claude-config'
 import type { CodexConfig, CodexProviderBlock } from '@/domain/schemas/codex-config'
 import { isRecord } from '@/utils/guards'
@@ -108,7 +109,11 @@ function codexProviderFrom(config: CodexConfig): CodexProviderSource {
 }
 
 /** 从 Codex 当前配置生成待编辑的预设草稿；无任何可识别信息时返回 null */
-export function codexPresetInputFrom(config: CodexConfig, auth: unknown): PresetInput | null {
+export function codexPresetInputFrom(
+  config: CodexConfig,
+  auth: unknown,
+  modelsCatalog: unknown = null
+): PresetInput | null {
   const source = codexProviderFrom(config)
   // Key 读取链：provider 块内嵌 token（DeepSeek 脚本用法）→ auth.json（官方 API 用法）
   const apiKey = source.blockToken ?? codexApiKeyFrom(auth)
@@ -119,10 +124,39 @@ export function codexPresetInputFrom(config: CodexConfig, auth: unknown): Preset
   }
   return {
     tool: 'codex',
-    name: model || (baseUrl ? hostOf(baseUrl) : '导入配置'),
-    providerName: providerName ?? (baseUrl ? hostOf(baseUrl) : 'OpenAI 官方'),
+    name: importDisplayName(model, baseUrl),
+    providerName: importProviderName(providerName, baseUrl),
     baseUrl,
     apiKey,
     model,
+    modelMetadata: captureModelMetadata(config, model, modelsCatalog),
   }
+}
+
+function importDisplayName(model: string, baseUrl: string | undefined): string {
+  return model || (baseUrl ? hostOf(baseUrl) : '导入配置')
+}
+
+function importProviderName(
+  providerName: string | undefined,
+  baseUrl: string | undefined
+): string {
+  return providerName ?? (baseUrl ? hostOf(baseUrl) : 'OpenAI 官方')
+}
+
+/** 目录启用（model_catalog_json 已设）且含当前模型条目时，整份捕获（含同族模型）供切换回写 */
+function captureModelMetadata(
+  config: CodexConfig,
+  model: string,
+  modelsCatalog: unknown
+): Record<string, unknown> | undefined {
+  if (
+    !config.model_catalog_json ||
+    !model ||
+    !isRecord(modelsCatalog) ||
+    !Array.isArray(modelsCatalog.models)
+  ) {
+    return undefined
+  }
+  return findCatalogEntry(modelsCatalog, model) ? { ...modelsCatalog } : undefined
 }

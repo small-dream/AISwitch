@@ -51,7 +51,7 @@
 | ID    | 用户故事                                                                      | 验收标准                                                                                                                                                                                                                                           |
 | ----- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | US-01 | 作为用户，启动时自动**探测**本机 Claude Code / Codex 的全局配置与当前生效模型 | ① 三态：未检测到配置 / 已配置（显示当前供应商与模型）/ 未知（配置存在但无法解析，给出警告）；② 启动后 3 秒内完成探测；③ **探测仅基于全局配置文件，不依赖终端 CLI / PATH 存在性**——VS Code 插件形态使用时同样正确识别，且切换入口在任何状态下都可用 |
-| US-02 | 作为用户，我可以对「模型预设」做**增删改查**                                  | ① 字段与校验见 §5.2；② API Key 默认遮蔽显示，可切换明文；③ 删除需二次确认；④ 同一工具内预设名唯一                                                                                                                                                  |
+| US-02 | 作为用户，我可以对「模型预设」做**增删改查**                                  | ① 字段与校验见 §5.2；② API Key 默认遮蔽显示，可切换明文；③ 删除需二次确认；④ 同一工具内预设名唯一；⑤ Codex 预设提供「高级」折叠区编辑 `modelMetadata`（支持粘贴单条条目或整份 models.json 文件，文件原样保存、同族模型切换后都进选单；须含与模型名一致的条目，`display_name` 缺失时自动补齐，留空 = 不使用） |
 | US-03 | 作为用户，选中预设后**一键切换**，程序自动写入对应配置文件                    | ① 写入映射见 §5.1；② 写入采用「临时文件 + 原子替换」；③ 写后回读校验生效；④ 全程 ≤ 1 秒                                                                                                                                                            |
 | US-04 | 作为用户，每次写入前**自动备份**原配置，可一键回滚                            | ① 备份策略见 §5.4；② 写入失败自动回滚并提示错误详情；③ 可一键恢复最近一份备份                                                                                                                                                                      |
 | US-05 | 作为用户，首页清晰展示**两个工具当前激活**的供应商/模型                       | 状态点 + 供应商名 + 模型名；探测数据实时刷新                                                                                                                                                                                                       |
@@ -123,10 +123,16 @@ flowchart TD
 | `config.toml` | 顶层 `model`                                               | `preset.model`   | —                                                      |
 | `config.toml` | 顶层 `model_provider`                                      | —                | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块 |
 | `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl` | 第三方时写入；切回官方时移除该块                       |
+| `config.toml` | `[model_providers.jake_current].name`                      | `preset.providerName` | 第三方时必写；Codex 要求块内 `name` 非空，缺失将导致整个 config.toml 加载失败、CLI/插件退回安装引导 |
+| `config.toml` | `[model_providers.jake_current].wire_api`                   | 固定 `"responses"` | 第三方时必写；缺省会回落 chat 协议，与官方及主流中转行为不一致 |
 | `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`  | 第三方时同步写入（DeepSeek 官方脚本模式）              |
+| `config.toml` | 顶层 `model_catalog_json`                                   | —                | 预设携带元数据 → 指向 `~/.codex/models.json`；目录无当前模型条目 → 移除该键回落内置目录；其余保持现状 |
+| `models.json` | `models[]` 条目                                             | `preset.modelMetadata` | 切换时重写为**当前预设的条目集**——整份厂商文件粘贴时保留全部同族模型（选单只显示当前供应商），单条粘贴仅该条；切回其他预设时由其自带元数据重建 |
 | `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`  | 始终写入（官方模式），与块内 token 双通道兼容          |
 
 **Codex 读取语义（导入/探测）**：供应商 = `model_provider` 指向的 `[model_providers.<id>]` 块（不猜测其他块）；供应商展示名优先块内 `name`；**Key 读取链 = 块内 `experimental_bearer_token` → `auth.json` 的 `OPENAI_API_KEY`**（DeepSeek 官方安装脚本将 Key 内嵌于 provider 块）。
+
+**模型目录语义（models.json）**：`model_catalog_json` 是**整体替换** Codex 内置目录而非叠加（实测 codex 0.147）——目录里没有当前模型时必须移除该键，否则官方模型元数据被遮蔽（回落兜底元数据并告警）。导入时若该键已设且目录含当前模型条目，整条捕获为 `preset.modelMetadata` 供切换回写。
 
 ### 5.2 预设字段定义
 
@@ -140,6 +146,7 @@ flowchart TD
 | `apiKey`                  | string   | 是       | 非空                           |
 | `model`                   | string   | 是       | 1–100 字符                     |
 | `smallFastModel`          | string   | 否       | 仅 claude-code 使用            |
+| `modelMetadata`           | object   | 否       | 仅 codex 使用：models.json 目录条目，opaque 透传（结构与 Codex 版本耦合，不做字段校验）；`slug` 须等于 `model` |
 | `createdAt` / `updatedAt` | ISO 8601 | 系统维护 | —                              |
 
 ### 5.3 预设存储

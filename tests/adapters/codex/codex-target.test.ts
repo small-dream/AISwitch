@@ -6,19 +6,33 @@ import { describe, expect, it } from 'vitest'
 
 import { createCodexTarget } from '@/adapters/codex'
 import { CODEX_CONFIG_KEYS } from '@/constants/config-keys'
+import { findCatalogEntry } from '@/domain/rules/codex-catalog'
 import { makePreset } from '../../helpers/make-preset'
-import { createMemoryFs, type MemoryFs } from '../../helpers/memory-fs'
+import { createMemoryFs, MEMORY_HOME, type MemoryFs } from '../../helpers/memory-fs'
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'fixtures')
 const CONFIG_FIXTURE = readFileSync(join(FIXTURES, 'codex-config.toml'), 'utf8')
 const AUTH_FIXTURE = readFileSync(join(FIXTURES, 'codex-auth.json'), 'utf8')
+const MODELS_FIXTURE = readFileSync(join(FIXTURES, 'codex-models.json'), 'utf8')
 const INJECTED = CODEX_CONFIG_KEYS.injectedProvider
+const MODELS_PATH = '.codex/models.json'
+const MANAGED_CATALOG = `${MEMORY_HOME}/.codex/models.json`
 
-function seededFs(): MemoryFs {
+function seededFs(files: Record<string, string> = {}): MemoryFs {
   return createMemoryFs({
     '.codex/config.toml': CONFIG_FIXTURE,
     '.codex/auth.json': AUTH_FIXTURE,
+    [MODELS_PATH]: MODELS_FIXTURE,
+    ...files,
   })
+}
+
+/** 在 fixture 顶层键后注入 model_catalog_json（TOML 顶层键须位于表之前） */
+function configWithCatalogKey(path: string): string {
+  return CONFIG_FIXTURE.replace(
+    'model_provider = "openai"',
+    `model_provider = "openai"\nmodel_catalog_json = "${path}"`
+  )
 }
 
 function readToml(fs: MemoryFs): Record<string, unknown> {
@@ -65,7 +79,9 @@ describe('CodexConfigTarget · apply / rollback', () => {
     const config = readToml(fs)
     expect(config.model).toBe('glm-4.6')
     expect(config.model_provider).toBe(INJECTED)
+    expect(readProviders(fs)[INJECTED]?.name).toBe(preset.providerName)
     expect(readProviders(fs)[INJECTED]?.base_url).toBe('https://relay.example.com/v1')
+    expect(readProviders(fs)[INJECTED]?.wire_api).toBe('responses')
     expect(readProviders(fs)[INJECTED]?.experimental_bearer_token).toBe('sk-test-key')
     expect(readProviders(fs).openai).toEqual({ name: 'OpenAI', wire_api: 'responses' })
     expect(readProviders(fs).deepseek).toEqual({
@@ -99,14 +115,105 @@ describe('CodexConfigTarget · apply / rollback', () => {
     expect(config.model_provider).toBe('openai')
     expect(INJECTED in readProviders(fs)).toBe(false)
   })
+})
 
-  it('rollback：恢复两个文件的最近备份', async () => {
+describe('CodexConfigTarget · rollback', () => {
+  it('rollback：恢复两个文件与模型目录的最近备份', async () => {
     const fs = seededFs()
     const target = createCodexTarget(fs)
-    await target.apply(makePreset({ tool: 'codex' }))
+    await target.apply(
+      makePreset({ tool: 'codex', modelMetadata: { context_window: 128000 } })
+    )
 
     expect(await target.rollback()).toBe(true)
     expect(fs.files().get('.codex/config.toml')).toBe(CONFIG_FIXTURE)
     expect(fs.files().get('.codex/auth.json')).toBe(AUTH_FIXTURE)
+    expect(fs.files().get(MODELS_PATH)).toBe(MODELS_FIXTURE)
+  })
+})
+
+describe('CodexConfigTarget · 模型目录（models.json）', () => {
+  it('预设携带元数据 → 目录重写为仅当前条目并指向托管路径', async () => {
+    const fs = seededFs()
+    const target = createCodexTarget(fs)
+    const preset = makePreset({
+      tool: 'codex',
+      baseUrl: 'https://relay.example.com/v1',
+      modelMetadata: { context_window: 128000 },
+    })
+
+    await target.apply(preset)
+
+    expect(readToml(fs).model_catalog_json).toBe(MANAGED_CATALOG)
+    const catalog: unknown = JSON.parse(fs.files().get(MODELS_PATH) ?? '{}')
+    expect(findCatalogEntry(catalog, 'glm-4.6')).toEqual({
+      slug: 'glm-4.6',
+      context_window: 128000,
+      display_name: 'glm-4.6',
+    })
+    expect(findCatalogEntry(catalog, 'deepseek-v4-flash')).toBeNull()
+    expect(await target.verify(preset)).toBe(true)
+  })
+
+  it('无元数据但目录已有该模型条目 → 目录与既有键保持现状', async () => {
+    const customKey = 'C:/custom/catalog.json'
+    const fs = seededFs({ '.codex/config.toml': configWithCatalogKey(customKey) })
+    const target = createCodexTarget(fs)
+    const preset = makePreset({ tool: 'codex', baseUrl: 'https://relay.example.com/v1' })
+
+    await target.apply(preset)
+
+    expect(readToml(fs).model_catalog_json).toBe(customKey)
+    expect(fs.files().get(MODELS_PATH)).toBe(MODELS_FIXTURE)
+    expect(await target.verify(preset)).toBe(true)
+  })
+
+  it('无元数据且目录无条目 → 移除指向键回落内置目录', async () => {
+    const fs = seededFs({ '.codex/config.toml': configWithCatalogKey('C:/custom/catalog.json') })
+    const target = createCodexTarget(fs)
+    const preset = makePreset({
+      tool: 'codex',
+      baseUrl: 'https://relay.example.com/v1',
+      model: 'brand-new-model',
+    })
+
+    await target.apply(preset)
+
+    expect(readToml(fs).model_catalog_json).toBeUndefined()
+    expect(fs.files().get(MODELS_PATH)).toBe(MODELS_FIXTURE)
+    expect(await target.verify(preset)).toBe(true)
+  })
+})
+
+describe('CodexConfigTarget · 整份文件元数据（同族模型）', () => {
+  it('整份文件元数据 → 同族条目全部写入目录', async () => {
+    const fs = seededFs()
+    const target = createCodexTarget(fs)
+    const preset = makePreset({
+      tool: 'codex',
+      baseUrl: 'https://relay.example.com/v1',
+      modelMetadata: {
+        models: [
+          { slug: 'glm-4.6', context_window: 128000 },
+          { slug: 'glm-5-turbo', context_window: 100000, display_name: 'GLM-5-Turbo' },
+        ],
+      },
+    })
+
+    await target.apply(preset)
+
+    const catalog: unknown = JSON.parse(fs.files().get(MODELS_PATH) ?? '{}')
+    expect(findCatalogEntry(catalog, 'glm-4.6')).toEqual({
+      slug: 'glm-4.6',
+      context_window: 128000,
+      display_name: 'glm-4.6',
+    })
+    expect(findCatalogEntry(catalog, 'glm-5-turbo')).toEqual({
+      slug: 'glm-5-turbo',
+      context_window: 100000,
+      display_name: 'GLM-5-Turbo',
+    })
+    expect(findCatalogEntry(catalog, 'deepseek-v4-flash')).toBeNull()
+    expect(await target.verify(preset)).toBe(true)
   })
 })

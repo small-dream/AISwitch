@@ -56,7 +56,7 @@ graph TB
         FS["fs / dialog / shell 插件 + commands/"]
     end
 
-    OS["OS 配置文件<br/>~/.claude/settings.json<br/>~/.codex/config.toml + auth.json<br/>~/.jakeaitools/*"]
+    OS["OS 配置文件<br/>~/.claude/settings.json<br/>~/.codex/config.toml + auth.json (+ models.json)<br/>~/.jakeaitools/*"]
 
     UI --> HK --> SVC
     ST --> HK

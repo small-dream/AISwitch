@@ -9,6 +9,7 @@ export interface ImportSources {
   readClaude(): Promise<ClaudeSettings | null>
   readCodexConfig(): Promise<CodexConfig | null>
   readCodexAuth(): Promise<unknown>
+  readCodexModels(): Promise<unknown>
 }
 
 /** 从本机现有配置导入生成预设草稿（PRD US-07） */
@@ -34,6 +35,7 @@ export class ImportService {
       return null
     }
     const auth = await this.sources.readCodexAuth()
-    return codexPresetInputFrom(config, auth)
+    const modelsCatalog = await this.sources.readCodexModels()
+    return codexPresetInputFrom(config, auth, modelsCatalog)
   }
 }

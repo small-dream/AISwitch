@@ -8,6 +8,8 @@ import { FormField } from '@/ui/components/FormField'
 import { Input } from '@/ui/components/Input'
 import { PasswordInput } from '@/ui/components/PasswordInput'
 import { Select } from '@/ui/components/Select'
+import { CodexMetadataSection } from './CodexMetadataSection'
+import { metadataToFieldText, parseModelMetadataField } from './model-metadata'
 import { type PresetFormValues, presetFormSchema } from './preset-form-schema'
 
 const EMPTY_VALUES: Omit<PresetFormValues, 'tool'> = {
@@ -17,6 +19,7 @@ const EMPTY_VALUES: Omit<PresetFormValues, 'tool'> = {
   apiKey: '',
   model: '',
   smallFastModel: '',
+  modelMetadataJson: '',
 }
 
 /** 编辑取预设本体；导入取草稿（US-07）；新建取空值，目标工具默认当前 Tab */
@@ -37,14 +40,20 @@ function toFormValues(
     apiKey: source.apiKey,
     model: source.model,
     smallFastModel: source.smallFastModel ?? '',
+    modelMetadataJson: metadataToFieldText(source.modelMetadata),
   }
 }
 
-/** 表单值 → 领域输入：空串归一化为 undefined，smallFastModel 仅 Claude 使用 */
+/** 表单值 → 领域输入：空串归一化为 undefined，smallFastModel 仅 Claude 使用，元数据 JSON 仅 Codex 使用 */
 function toPresetInput(values: PresetFormValues): PresetInput {
   const smallFastModel =
     values.tool === 'claude-code' && values.smallFastModel ? values.smallFastModel : undefined
-  return { ...values, baseUrl: values.baseUrl || undefined, smallFastModel }
+  const { modelMetadataJson, ...rest } = values
+  const modelMetadata =
+    values.tool === 'codex'
+      ? parseModelMetadataField(modelMetadataJson ?? '', values.model).entry
+      : undefined
+  return { ...rest, baseUrl: values.baseUrl || undefined, smallFastModel, modelMetadata }
 }
 
 function PresetFormFields({
@@ -87,7 +96,28 @@ function PresetFormFields({
           <Input {...register('smallFastModel')} placeholder="如：glm-4.6-air" />
         </FormField>
       ) : null}
+      {tool === 'codex' ? <CodexMetadataSection register={register} errors={errors} /> : null}
     </>
+  )
+}
+
+/** 操作行固定于弹窗底部，不随字段区滚动 */
+function PresetFormActions({
+  submitting,
+  onCancel,
+}: {
+  submitting: boolean
+  onCancel: () => void
+}) {
+  return (
+    <div className="flex shrink-0 justify-end gap-2 pt-4">
+      <Button variant="secondary" onClick={onCancel}>
+        取消
+      </Button>
+      <Button type="submit" disabled={submitting}>
+        {submitting ? '保存中…' : '保存'}
+      </Button>
+    </div>
   )
 }
 
@@ -127,20 +157,16 @@ export function PresetForm({
 
   return (
     <form
-      className="space-y-4"
+      className="flex min-h-0 flex-1 flex-col"
       onSubmit={(event) => {
         void submit(event)
       }}
     >
-      <PresetFormFields register={register} errors={errors} tool={watch('tool')} />
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="secondary" onClick={onCancel}>
-          取消
-        </Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? '保存中…' : '保存'}
-        </Button>
+      {/* 字段区：超高时在弹窗内滚动，操作按钮不随之移出视口 */}
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+        <PresetFormFields register={register} errors={errors} tool={watch('tool')} />
       </div>
+      <PresetFormActions submitting={submitting} onCancel={onCancel} />
     </form>
   )
 }

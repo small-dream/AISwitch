@@ -14,10 +14,32 @@ function requireFile(store: Map<string, string>, path: string): string {
   return content
 }
 
+/** 内存替身的固定 HOME 绝对路径（断言 model_catalog_json 等托管绝对路径用） */
+export const MEMORY_HOME = 'C:/Users/tester'
+
+/** 列出 store 中 path 第一层的文件/目录名（去重保序） */
+function firstLevelNames(store: Map<string, string>, path: string): string[] {
+  const prefix = `${path}/`
+  const names = new Set<string>()
+  for (const key of store.keys()) {
+    if (!key.startsWith(prefix)) {
+      continue
+    }
+    const [first] = key.slice(prefix.length).split('/')
+    if (first) {
+      names.add(first)
+    }
+  }
+  return [...names]
+}
+
 /** FileSystemPort 内存替身：路径语义与生产实现一致（相对 HOME 正斜杠） */
 export function createMemoryFs(initial: Record<string, string> = {}): MemoryFs {
   const store = new Map<string, string>(Object.entries(initial))
   return {
+    homeDir() {
+      return Promise.resolve(MEMORY_HOME)
+    },
     exists(path) {
       if (store.has(path)) {
         return Promise.resolve(true)
@@ -34,18 +56,7 @@ export function createMemoryFs(initial: Record<string, string> = {}): MemoryFs {
       return Promise.resolve()
     },
     readDir(path) {
-      const prefix = `${path}/`
-      const names = new Set<string>()
-      for (const key of store.keys()) {
-        if (!key.startsWith(prefix)) {
-          continue
-        }
-        const [first] = key.slice(prefix.length).split('/')
-        if (first) {
-          names.add(first)
-        }
-      }
-      return Promise.resolve([...names])
+      return Promise.resolve(firstLevelNames(store, path))
     },
     mkdir() {
       return Promise.resolve()

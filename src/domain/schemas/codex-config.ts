@@ -14,6 +14,8 @@ export type CodexProviderBlock = z.infer<typeof providerBlockSchema>
 export const codexConfigSchema = z.looseObject({
   model: z.string().optional(),
   model_provider: z.string().optional(),
+  /** 自定义模型目录指针：整体替换 Codex 内置目录（非叠加） */
+  model_catalog_json: z.string().optional(),
   model_providers: z.record(z.string(), providerBlockSchema).optional(),
 })
 
