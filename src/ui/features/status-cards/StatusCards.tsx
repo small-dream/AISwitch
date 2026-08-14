@@ -1,10 +1,9 @@
-import { useRollback } from '@/hooks/use-switch'
-import { useToolStatus } from '@/hooks/use-tool-status'
+import type { ToolInstallStatus, ToolStatus } from '@/domain/entities/preset'
 import { TOOL_META } from '@/constants/tools'
-import type { TargetTool, ToolInstallStatus, ToolStatus } from '@/domain/entities/preset'
-import { errorMessage } from '@/utils/error-message'
-import { toastError, toastSuccess } from '@/stores/toast-store'
-import { Button } from '@/ui/components/Button'
+import { useToolStatus } from '@/hooks/use-tool-status'
+import { useVscodePresence } from '@/hooks/use-vscode-presence'
+import { BackupsButton } from '@/ui/features/backups/BackupsButton'
+import { Badge } from '@/ui/components/Badge'
 import { Card } from '@/ui/components/Card'
 import { StatusDot } from '@/ui/components/StatusDot'
 
@@ -16,25 +15,10 @@ const STATUS_TEXT: Record<ToolInstallStatus, string> = {
 
 export function StatusCards() {
   const { data: statuses, isLoading } = useToolStatus()
-  const rollback = useRollback()
+  const { data: presence } = useVscodePresence()
 
   if (isLoading) {
     return <Card className="p-6 text-sm text-zinc-400">正在探测本机 Claude Code / Codex 环境…</Card>
-  }
-
-  const handleRollback = (tool: TargetTool) => {
-    rollback.mutate(tool, {
-      onSuccess: (restored) => {
-        if (restored) {
-          toastSuccess(`已恢复 ${TOOL_META[tool].label} 最近一份备份`)
-        } else {
-          toastError('没有可用备份')
-        }
-      },
-      onError: (error) => {
-        toastError(errorMessage(error))
-      },
-    })
   }
 
   return (
@@ -43,8 +27,7 @@ export function StatusCards() {
         <ToolStatusCard
           key={status.tool}
           status={status}
-          rollbackPending={rollback.isPending}
-          onRollback={handleRollback}
+          vscodeDetected={presence?.[status.tool] ?? false}
         />
       ))}
     </div>
@@ -53,12 +36,10 @@ export function StatusCards() {
 
 function ToolStatusCard({
   status,
-  rollbackPending,
-  onRollback,
+  vscodeDetected,
 }: {
   status: ToolStatus
-  rollbackPending: boolean
-  onRollback: (tool: TargetTool) => void
+  vscodeDetected: boolean
 }) {
   const meta = TOOL_META[status.tool]
   return (
@@ -76,23 +57,18 @@ function ToolStatusCard({
           {status.activeProviderName ?? meta.configPath}
         </p>
         {status.status === 'not-configured' ? (
-          <p className="text-[11px] leading-4 text-zinc-600">
-            首次切换将自动创建全局配置，VS Code 插件方式使用同样生效
-          </p>
+          vscodeDetected ? (
+            <Badge tone="success">检测到 VS Code 插件，切换后即可生效</Badge>
+          ) : (
+            <p className="text-[11px] leading-4 text-zinc-600">
+              首次切换将自动创建全局配置，VS Code 插件方式使用同样生效
+            </p>
+          )
         ) : null}
       </div>
       {status.status !== 'not-configured' ? (
         <div className="mt-3">
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={rollbackPending}
-            onClick={() => {
-              onRollback(status.tool)
-            }}
-          >
-            恢复上次备份
-          </Button>
+          <BackupsButton tool={status.tool} />
         </div>
       ) : null}
     </Card>

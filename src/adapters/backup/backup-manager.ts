@@ -1,7 +1,12 @@
 import { writeTextAtomic } from '@/adapters/fs/atomic-write'
 import { PATHS } from '@/constants/paths'
 import type { TargetTool } from '@/domain/entities/preset'
-import { backupFileName, latestBackupName, namesToPrune } from '@/domain/rules/backup-naming'
+import {
+  backupFileName,
+  latestBackupName,
+  namesToPrune,
+  parseBackupName,
+} from '@/domain/rules/backup-naming'
 import type { FileSystemPort } from '@/types/fs-port'
 
 /** 每个工具每个源文件保留的备份份数（PRD §5.4） */
@@ -38,6 +43,30 @@ export class BackupManager {
     return name
   }
 
+  /** 指定工具全部备份文件名（新到旧）；目录不存在返回空 */
+  async list(tool: TargetTool): Promise<string[]> {
+    const dir = this.dirFor(tool)
+    if (!(await this.fs.exists(dir))) {
+      return []
+    }
+    const names = await this.fs.readDir(dir)
+    return names
+      .filter((name) => parseBackupName(name) !== null)
+      .sort()
+      .reverse()
+  }
+
+  /** 按备份名恢复到指定路径 */
+  async restore(tool: TargetTool, name: string, targetPath: string): Promise<void> {
+    const parsed = parseBackupName(name)
+    if (parsed?.basename !== basenameOf(targetPath)) {
+      throw new Error(`非法备份名: ${name}`)
+    }
+    const dir = this.dirFor(tool)
+    const content = await this.fs.readTextFile(`${dir}/${name}`)
+    await writeTextAtomic(this.fs, targetPath, content)
+  }
+
   /** 恢复指定源文件的最近一份备份；无可用备份返回 false */
   async restoreLatest(tool: TargetTool, targetPath: string): Promise<boolean> {
     const dir = this.dirFor(tool)
@@ -48,9 +77,16 @@ export class BackupManager {
     if (!latest) {
       return false
     }
-    const content = await this.fs.readTextFile(`${dir}/${latest}`)
-    await writeTextAtomic(this.fs, targetPath, content)
+    await this.restore(tool, latest, targetPath)
     return true
+  }
+
+  /** 删除指定备份文件 */
+  async removeOne(tool: TargetTool, name: string): Promise<void> {
+    if (!parseBackupName(name)) {
+      throw new Error(`非法备份名: ${name}`)
+    }
+    await this.fs.remove(`${this.dirFor(tool)}/${name}`)
   }
 
   private async prune(tool: TargetTool): Promise<void> {

@@ -15,6 +15,20 @@ export function backupFileName(basename: string, date: Date): string {
   return `${formatBackupTimestamp(date)}${BACKUP_SEPARATOR}${basename}`
 }
 
+/** 解析备份文件名为 { 时间戳, 源文件名 }；不符合命名规则返回 null */
+export function parseBackupName(name: string): { timestamp: string; basename: string } | null {
+  const index = name.indexOf(BACKUP_SEPARATOR)
+  if (index <= 0) {
+    return null
+  }
+  const timestamp = name.slice(0, index)
+  const basename = name.slice(index + BACKUP_SEPARATOR.length)
+  if (!/^\d{8}-\d{6}$/.test(timestamp) || !basename) {
+    return null
+  }
+  return { timestamp, basename }
+}
+
 /** 指定源文件最新一份备份的文件名；无则 null */
 export function latestBackupName(names: readonly string[], basename: string): string | null {
   const matched = names

@@ -10,26 +10,30 @@ import { PasswordInput } from '@/ui/components/PasswordInput'
 import { Select } from '@/ui/components/Select'
 import { type PresetFormValues, presetFormSchema } from './preset-form-schema'
 
-function toDefaults(preset: Preset | null): PresetFormValues {
-  if (!preset) {
-    return {
-      tool: 'claude-code',
-      name: '',
-      providerName: '',
-      baseUrl: '',
-      apiKey: '',
-      model: '',
-      smallFastModel: '',
-    }
+const EMPTY_VALUES: PresetFormValues = {
+  tool: 'claude-code',
+  name: '',
+  providerName: '',
+  baseUrl: '',
+  apiKey: '',
+  model: '',
+  smallFastModel: '',
+}
+
+/** 编辑取预设本体；导入取草稿（US-07）；新建取空值 */
+function toFormValues(preset: Preset | null, draft: PresetInput | null): PresetFormValues {
+  const source: PresetInput | null = preset ?? draft
+  if (!source) {
+    return { ...EMPTY_VALUES }
   }
   return {
-    tool: preset.tool,
-    name: preset.name,
-    providerName: preset.providerName,
-    baseUrl: preset.baseUrl ?? '',
-    apiKey: preset.apiKey,
-    model: preset.model,
-    smallFastModel: preset.smallFastModel ?? '',
+    tool: source.tool,
+    name: source.name,
+    providerName: source.providerName,
+    baseUrl: source.baseUrl ?? '',
+    apiKey: source.apiKey,
+    model: source.model,
+    smallFastModel: source.smallFastModel ?? '',
   }
 }
 
@@ -86,11 +90,13 @@ function PresetFormFields({
 
 export function PresetForm({
   preset,
+  draft,
   submitting,
   onSubmit,
   onCancel,
 }: {
   preset: Preset | null
+  draft: PresetInput | null
   submitting: boolean
   onSubmit: (input: PresetInput) => void
   onCancel: () => void
@@ -103,12 +109,12 @@ export function PresetForm({
     formState: { errors },
   } = useForm<PresetFormValues>({
     resolver: zodResolver(presetFormSchema),
-    defaultValues: toDefaults(preset),
+    defaultValues: toFormValues(preset, draft),
   })
 
   useEffect(() => {
-    reset(toDefaults(preset))
-  }, [preset, reset])
+    reset(toFormValues(preset, draft))
+  }, [preset, draft, reset])
 
   const submit = handleSubmit((values) => {
     onSubmit(toPresetInput(values))

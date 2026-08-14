@@ -38,14 +38,16 @@ function useSubmitPreset(preset: Preset | null, onClose: () => void) {
   return { submitting: create.isPending || update.isPending, submit }
 }
 
-/** 预设创建/编辑弹窗（PRD US-02） */
+/** 预设创建/编辑/导入弹窗（PRD US-02 / US-07） */
 export function PresetDialog({
   open,
   preset,
+  draft,
   onClose,
 }: {
   open: boolean
   preset: Preset | null
+  draft: PresetInput | null
   onClose: () => void
 }) {
   const { submitting, submit } = useSubmitPreset(preset, onClose)
@@ -54,6 +56,8 @@ export function PresetDialog({
     return null
   }
 
+  const title = preset ? '编辑预设' : draft ? '导入配置为预设' : '新建预设'
+
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
@@ -61,8 +65,14 @@ export function PresetDialog({
       aria-modal="true"
     >
       <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="mb-4 text-base font-semibold">{preset ? '编辑预设' : '新建预设'}</h2>
-        <PresetForm preset={preset} submitting={submitting} onSubmit={submit} onCancel={onClose} />
+        <h2 className="mb-4 text-base font-semibold">{title}</h2>
+        <PresetForm
+          preset={preset}
+          draft={draft}
+          submitting={submitting}
+          onSubmit={submit}
+          onCancel={onClose}
+        />
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "主窗口最小权限：仅允许访问三个目标目录（ARCHITECTURE §7）",
+  "description": "主窗口最小权限：配置三目录读写 + VS Code 目录只读探测 + 连通性测试 HTTP（ARCHITECTURE §7）",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -10,7 +10,9 @@
       "allow": [
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools/**" }
+        { "path": "$HOME/.jakeaitools/**" },
+        { "path": "$HOME/.vscode/**" },
+        { "path": "$HOME/.vscode-insiders/**" }
       ]
     },
     {
@@ -34,7 +36,9 @@
       "allow": [
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools/**" }
+        { "path": "$HOME/.jakeaitools/**" },
+        { "path": "$HOME/.vscode/**" },
+        { "path": "$HOME/.vscode-insiders/**" }
       ]
     },
     {
@@ -60,6 +64,10 @@
         { "path": "$HOME/.codex/**" },
         { "path": "$HOME/.jakeaitools/**" }
       ]
+    },
+    {
+      "identifier": "http:default",
+      "allow": [{ "url": "https://**" }, { "url": "http://**" }]
     }
   ]
 }

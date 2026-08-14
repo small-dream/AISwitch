@@ -191,7 +191,7 @@ sequenceDiagram
 
 ## 7. 安全模型
 
-1. **最小权限**：Tauri capabilities 仅声明所需权限；Phase 2 起 fs scope 收紧至 `~/.claude`、`~/.codex`、`~/.jakeaitools` 三个目录；
+1. **最小权限**：fs 读写仅限 `~/.claude`、`~/.codex`、`~/.jakeaitools` 三目录；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；连通性测试经 tauri-plugin-http，因供应商地址由用户预设决定，scope 放开 `https://**` / `http://**`；
 2. **API Key**：仅本地存储（v0.1 JSON + 收紧文件权限；v0.2 评估 OS Keychain，见 PRD §7.3）；
 3. **CSP**：当前开发期为 null，发布前必须配置严格 CSP（记入发布检查单）。
 

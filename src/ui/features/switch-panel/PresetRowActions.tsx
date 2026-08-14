@@ -5,6 +5,7 @@ import { useSwitchPreset } from '@/hooks/use-switch'
 import { toastError, toastSuccess } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
 import { Button } from '@/ui/components/Button'
+import { ConnectivityButton } from './ConnectivityButton'
 
 function useRemoveAction(preset: Preset) {
   const removeMutation = useRemovePreset()
@@ -48,6 +49,7 @@ export function PresetRowActions({
 
   return (
     <div className="flex shrink-0 items-center gap-2">
+      <ConnectivityButton preset={preset} />
       <Button size="sm" disabled={switchMutation.isPending} onClick={handleApply}>
         {switchMutation.isPending ? '切换中…' : '应用'}
       </Button>

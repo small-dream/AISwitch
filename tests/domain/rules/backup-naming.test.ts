@@ -5,7 +5,23 @@ import {
   formatBackupTimestamp,
   latestBackupName,
   namesToPrune,
+  parseBackupName,
 } from '@/domain/rules/backup-naming'
+
+describe('parseBackupName', () => {
+  it('解析时间戳与源文件名', () => {
+    expect(parseBackupName('20260814-183000--settings.json')).toEqual({
+      timestamp: '20260814-183000',
+      basename: 'settings.json',
+    })
+  })
+
+  it('非法命名返回 null', () => {
+    expect(parseBackupName('random.txt')).toBeNull()
+    expect(parseBackupName('--settings.json')).toBeNull()
+    expect(parseBackupName('2026081-1830--x.json')).toBeNull()
+  })
+})
 
 describe('formatBackupTimestamp', () => {
   it('生成本地时间戳 yyyyMMdd-HHmmss', () => {
