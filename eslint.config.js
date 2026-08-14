@@ -33,6 +33,15 @@ export default tseslint.config(
       'max-lines-per-function': ['error', { max: 50, skipBlankLines: true, skipComments: true }],
       complexity: ['error', 10],
       '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },

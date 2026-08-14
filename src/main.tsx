@@ -2,7 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from '@/app/App'
 import { AppProviders } from '@/app/AppProviders'
+import { bootstrapApp } from '@/app/composition'
 import '@/styles/global.css'
+
+bootstrapApp()
 
 const container = document.getElementById('root')
 if (!container) {

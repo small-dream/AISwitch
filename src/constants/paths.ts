@@ -1,0 +1,12 @@
+/**
+ * 全部路径为相对用户主目录（HOME）的正斜杠相对路径，
+ * 由 FileSystemPort 实现负责平台差异转换（ARCHITECTURE §2.3 D3）。
+ */
+export const PATHS = {
+  claudeSettings: '.claude/settings.json',
+  codexConfig: '.codex/config.toml',
+  codexAuth: '.codex/auth.json',
+  appDir: '.jakeaitools',
+  presetsFile: '.jakeaitools/presets.json',
+  backupsDir: '.jakeaitools/backups',
+} as const

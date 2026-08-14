@@ -18,6 +18,6 @@ export interface ConfigTarget {
   apply(preset: Preset): Promise<ApplyResult>
   /** 回读配置文件，校验预设是否已生效 */
   verify(preset: Preset): Promise<boolean>
-  /** 从最近一份备份恢复 */
-  rollback(): Promise<void>
+  /** 从最近一份备份恢复；无可用备份返回 false */
+  rollback(): Promise<boolean>
 }

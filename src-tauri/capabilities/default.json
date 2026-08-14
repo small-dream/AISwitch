@@ -1,7 +1,65 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "主窗口默认能力；Phase 2 将按 ARCHITECTURE §7 收紧 fs scope",
+  "description": "主窗口最小权限：仅允许访问三个目标目录（ARCHITECTURE §7）",
   "windows": ["main"],
-  "permissions": ["core:default", "fs:default", "dialog:default", "shell:default"]
+  "permissions": [
+    "core:default",
+    {
+      "identifier": "fs:allow-exists",
+      "allow": [
+        { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [
+        { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [
+        { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [
+        { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [
+        { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [
+        { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools/**" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-rename",
+      "allow": [
+        { "path": "$HOME/.claude/**" },
+        { "path": "$HOME/.codex/**" },
+        { "path": "$HOME/.jakeaitools/**" }
+      ]
+    }
+  ]
 }

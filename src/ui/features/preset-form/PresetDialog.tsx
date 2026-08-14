@@ -1,0 +1,69 @@
+import type { Preset, PresetInput } from '@/domain/entities/preset'
+import { useCreatePreset, useUpdatePreset } from '@/hooks/use-presets'
+import { toastError, toastSuccess } from '@/stores/toast-store'
+import { errorMessage } from '@/utils/error-message'
+import { PresetForm } from './PresetForm'
+
+function useSubmitPreset(preset: Preset | null, onClose: () => void) {
+  const create = useCreatePreset()
+  const update = useUpdatePreset()
+
+  const handleError = (error: unknown) => {
+    toastError(errorMessage(error))
+  }
+
+  const submit = (input: PresetInput) => {
+    if (preset) {
+      update.mutate(
+        { id: preset.id, input },
+        {
+          onSuccess: () => {
+            toastSuccess('预设已更新')
+            onClose()
+          },
+          onError: handleError,
+        }
+      )
+      return
+    }
+    create.mutate(input, {
+      onSuccess: () => {
+        toastSuccess('预设已创建')
+        onClose()
+      },
+      onError: handleError,
+    })
+  }
+
+  return { submitting: create.isPending || update.isPending, submit }
+}
+
+/** 预设创建/编辑弹窗（PRD US-02） */
+export function PresetDialog({
+  open,
+  preset,
+  onClose,
+}: {
+  open: boolean
+  preset: Preset | null
+  onClose: () => void
+}) {
+  const { submitting, submit } = useSubmitPreset(preset, onClose)
+
+  if (!open) {
+    return null
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-900 p-6">
+        <h2 className="mb-4 text-base font-semibold">{preset ? '编辑预设' : '新建预设'}</h2>
+        <PresetForm preset={preset} submitting={submitting} onSubmit={submit} onCancel={onClose} />
+      </div>
+    </div>
+  )
+}

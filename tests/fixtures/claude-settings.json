@@ -1,0 +1,11 @@
+{
+  "env": {
+    "ANTHROPIC_MODEL": "claude-sonnet-4-5",
+    "ANTHROPIC_AUTH_TOKEN": "sk-ant-old",
+    "ANTHROPIC_BASE_URL": "https://old-relay.example.com",
+    "OTHER_KEY": "keep-me"
+  },
+  "permissions": {
+    "allow": ["Bash"]
+  }
+}

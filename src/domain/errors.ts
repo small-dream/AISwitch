@@ -22,3 +22,19 @@ export class AppError extends Error {
 export function isAppError(error: unknown): error is AppError {
   return error instanceof AppError
 }
+
+/** 适配层兜底转换：已是 AppError 原样透传，否则包装为带上下文的应用错误 */
+export function toAppError(
+  error: unknown,
+  fallbackCode: ErrorCode,
+  message: string,
+  context: AppErrorContext = {}
+): AppError {
+  if (isAppError(error)) {
+    return error
+  }
+  if (error instanceof Error) {
+    return new AppError(fallbackCode, message, { ...context, cause: error.message })
+  }
+  return new AppError('E_UNKNOWN', message, context)
+}

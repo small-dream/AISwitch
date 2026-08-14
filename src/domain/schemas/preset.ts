@@ -24,3 +24,10 @@ export const presetCollectionSchema = z.object({
   version: z.literal(1),
   presets: z.array(presetSchema),
 })
+
+/** 创建/更新预设时的用户输入（id 与时间戳由服务层生成） */
+export const presetInputSchema = presetSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+})

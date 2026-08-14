@@ -197,10 +197,10 @@ sequenceDiagram
 
 ## 8. 环境要求与开发命令
 
-| 项     | 要求                                |
-| ------ | ----------------------------------- |
-| Node   | ≥ 20（推荐 24 LTS）                 |
-| Rust   | ≥ 1.82（MSVC 工具链，Windows）      |
+| 项     | 要求                              |
+| ------ | --------------------------------- |
+| Node   | ≥ 20（推荐 24 LTS）               |
+| Rust   | ≥ 1.82（MSVC 工具链，Windows）    |
 | 包管理 | pnpm（依赖锁定于 pnpm-lock.yaml） |
 
 ```bash
@@ -227,11 +227,11 @@ pnpm typecheck      # TypeScript 严格检查
 
 ## 10. 决策记录（ADR）
 
-| 编号    | 决策                                | 理由与代价                                                     |
-| ------- | ----------------------------------- | -------------------------------------------------------------- |
-| ADR-001 | Tauri 2 而非 Electron               | 包体/内存/安全全面占优；接受 Rust 心智成本，以「薄壳原则」缓解 |
-| ADR-002 | JSON 文件存储而非 SQLite            | 量级小、可读可 diff；Repository 接口保留未来替换权             |
-| ADR-003 | Zustand + TanStack Query 而非 Redux | 低样板，边界清晰（UI 状态 vs 服务端状态）                      |
-| ADR-004 | Tailwind CSS v4                     | 原子化 + CSS-first 配置，AI 修改安全性高                       |
-| ADR-005 | 依赖策略：全部使用最新稳定版        | 安装时解析 latest，`npm outdated` 复核，锁文件锁定             |
+| 编号    | 决策                                | 理由与代价                                                                       |
+| ------- | ----------------------------------- | -------------------------------------------------------------------------------- |
+| ADR-001 | Tauri 2 而非 Electron               | 包体/内存/安全全面占优；接受 Rust 心智成本，以「薄壳原则」缓解                   |
+| ADR-002 | JSON 文件存储而非 SQLite            | 量级小、可读可 diff；Repository 接口保留未来替换权                               |
+| ADR-003 | Zustand + TanStack Query 而非 Redux | 低样板，边界清晰（UI 状态 vs 服务端状态）                                        |
+| ADR-004 | Tailwind CSS v4                     | 原子化 + CSS-first 配置，AI 修改安全性高                                         |
+| ADR-005 | 依赖策略：全部使用最新稳定版        | 安装时解析 latest，`npm outdated` 复核，锁文件锁定                               |
 | ADR-006 | TypeScript 锁定 6.x（暂不升 7.0）   | TS 7.0 为原生编译器（无 JS API），typescript-eslint 生态尚未支持；待其支持后升级 |
