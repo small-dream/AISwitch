@@ -22,7 +22,7 @@
     "desktop:run": "tauri dev",
     "desktop:build": "tauri build --no-bundle",
     "desktop:bundle": "tauri build",
-    "icon": "node scripts/generate-icon.mjs && tauri icon scripts/app-icon.png"
+    "icon": "node scripts/generate-icon.mjs && tauri icon scripts/app-icon.png && node scripts/render-icon-sizes.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.8.0",
