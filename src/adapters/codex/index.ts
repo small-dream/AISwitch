@@ -20,9 +20,12 @@ function configMatches(actual: CodexConfig, expected: CodexConfig): boolean {
   if (actual.model_provider !== expected.model_provider) {
     return false
   }
-  const actualUrl = actual.model_providers?.[INJECTED]?.base_url
-  const expectedUrl = expected.model_providers?.[INJECTED]?.base_url
-  return actualUrl === expectedUrl
+  const actualBlock = actual.model_providers?.[INJECTED]
+  const expectedBlock = expected.model_providers?.[INJECTED]
+  if (actualBlock?.base_url !== expectedBlock?.base_url) {
+    return false
+  }
+  return actualBlock?.experimental_bearer_token === expectedBlock?.experimental_bearer_token
 }
 
 async function detectCodex(fs: FileSystemPort): Promise<ToolStatus> {

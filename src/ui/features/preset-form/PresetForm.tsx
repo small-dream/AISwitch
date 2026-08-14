@@ -10,8 +10,7 @@ import { PasswordInput } from '@/ui/components/PasswordInput'
 import { Select } from '@/ui/components/Select'
 import { type PresetFormValues, presetFormSchema } from './preset-form-schema'
 
-const EMPTY_VALUES: PresetFormValues = {
-  tool: 'claude-code',
+const EMPTY_VALUES: Omit<PresetFormValues, 'tool'> = {
   name: '',
   providerName: '',
   baseUrl: '',
@@ -20,11 +19,15 @@ const EMPTY_VALUES: PresetFormValues = {
   smallFastModel: '',
 }
 
-/** 编辑取预设本体；导入取草稿（US-07）；新建取空值 */
-function toFormValues(preset: Preset | null, draft: PresetInput | null): PresetFormValues {
+/** 编辑取预设本体；导入取草稿（US-07）；新建取空值，目标工具默认当前 Tab */
+function toFormValues(
+  preset: Preset | null,
+  draft: PresetInput | null,
+  defaultTool: TargetTool,
+): PresetFormValues {
   const source: PresetInput | null = preset ?? draft
   if (!source) {
-    return { ...EMPTY_VALUES }
+    return { ...EMPTY_VALUES, tool: defaultTool }
   }
   return {
     tool: source.tool,
@@ -91,12 +94,14 @@ function PresetFormFields({
 export function PresetForm({
   preset,
   draft,
+  defaultTool,
   submitting,
   onSubmit,
   onCancel,
 }: {
   preset: Preset | null
   draft: PresetInput | null
+  defaultTool: TargetTool
   submitting: boolean
   onSubmit: (input: PresetInput) => void
   onCancel: () => void
@@ -109,12 +114,12 @@ export function PresetForm({
     formState: { errors },
   } = useForm<PresetFormValues>({
     resolver: zodResolver(presetFormSchema),
-    defaultValues: toFormValues(preset, draft),
+    defaultValues: toFormValues(preset, draft, defaultTool),
   })
 
   useEffect(() => {
-    reset(toFormValues(preset, draft))
-  }, [preset, draft, reset])
+    reset(toFormValues(preset, draft, defaultTool))
+  }, [preset, draft, defaultTool, reset])
 
   const submit = handleSubmit((values) => {
     onSubmit(toPresetInput(values))

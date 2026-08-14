@@ -1,8 +1,10 @@
 {
   "env": {
-    "ANTHROPIC_MODEL": "claude-sonnet-4-5",
     "ANTHROPIC_AUTH_TOKEN": "sk-ant-old",
     "ANTHROPIC_BASE_URL": "https://old-relay.example.com",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "old-haiku",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "old-sonnet",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "old-opus",
     "OTHER_KEY": "keep-me"
   },
   "permissions": {

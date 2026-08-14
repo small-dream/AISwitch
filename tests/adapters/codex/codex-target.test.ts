@@ -43,13 +43,13 @@ describe('CodexConfigTarget · detect', () => {
     expect(await target.detect()).toEqual({ tool: 'codex', status: 'not-configured' })
   })
 
-  it('读取当前模型与供应商', async () => {
+  it('读取当前模型与供应商（展示名优先取块内 name）', async () => {
     const target = createCodexTarget(seededFs())
     expect(await target.detect()).toEqual({
       tool: 'codex',
       status: 'installed',
       activeModel: 'gpt-5.2-codex',
-      activeProviderName: 'openai',
+      activeProviderName: 'OpenAI',
     })
   })
 })
@@ -66,7 +66,14 @@ describe('CodexConfigTarget · apply / rollback', () => {
     expect(config.model).toBe('glm-4.6')
     expect(config.model_provider).toBe(INJECTED)
     expect(readProviders(fs)[INJECTED]?.base_url).toBe('https://relay.example.com/v1')
+    expect(readProviders(fs)[INJECTED]?.experimental_bearer_token).toBe('sk-test-key')
     expect(readProviders(fs).openai).toEqual({ name: 'OpenAI', wire_api: 'responses' })
+    expect(readProviders(fs).deepseek).toEqual({
+      name: 'deepseek',
+      base_url: 'https://api.deepseek.com/',
+      wire_api: 'responses',
+      experimental_bearer_token: 'sk-ds-real-token',
+    })
   })
 
   it('apply：同步更新 auth.json 且写后校验通过', async () => {

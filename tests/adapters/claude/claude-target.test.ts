@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 import { createClaudeTarget } from '@/adapters/claude'
-import { CLAUDE_ENV_KEYS } from '@/constants/config-keys'
+import { CLAUDE_ENV_KEYS, CLAUDE_SLOT_KEYS } from '@/constants/config-keys'
 import { makePreset } from '../../helpers/make-preset'
 import { createMemoryFs } from '../../helpers/memory-fs'
 
@@ -18,18 +18,18 @@ function parseSettings(raw: string | undefined): Record<string, unknown> {
   return JSON.parse(raw) as Record<string, unknown>
 }
 
-describe('ClaudeConfigTarget', () => {
+describe('ClaudeConfigTarget · detect', () => {
   it('detect：未检测到全局配置（不判定为未安装，兼容 VS Code 插件场景）', async () => {
     const target = createClaudeTarget(createMemoryFs())
     expect(await target.detect()).toEqual({ tool: 'claude-code', status: 'not-configured' })
   })
 
-  it('detect：读取当前模型与供应商', async () => {
+  it('detect：读取当前模型与供应商（槽位映射模式回退链）', async () => {
     const target = createClaudeTarget(createMemoryFs({ '.claude/settings.json': SETTINGS_FIXTURE }))
     expect(await target.detect()).toEqual({
       tool: 'claude-code',
       status: 'installed',
-      activeModel: 'claude-sonnet-4-5',
+      activeModel: 'old-sonnet',
       activeProviderName: 'https://old-relay.example.com',
     })
   })
@@ -38,7 +38,9 @@ describe('ClaudeConfigTarget', () => {
     const target = createClaudeTarget(createMemoryFs({ '.claude/settings.json': '{broken' }))
     expect(await target.detect()).toEqual({ tool: 'claude-code', status: 'unknown' })
   })
+})
 
+describe('ClaudeConfigTarget · apply / rollback', () => {
   it('apply：写入预设键、保留未知字段、创建备份', async () => {
     const fs = createMemoryFs({ '.claude/settings.json': SETTINGS_FIXTURE })
     const target = createClaudeTarget(fs)
@@ -54,6 +56,9 @@ describe('ClaudeConfigTarget', () => {
     }
     expect(written.env[CLAUDE_ENV_KEYS.model]).toBe('glm-4.6')
     expect(written.env[CLAUDE_ENV_KEYS.authToken]).toBe('sk-test-key')
+    expect(written.env[CLAUDE_SLOT_KEYS.sonnet]).toBe('glm-4.6')
+    expect(written.env[CLAUDE_SLOT_KEYS.opus]).toBe('glm-4.6')
+    expect(written.env[CLAUDE_SLOT_KEYS.haiku]).toBe('glm-4.6')
     expect(written.env.OTHER_KEY).toBe('keep-me')
     expect(written.permissions).toEqual({ allow: ['Bash'] })
     expect(await target.verify(preset)).toBe(true)

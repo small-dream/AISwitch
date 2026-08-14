@@ -1,9 +1,10 @@
 import { BackupManager } from '@/adapters/backup/backup-manager'
-import { CLAUDE_ENV_KEYS } from '@/constants/config-keys'
+import { CLAUDE_ENV_KEYS, CLAUDE_SLOT_KEYS } from '@/constants/config-keys'
 import { PATHS } from '@/constants/paths'
 import { AppError } from '@/domain/errors'
 import type { Preset, ToolStatus } from '@/domain/entities/preset'
-import { expectedClaudeEnv, mergeClaudeSettings } from '@/domain/rules/claude-merge'
+import { expectedClaudeEnv, isSlotModeEnv, mergeClaudeSettings } from '@/domain/rules/claude-merge'
+import type { ClaudeSettings } from '@/domain/schemas/claude-config'
 import type { ApplyResult, ConfigTarget } from '@/types/config-target'
 import type { FileSystemPort } from '@/types/fs-port'
 import { readClaudeSettings } from './reader'
@@ -14,7 +15,22 @@ const MANAGED_ENV_KEYS = [
   CLAUDE_ENV_KEYS.model,
   CLAUDE_ENV_KEYS.baseUrl,
   CLAUDE_ENV_KEYS.smallFastModel,
+  CLAUDE_SLOT_KEYS.haiku,
+  CLAUDE_SLOT_KEYS.sonnet,
+  CLAUDE_SLOT_KEYS.opus,
 ] as const
+
+/** 当前生效模型：ANTHROPIC_MODEL → 槽位键（中转场景）→ 顶层 model（原生） */
+export function activeClaudeModel(settings: ClaudeSettings): string | undefined {
+  const env = settings.env ?? {}
+  return (
+    env[CLAUDE_ENV_KEYS.model] ??
+    env[CLAUDE_SLOT_KEYS.sonnet] ??
+    env[CLAUDE_SLOT_KEYS.opus] ??
+    env[CLAUDE_SLOT_KEYS.haiku] ??
+    settings.model
+  )
+}
 
 /** 逐键校验：期望键必须相等，被删除的受管键必须不存在，用户自有键（如 OTHER_KEY）忽略 */
 function envMatches(actual: Record<string, string>, expected: Record<string, string>): boolean {
@@ -42,7 +58,7 @@ async function detectClaude(fs: FileSystemPort): Promise<ToolStatus> {
     return {
       ...base,
       status: 'installed' as const,
-      activeModel: env[CLAUDE_ENV_KEYS.model],
+      activeModel: activeClaudeModel(settings),
       activeProviderName: env[CLAUDE_ENV_KEYS.baseUrl] ?? '官方 API',
     }
   } catch {
@@ -57,7 +73,8 @@ async function verifyClaude(fs: FileSystemPort, preset: Preset): Promise<boolean
     if (!settings) {
       return false
     }
-    return envMatches(settings.env ?? {}, expectedClaudeEnv(preset))
+    const expected = expectedClaudeEnv(preset, isSlotModeEnv(settings.env))
+    return envMatches(settings.env ?? {}, expected)
   } catch {
     return false
   }

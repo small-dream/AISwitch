@@ -114,14 +114,19 @@ flowchart TD
 
 规则：仅覆盖上表所列键，**保留文件中其余未知字段**（防止抹掉用户其他配置）。
 
+**槽位映射兼容**：第三方中转常见用法是不写 `ANTHROPIC_MODEL`，而以 `ANTHROPIC_DEFAULT_SONNET/OPUS/HAIKU_MODEL` 三槽位映射实际模型。当检测到任一槽位键时视为「槽位映射模式」：切换将同步覆盖三槽位（SONNET/OPUS = 模型，HAIKU = 小模型或主模型），否则切换对该类配置不生效；导入与探测的模型读取链为 `ANTHROPIC_MODEL → 槽位键 → 顶层 model`。
+
 **表 B · Codex CLI**（写入 `~/.codex/config.toml` 与 `~/.codex/auth.json`）：
 
-| 文件          | 配置键                                    | 来源             | 规则                                                   |
-| ------------- | ----------------------------------------- | ---------------- | ------------------------------------------------------ |
-| `config.toml` | 顶层 `model`                              | `preset.model`   | —                                                      |
-| `config.toml` | 顶层 `model_provider`                     | —                | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块 |
-| `config.toml` | `[model_providers.jake_current].base_url` | `preset.baseUrl` | 第三方时写入；切回官方时移除该块                       |
-| `auth.json`   | `OPENAI_API_KEY`                          | `preset.apiKey`  | —                                                      |
+| 文件          | 配置键                                                     | 来源             | 规则                                                   |
+| ------------- | ---------------------------------------------------------- | ---------------- | ------------------------------------------------------ |
+| `config.toml` | 顶层 `model`                                               | `preset.model`   | —                                                      |
+| `config.toml` | 顶层 `model_provider`                                      | —                | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块 |
+| `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl` | 第三方时写入；切回官方时移除该块                       |
+| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`  | 第三方时同步写入（DeepSeek 官方脚本模式）              |
+| `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`  | 始终写入（官方模式），与块内 token 双通道兼容          |
+
+**Codex 读取语义（导入/探测）**：供应商 = `model_provider` 指向的 `[model_providers.<id>]` 块（不猜测其他块）；供应商展示名优先块内 `name`；**Key 读取链 = 块内 `experimental_bearer_token` → `auth.json` 的 `OPENAI_API_KEY`**（DeepSeek 官方安装脚本将 Key 内嵌于 provider 块）。
 
 ### 5.2 预设字段定义
 

@@ -1,7 +1,12 @@
-import { CLAUDE_ENV_KEYS, CODEX_AUTH_KEYS, CODEX_CONFIG_KEYS } from '@/constants/config-keys'
+import {
+  CLAUDE_ENV_KEYS,
+  CLAUDE_SLOT_KEYS,
+  CODEX_AUTH_KEYS,
+  CODEX_CONFIG_KEYS,
+} from '@/constants/config-keys'
 import type { PresetInput } from '@/domain/entities/preset'
 import type { ClaudeSettings } from '@/domain/schemas/claude-config'
-import type { CodexConfig } from '@/domain/schemas/codex-config'
+import type { CodexConfig, CodexProviderBlock } from '@/domain/schemas/codex-config'
 import { isRecord } from '@/utils/guards'
 
 function hostOf(baseUrl: string): string {
@@ -12,23 +17,44 @@ function hostOf(baseUrl: string): string {
   }
 }
 
-function hasManagedClaudeKey(env: Record<string, string>): boolean {
+/** 当前生效模型读取链：ANTHROPIC_MODEL → 槽位键 → 顶层 model（与 detect 保持一致） */
+function claudeActiveModel(settings: ClaudeSettings): string {
+  const env = settings.env ?? {}
   return (
-    CLAUDE_ENV_KEYS.authToken in env ||
-    CLAUDE_ENV_KEYS.model in env ||
-    CLAUDE_ENV_KEYS.baseUrl in env ||
-    CLAUDE_ENV_KEYS.smallFastModel in env
+    env[CLAUDE_ENV_KEYS.model] ??
+    env[CLAUDE_SLOT_KEYS.sonnet] ??
+    env[CLAUDE_SLOT_KEYS.opus] ??
+    env[CLAUDE_SLOT_KEYS.haiku] ??
+    settings.model ??
+    ''
   )
+}
+
+function hasManagedClaudeKey(settings: ClaudeSettings): boolean {
+  const env = settings.env ?? {}
+  const managedKeys = [
+    CLAUDE_ENV_KEYS.authToken,
+    CLAUDE_ENV_KEYS.model,
+    CLAUDE_ENV_KEYS.baseUrl,
+    CLAUDE_ENV_KEYS.smallFastModel,
+    CLAUDE_SLOT_KEYS.haiku,
+    CLAUDE_SLOT_KEYS.sonnet,
+    CLAUDE_SLOT_KEYS.opus,
+  ] as const
+  if (managedKeys.some((key) => key in env)) {
+    return true
+  }
+  return Boolean(settings.model)
 }
 
 /** 从 Claude 当前配置生成待编辑的预设草稿；无任何可识别键时返回 null */
 export function claudePresetInputFrom(settings: ClaudeSettings): PresetInput | null {
-  const env = settings.env
-  if (!env || !hasManagedClaudeKey(env)) {
+  if (!hasManagedClaudeKey(settings)) {
     return null
   }
+  const env = settings.env ?? {}
   const baseUrl = env[CLAUDE_ENV_KEYS.baseUrl]
-  const model = env[CLAUDE_ENV_KEYS.model] ?? ''
+  const model = claudeActiveModel(settings)
   return {
     tool: 'claude-code',
     name: model || (baseUrl ? hostOf(baseUrl) : '官方配置'),
@@ -45,18 +71,48 @@ function codexApiKeyFrom(auth: unknown): string {
   return typeof raw === 'string' ? raw : ''
 }
 
-function codexBaseUrlFrom(config: CodexConfig): string | undefined {
-  const provider = config.model_provider
-  if (!provider || provider === CODEX_CONFIG_KEYS.officialProvider) {
-    return undefined
+interface CodexProviderSource {
+  baseUrl: string | undefined
+  providerName: string | undefined
+  /** provider 块内嵌 Key（DeepSeek 官方脚本等用法） */
+  blockToken: string | undefined
+}
+
+/** 供应商展示名：块内 name → base_url host → 块 id */
+function providerNameOf(block: CodexProviderBlock, fallbackId: string): string {
+  if (block.name) {
+    return block.name
   }
-  return config.model_providers?.[provider]?.base_url
+  if (block.base_url) {
+    return hostOf(block.base_url)
+  }
+  return fallbackId
+}
+
+/** 解析当前供应商：model_provider 指向的 config.toml provider 块（官方机制，DeepSeek/yunwu 等皆如此） */
+function codexProviderFrom(config: CodexConfig): CodexProviderSource {
+  const provider = config.model_provider
+  const blocks = config.model_providers
+  if (!provider || provider === CODEX_CONFIG_KEYS.officialProvider) {
+    return { baseUrl: undefined, providerName: undefined, blockToken: undefined }
+  }
+  const directed = blocks?.[provider]
+  if (!directed) {
+    return { baseUrl: undefined, providerName: provider, blockToken: undefined }
+  }
+  return {
+    baseUrl: directed.base_url,
+    providerName: providerNameOf(directed, provider),
+    blockToken: directed.experimental_bearer_token,
+  }
 }
 
 /** 从 Codex 当前配置生成待编辑的预设草稿；无任何可识别信息时返回 null */
 export function codexPresetInputFrom(config: CodexConfig, auth: unknown): PresetInput | null {
-  const apiKey = codexApiKeyFrom(auth)
-  const baseUrl = codexBaseUrlFrom(config)
+  const source = codexProviderFrom(config)
+  // Key 读取链：provider 块内嵌 token（DeepSeek 脚本用法）→ auth.json（官方 API 用法）
+  const apiKey = source.blockToken ?? codexApiKeyFrom(auth)
+  const { baseUrl, providerName } = source
   const model = config.model ?? ''
   if (!model && !apiKey && !baseUrl) {
     return null
@@ -64,7 +120,7 @@ export function codexPresetInputFrom(config: CodexConfig, auth: unknown): Preset
   return {
     tool: 'codex',
     name: model || (baseUrl ? hostOf(baseUrl) : '导入配置'),
-    providerName: baseUrl ? hostOf(baseUrl) : 'OpenAI 官方',
+    providerName: providerName ?? (baseUrl ? hostOf(baseUrl) : 'OpenAI 官方'),
     baseUrl,
     apiKey,
     model,

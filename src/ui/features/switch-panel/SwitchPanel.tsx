@@ -119,6 +119,7 @@ export function SwitchPanel() {
         open={formOpen}
         preset={editing}
         draft={draft}
+        defaultTool={activeTool}
         onClose={() => {
           setFormOpen(false)
         }}

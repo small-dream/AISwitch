@@ -6,7 +6,7 @@ import { serializeClaudeSettings } from './transformer'
 
 export async function writeClaudeSettings(
   fs: FileSystemPort,
-  settings: ClaudeSettings,
+  settings: ClaudeSettings
 ): Promise<void> {
   // 全新环境（如 VS Code 插件用户）可能尚无 ~/.claude 目录
   await fs.mkdir(PATHS.claudeDir)

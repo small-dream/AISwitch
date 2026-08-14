@@ -20,6 +20,7 @@ describe('mergeCodexConfig', () => {
     expect(merged.model).toBe(preset.model)
     expect(merged.model_provider).toBe(injected)
     expect(merged.model_providers?.[injected]?.base_url).toBe(preset.baseUrl)
+    expect(merged.model_providers?.[injected]?.experimental_bearer_token).toBe(preset.apiKey)
     expect(merged.model_providers?.openai).toEqual({ name: 'OpenAI', wire_api: 'responses' })
   })
 
@@ -55,7 +56,7 @@ describe('mergeCodexAuth', () => {
 })
 
 describe('codexProviderLabel', () => {
-  it('注入供应商显示 base_url，未注入显示 provider 名，未设置有兜底', () => {
+  it('注入供应商显示 base_url；指向块优先显示 name；无 name 显示 id；未设置有兜底', () => {
     const injected = CODEX_CONFIG_KEYS.injectedProvider
     expect(
       codexProviderLabel({
@@ -63,6 +64,12 @@ describe('codexProviderLabel', () => {
         model_providers: { [injected]: { base_url: 'https://relay.example.com' } },
       })
     ).toBe('https://relay.example.com')
+    expect(
+      codexProviderLabel({
+        model_provider: 'deepseek',
+        model_providers: { deepseek: { name: 'deepseek', base_url: 'https://api.deepseek.com/' } },
+      })
+    ).toBe('deepseek')
     expect(codexProviderLabel({ model_provider: 'openai' })).toBe('openai')
     expect(codexProviderLabel({})).toBe('未设置')
   })

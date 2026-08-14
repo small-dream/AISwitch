@@ -1,4 +1,4 @@
-import type { Preset, PresetInput } from '@/domain/entities/preset'
+import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
 import { useCreatePreset, useUpdatePreset } from '@/hooks/use-presets'
 import { toastError, toastSuccess } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
@@ -43,11 +43,13 @@ export function PresetDialog({
   open,
   preset,
   draft,
+  defaultTool,
   onClose,
 }: {
   open: boolean
   preset: Preset | null
   draft: PresetInput | null
+  defaultTool: TargetTool
   onClose: () => void
 }) {
   const { submitting, submit } = useSubmitPreset(preset, onClose)
@@ -69,6 +71,7 @@ export function PresetDialog({
         <PresetForm
           preset={preset}
           draft={draft}
+          defaultTool={defaultTool}
           submitting={submitting}
           onSubmit={submit}
           onCancel={onClose}

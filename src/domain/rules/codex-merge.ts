@@ -12,7 +12,12 @@ export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexCon
   let modelProvider: string
   if (preset.baseUrl) {
     const existing = providers[injected] ?? {}
-    providers[injected] = { ...existing, base_url: preset.baseUrl }
+    // 双通道写 Key：块内嵌 token（DeepSeek 脚本模式）+ auth.json（官方模式），两种取 key 路径都生效
+    providers[injected] = {
+      ...existing,
+      base_url: preset.baseUrl,
+      experimental_bearer_token: preset.apiKey,
+    }
     modelProvider = injected
   } else {
     Reflect.deleteProperty(providers, injected)
@@ -32,14 +37,15 @@ export function mergeCodexAuth(current: unknown, preset: Preset): CodexAuthFile 
   return { ...base, [CODEX_AUTH_KEYS.apiKey]: preset.apiKey }
 }
 
-/** 当前生效供应商的展示名 */
+/** 当前生效供应商的展示名：块内 name → 注入块 base_url → provider id */
 export function codexProviderLabel(config: CodexConfig): string {
   const provider = config.model_provider
   if (!provider) {
     return '未设置'
   }
+  const block = config.model_providers?.[provider]
   if (provider !== CODEX_CONFIG_KEYS.injectedProvider) {
-    return provider
+    return block?.name ?? provider
   }
   const injected = config.model_providers?.[CODEX_CONFIG_KEYS.injectedProvider]
   return injected?.base_url ?? '自定义供应商'
