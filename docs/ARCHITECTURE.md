@@ -104,6 +104,8 @@ export interface ConfigTarget {
 
 **D5 · Rust 薄壳原则**：优先使用官方 fs/dialog/shell 插件；确需自定义命令时按组放入 `src-tauri/src/commands/`，每命令组一个小文件，逻辑保持 ≤ 20 行。
 
+**D6 · 托盘数据流（US-08）**：业务数据仅存 TS 侧——前端经 `tray_update` 命令推送预设快照、Rust（`src-tauri/src/tray.rs`）只做菜单装配；托盘点击经 `tray://switch` 事件回到前端，复用 `SwitchService` 单一切换链路。Rust 不持有业务状态，切换语义与主窗口完全一致。
+
 ## 3. 目录结构
 
 ```text

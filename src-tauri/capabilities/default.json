@@ -68,6 +68,7 @@
     {
       "identifier": "http:default",
       "allow": [{ "url": "https://**" }, { "url": "http://**" }]
-    }
+    },
+    "notification:default"
   ]
 }
