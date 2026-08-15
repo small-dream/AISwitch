@@ -1,5 +1,6 @@
 import type { ConnectivityResult } from '@/domain/entities/connectivity'
 import type { Preset } from '@/domain/entities/preset'
+import { isAllowedBaseUrl } from '@/domain/rules/base-url'
 import { buildProbeUrl } from '@/domain/rules/probe-url'
 import type { HttpPort } from '@/types/http-port'
 
@@ -10,6 +11,13 @@ export class ConnectivityProber {
   constructor(private readonly http: HttpPort) {}
 
   async probe(preset: Preset): Promise<ConnectivityResult> {
+    // 隐私红线：探测请求携带 API Key，不合规的 baseUrl 一律拒绝发出
+    if (!isAllowedBaseUrl(preset.baseUrl)) {
+      return {
+        status: 'unreachable',
+        message: '已阻止探测：明文 http 地址仅允许本机回环，请改用 https',
+      }
+    }
     const url = buildProbeUrl(preset)
     const startedAt = Date.now()
     try {

@@ -1,13 +1,18 @@
 import { z } from 'zod'
 
+import { isAllowedBaseUrl } from '@/domain/rules/base-url'
 import { presetInputSchema } from '@/domain/schemas/preset'
 import { parseModelMetadataField } from './model-metadata'
 
-/** 表单态 URL：留空表示官方 API，填写时必须是合法 URL */
+/** 表单态 URL：留空表示官方 API；https 任意主机，http 仅允许本机回环（防密钥明文外发） */
 const urlField = z
   .string()
   .trim()
   .refine((value) => value === '' || URL.canParse(value), '请输入合法 URL 或留空')
+  .refine(
+    (value) => isAllowedBaseUrl(value || undefined),
+    '仅支持 https 地址；http 仅允许本机回环（localhost / 127.0.0.1 / [::1]）'
+  )
 
 /** 表单 Schema：在领域输入 Schema 基础上放宽空串（提交前归一化） */
 const presetFormBase = presetInputSchema.extend({
