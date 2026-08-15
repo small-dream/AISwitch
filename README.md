@@ -85,6 +85,14 @@ pnpm typecheck      # strict TypeScript check
 pnpm icon           # regenerate app icons (scripts/app-icon.png → src-tauri/icons)
 ```
 
+### Release (GitHub Actions)
+
+1. Bump `version` in both `package.json` and `src-tauri/tauri.conf.json`
+2. Commit, then tag & push: `git tag vX.Y.Z && git push origin vX.Y.Z`
+3. The [Release workflow](.github/workflows/release.yml) builds all platforms (macOS universal · Windows msi/nsis · Linux deb/appimage) and uploads them to a **draft** GitHub Release — review, then publish
+
+Every push/PR also runs the [CI workflow](.github/workflows/ci.yml): lint / typecheck / tests plus a `cargo check` matrix across macOS, Windows & Linux (platform-conditional code can't be fully verified on a single dev machine). Installers are currently unsigned — expect Gatekeeper/SmartScreen warnings on first launch.
+
 ## Project Structure
 
 Layered for testability — UI never touches the filesystem directly:

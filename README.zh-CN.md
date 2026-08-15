@@ -85,6 +85,14 @@ pnpm typecheck      # TypeScript 严格检查
 pnpm icon           # 重新生成应用图标（scripts/app-icon.png → src-tauri/icons）
 ```
 
+### 发布（GitHub Actions）
+
+1. 同步更新 `package.json` 与 `src-tauri/tauri.conf.json` 的 `version`
+2. 提交后打标签并推送：`git tag vX.Y.Z && git push origin vX.Y.Z`
+3. [Release workflow](.github/workflows/release.yml) 自动构建全平台安装包（macOS 双架构 · Windows msi/nsis · Linux deb/appimage）并上传到**草稿** GitHub Release——核对无误后手动发布
+
+每次 push / PR 还会跑 [CI workflow](.github/workflows/ci.yml)：lint / 类型检查 / 测试，外加 macOS、Windows、Linux 三平台的 `cargo check` 矩阵（平台条件代码无法在单一开发机上完全验证）。安装包当前未签名——首次启动可能遇到 Gatekeeper / SmartScreen 提示。
+
 ## 目录结构
 
 为可测试性而分层——UI 永远不直接碰文件系统：
