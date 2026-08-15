@@ -42,11 +42,12 @@ jobs:
           > - **Linux**：`.deb` / `.AppImage` 可直接安装，无拦截提示。
           EOF
           )
-          gh release create "$TAG" --repo "$REPO" \
-            --title "AISwitch $TAG" --notes "$body"
-          echo "release_id=$(gh api "repos/$REPO/releases" \
-            --jq ".[] | select(.tag_name == \"$TAG\") | .id")" \
-            >> "$GITHUB_OUTPUT"
+          # 直接调 API 创建，响应自带 id；避免 create 后立刻列表查询
+          # 因索引延迟拿不到 id，导致 tauri-action 跳过上传。
+          release_id=$(gh api --method POST "repos/$REPO/releases" \
+            -f tag_name="$TAG" -f name="AISwitch $TAG" -f body="$body" \
+            --jq '.id')
+          echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
 
   publish-tauri:
     needs: create-release
