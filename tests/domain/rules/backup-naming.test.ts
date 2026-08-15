@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   backupFileName,
+  earliestBackupName,
   formatBackupTimestamp,
   latestBackupName,
   namesToPrune,
@@ -51,6 +52,21 @@ describe('latestBackupName', () => {
 
   it('无匹配备份时返回 null', () => {
     expect(latestBackupName(['random.txt'], 'settings.json')).toBeNull()
+  })
+})
+
+describe('earliestBackupName', () => {
+  it('返回指定文件最早一份备份（一键还原的近似基线）', () => {
+    const names = [
+      '20260814-100000--settings.json',
+      '20260813-080000--settings.json',
+      '20260814-090503--auth.json',
+    ]
+    expect(earliestBackupName(names, 'settings.json')).toBe('20260813-080000--settings.json')
+  })
+
+  it('无匹配备份时返回 null', () => {
+    expect(earliestBackupName(['random.txt'], 'settings.json')).toBeNull()
   })
 })
 

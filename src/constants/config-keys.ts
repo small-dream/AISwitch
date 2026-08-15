@@ -29,3 +29,17 @@ export const CODEX_CONFIG_KEYS = {
 export const CODEX_AUTH_KEYS = {
   apiKey: 'OPENAI_API_KEY',
 } as const
+
+/**
+ * AISwitch 托管的 Claude env 键全集：
+ * 切换写入（envMatches 校验）与一键还原剥离共用同一清单，避免两处漂移。
+ */
+export const CLAUDE_MANAGED_ENV_KEYS = [
+  CLAUDE_ENV_KEYS.authToken,
+  CLAUDE_ENV_KEYS.model,
+  CLAUDE_ENV_KEYS.baseUrl,
+  CLAUDE_ENV_KEYS.smallFastModel,
+  CLAUDE_SLOT_KEYS.haiku,
+  CLAUDE_SLOT_KEYS.sonnet,
+  CLAUDE_SLOT_KEYS.opus,
+] as const

@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 
 import { CODEX_CONFIG_KEYS } from '@/constants/config-keys'
-import { codexProviderLabel, mergeCodexAuth, mergeCodexConfig } from '@/domain/rules/codex-merge'
+import {
+  codexProviderLabel,
+  mergeCodexAuth,
+  mergeCodexConfig,
+  stripManagedCodexAuth,
+  stripManagedCodexConfig,
+} from '@/domain/rules/codex-merge'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import { makePreset } from '../../helpers/make-preset'
 
@@ -54,6 +60,55 @@ describe('mergeCodexAuth', () => {
   it('非对象基线按空对象处理', () => {
     const preset = makePreset({ tool: 'codex' })
     expect(mergeCodexAuth(null, preset)).toEqual({ OPENAI_API_KEY: preset.apiKey })
+  })
+})
+
+describe('stripManagedCodexConfig', () => {
+  const injected = CODEX_CONFIG_KEYS.injectedProvider
+  const managedCatalogPath = 'C:/Users/tester/.codex/models.json'
+
+  it('删除托管键与注入块，保留用户自有 provider 与顶层字段', () => {
+    const merged = mergeCodexConfig(CURRENT, makePreset({ tool: 'codex', baseUrl: 'https://relay.example.com/v1' }))
+    const stripped = stripManagedCodexConfig(merged, managedCatalogPath)
+
+    expect(stripped.model).toBeUndefined()
+    expect(stripped.model_provider).toBeUndefined()
+    expect(stripped.model_providers?.[injected]).toBeUndefined()
+    expect(stripped.model_providers?.openai).toEqual({ name: 'OpenAI', wire_api: 'responses' })
+  })
+
+  it('model_catalog_json 仅在指向托管 models.json 时删除', () => {
+    const config: CodexConfig = {
+      ...CURRENT,
+      model_catalog_json: managedCatalogPath,
+    }
+    expect(stripManagedCodexConfig(config, managedCatalogPath).model_catalog_json).toBeUndefined()
+
+    const userOwned: CodexConfig = { ...CURRENT, model_catalog_json: 'C:/elsewhere/models.json' }
+    expect(stripManagedCodexConfig(userOwned, managedCatalogPath).model_catalog_json).toBe(
+      'C:/elsewhere/models.json'
+    )
+  })
+
+  it('model_providers 剥空后移除键本身', () => {
+    const onlyInjected: CodexConfig = {
+      model_provider: injected,
+      model_providers: { [injected]: { base_url: 'https://relay.example.com/v1' } },
+    }
+    expect('model_providers' in stripManagedCodexConfig(onlyInjected, managedCatalogPath)).toBe(
+      false
+    )
+  })
+})
+
+describe('stripManagedCodexAuth', () => {
+  it('删除 OPENAI_API_KEY 并保留其他字段', () => {
+    expect(stripManagedCodexAuth({ OPENAI_API_KEY: 'sk-x', Tokens: [] })).toEqual({ Tokens: [] })
+  })
+
+  it('剥空返回 null（调用方按应用创建语义删除文件）；非对象同样处理', () => {
+    expect(stripManagedCodexAuth({ OPENAI_API_KEY: 'sk-x' })).toBeNull()
+    expect(stripManagedCodexAuth('junk')).toBeNull()
   })
 })
 

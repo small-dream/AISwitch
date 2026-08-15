@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import { useThemeStore } from '@/stores/theme-store'
 import { Badge } from '@/ui/components/Badge'
+import { RestoreButton } from '@/ui/features/restore/RestoreButton'
 
 export function MainLayout({ children }: { children: ReactNode }) {
   const theme = useThemeStore((state) => state.theme)
@@ -22,6 +23,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
           <span className="font-mono">v0.1.0</span>
         </Badge>
         <div className="flex-1" />
+        <RestoreButton />
         <button
           type="button"
           aria-label="切换主题"

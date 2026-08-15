@@ -17,6 +17,8 @@ export const ERROR_CODES = [
   // 备份与回滚域
   'E_BACKUP_FAILED',
   'E_ROLLBACK_FAILED',
+  'E_BASELINE_FAILED',
+  'E_RESTORE_FAILED',
   // 目标工具域
   'E_TARGET_NOT_SUPPORTED',
   // 连通性测试域

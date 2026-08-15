@@ -3,6 +3,7 @@ import { createCodexTarget } from '@/adapters/codex'
 import { ConnectivityProber } from '@/adapters/connectivity/http-prober'
 import { tauriHttp } from '@/adapters/connectivity/tauri-http'
 import { BackupManager } from '@/adapters/backup/backup-manager'
+import { BaselineManager } from '@/adapters/baseline/baseline-manager'
 import { tauriFs } from '@/adapters/fs/tauri-fs-port'
 import { PresetRepository } from '@/adapters/presets/preset-repository'
 import { registerTarget } from '@/adapters/target-registry'
@@ -13,6 +14,7 @@ import { BackupService } from '@/services/backup-service'
 import { ConnectivityService } from '@/services/connectivity-service'
 import { ImportService } from '@/services/import-service'
 import { PresetService } from '@/services/preset-service'
+import { RestoreService } from '@/services/restore-service'
 import { SwitchService } from '@/services/switch-service'
 
 /**
@@ -32,7 +34,9 @@ export function bootstrapApp(): void {
 
 export const presetRepository = new PresetRepository(tauriFs)
 export const presetService = new PresetService(presetRepository)
-export const switchService = new SwitchService(presetRepository)
+export const backupManager = new BackupManager(tauriFs)
+export const baselineManager = new BaselineManager(tauriFs, backupManager)
+export const switchService = new SwitchService(presetRepository, baselineManager)
 export const connectivityService = new ConnectivityService(new ConnectivityProber(tauriHttp))
 export const importService = new ImportService({
   readClaude: () => readClaudeSettings(tauriFs),
@@ -40,7 +44,12 @@ export const importService = new ImportService({
   readCodexAuth: () => readCodexAuth(tauriFs),
   readCodexModels: () => readCodexModels(tauriFs),
 })
-export const backupService = new BackupService(new BackupManager(tauriFs))
+export const backupService = new BackupService(backupManager)
+export const restoreService = new RestoreService({
+  fs: tauriFs,
+  baselines: baselineManager,
+  backups: backupService,
+})
 export const vscodePresenceService = {
   detect: () => detectVscodeExtensions(tauriFs),
 }

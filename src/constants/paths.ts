@@ -12,4 +12,5 @@ export const PATHS = {
   appDir: '.aiswitch',
   presetsFile: '.aiswitch/presets.json',
   backupsDir: '.aiswitch/backups',
+  baselineDir: '.aiswitch/baseline',
 } as const

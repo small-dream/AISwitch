@@ -41,6 +41,45 @@ export function mergeCodexAuth(current: unknown, preset: Preset): CodexAuthFile 
   return { ...base, [CODEX_AUTH_KEYS.apiKey]: preset.apiKey }
 }
 
+/**
+ * 剥离 config.toml 中的托管键（mergeCodexConfig 的逆操作，一键还原的无基线兜底）：
+ * 删 model / model_provider / 注入的 provider 块；model_catalog_json 仅在指向
+ * 托管 models.json（managedCatalogPath）时才删——用户自有指向不动。
+ * model_providers 剥空后移除键本身，其余顶层字段原样保留。
+ */
+export function stripManagedCodexConfig(
+  config: CodexConfig,
+  managedCatalogPath: string
+): CodexConfig {
+  const next = { ...config }
+  Reflect.deleteProperty(next, 'model')
+  Reflect.deleteProperty(next, 'model_provider')
+  if (next.model_catalog_json === managedCatalogPath) {
+    Reflect.deleteProperty(next, 'model_catalog_json')
+  }
+  const injected = CODEX_CONFIG_KEYS.injectedProvider
+  if (next.model_providers) {
+    const providers = { ...next.model_providers }
+    Reflect.deleteProperty(providers, injected)
+    if (Object.keys(providers).length === 0) {
+      Reflect.deleteProperty(next, 'model_providers')
+    } else {
+      next.model_providers = providers
+    }
+  }
+  return next
+}
+
+/**
+ * 剥离 auth.json 中的托管键：删 OPENAI_API_KEY，其余字段保留。
+ * 剥空返回 null（调用方按「应用创建」语义删除该文件）。
+ */
+export function stripManagedCodexAuth(auth: unknown): CodexAuthFile | null {
+  const base: CodexAuthFile = isRecord(auth) ? { ...auth } : {}
+  Reflect.deleteProperty(base, CODEX_AUTH_KEYS.apiKey)
+  return Object.keys(base).length === 0 ? null : base
+}
+
 /** 当前生效供应商的展示名：块内 name → 注入块 base_url → provider id */
 export function codexProviderLabel(config: CodexConfig): string {
   const provider = config.model_provider

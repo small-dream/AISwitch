@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { CLAUDE_ENV_KEYS, CLAUDE_SLOT_KEYS } from '@/constants/config-keys'
-import { expectedClaudeEnv, isSlotModeEnv, mergeClaudeSettings } from '@/domain/rules/claude-merge'
+import {
+  expectedClaudeEnv,
+  isSlotModeEnv,
+  mergeClaudeSettings,
+  stripManagedClaudeKeys,
+} from '@/domain/rules/claude-merge'
 import type { ClaudeSettings } from '@/domain/schemas/claude-config'
 import { makePreset } from '../../helpers/make-preset'
 
@@ -86,5 +91,36 @@ describe('槽位映射模式', () => {
     const slotExpected = expectedClaudeEnv(preset, true)
     expect(slotExpected[CLAUDE_SLOT_KEYS.sonnet]).toBe('glm-4.6')
     expect(slotExpected[CLAUDE_SLOT_KEYS.haiku]).toBe('glm-4.6')
+  })
+})
+
+describe('stripManagedClaudeKeys', () => {
+  it('删除全部托管键，保留用户自有键与顶层字段', () => {
+    const stripped = stripManagedClaudeKeys(mergeClaudeSettings(CURRENT, makePreset()))
+
+    for (const key of [
+      CLAUDE_ENV_KEYS.authToken,
+      CLAUDE_ENV_KEYS.model,
+      CLAUDE_ENV_KEYS.baseUrl,
+      CLAUDE_ENV_KEYS.smallFastModel,
+    ]) {
+      expect(key in (stripped.env ?? {})).toBe(false)
+    }
+    expect(stripped.env?.OTHER_KEY).toBe('keep-me')
+    expect(stripped.permissions).toEqual({ allow: ['Bash'] })
+  })
+
+  it('槽位键同样被剥离（与切换写入的键集互为逆操作）', () => {
+    const stripped = stripManagedClaudeKeys(mergeClaudeSettings(SLOT_CURRENT, makePreset()))
+    expect(CLAUDE_SLOT_KEYS.sonnet in (stripped.env ?? {})).toBe(false)
+    expect(CLAUDE_SLOT_KEYS.opus in (stripped.env ?? {})).toBe(false)
+    expect(CLAUDE_SLOT_KEYS.haiku in (stripped.env ?? {})).toBe(false)
+  })
+
+  it('env 剥空后移除 env 键本身；无 env 时原样返回', () => {
+    expect('env' in stripManagedClaudeKeys({ env: { ANTHROPIC_MODEL: 'x' } })).toBe(false)
+    expect(stripManagedClaudeKeys({ permissions: { allow: [] } })).toEqual({
+      permissions: { allow: [] },
+    })
   })
 })

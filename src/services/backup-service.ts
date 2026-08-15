@@ -3,10 +3,10 @@ import { PATHS } from '@/constants/paths'
 import type { TargetTool } from '@/domain/entities/preset'
 import { parseBackupName } from '@/domain/rules/backup-naming'
 
-/** 每个工具受备份监控的配置文件 */
+/** 每个工具受备份监控的配置文件（models.json 由切换流程重写，同样纳入备份与恢复） */
 export const BACKUP_FILES: Record<TargetTool, readonly string[]> = {
   'claude-code': [PATHS.claudeSettings],
-  codex: [PATHS.codexConfig, PATHS.codexAuth],
+  codex: [PATHS.codexConfig, PATHS.codexAuth, PATHS.codexModels],
 }
 
 export interface BackupEntry {

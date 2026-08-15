@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { BackupManager } from '@/adapters/backup/backup-manager'
+import { BaselineManager } from '@/adapters/baseline/baseline-manager'
+import { PATHS } from '@/constants/paths'
 import { PresetRepository } from '@/adapters/presets/preset-repository'
 import { registerTarget } from '@/adapters/target-registry'
 import { AppError } from '@/domain/errors'
@@ -9,7 +12,9 @@ import { makePreset } from '../helpers/make-preset'
 import { createMemoryFs } from '../helpers/memory-fs'
 
 function setup() {
-  const repo = new PresetRepository(createMemoryFs())
+  const fs = createMemoryFs()
+  const repo = new PresetRepository(fs)
+  const baselines = new BaselineManager(fs, new BackupManager(fs))
   const applied: string[] = []
   const target: ConfigTarget = {
     tool: 'claude-code',
@@ -23,7 +28,7 @@ function setup() {
     rollback: () => Promise.resolve(true),
   }
   registerTarget(target)
-  return { repo, service: new SwitchService(repo), applied }
+  return { fs, repo, baselines, service: new SwitchService(repo, baselines), applied }
 }
 
 describe('SwitchService', () => {
@@ -56,5 +61,37 @@ describe('SwitchService', () => {
       expect(error).toBeInstanceOf(AppError)
       expect((error as AppError).code).toBe('E_VALIDATION_FAILED')
     }
+  })
+})
+
+describe('SwitchService 安装前基线挂钩', () => {
+  it('首次切换前捕获基线一次，二次切换不重复捕获', async () => {
+    const { repo, service, baselines } = setup()
+    const preset = makePreset()
+    await repo.save({ version: 1, presets: [preset] })
+
+    await service.switch('claude-code', preset.id)
+    const manifest = await baselines.manifest()
+    const capturedAt = manifest.tools['claude-code']?.files[PATHS.claudeSettings]?.capturedAt
+    expect(capturedAt).toBeTruthy()
+
+    await service.switch('claude-code', preset.id)
+    const again = await baselines.manifest()
+    expect(again.tools['claude-code']?.files[PATHS.claudeSettings]?.capturedAt).toBe(capturedAt)
+  })
+
+  it('基线捕获失败只降级告警，不阻断切换', async () => {
+    const { repo, applied } = setup()
+    const preset = makePreset()
+    await repo.save({ version: 1, presets: [preset] })
+    const failing = {
+      captureIfAbsent: () => Promise.reject(new Error('disk full')),
+    }
+    const service = new SwitchService(repo, failing as unknown as BaselineManager)
+
+    const result = await service.switch('claude-code', preset.id)
+
+    expect(result.tool).toBe('claude-code')
+    expect(applied).toEqual([preset.id])
   })
 })

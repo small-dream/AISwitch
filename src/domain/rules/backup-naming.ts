@@ -38,6 +38,14 @@ export function latestBackupName(names: readonly string[], basename: string): st
   return matched[0] ?? null
 }
 
+/** 指定源文件最早一份备份的文件名（一键还原的近似基线）；无则 null */
+export function earliestBackupName(names: readonly string[], basename: string): string | null {
+  const matched = names
+    .filter((name) => name.endsWith(`${BACKUP_SEPARATOR}${basename}`))
+    .sort()
+  return matched[0] ?? null
+}
+
 /** 超出保留数量时应清理的旧备份名（按新到旧排列） */
 export function namesToPrune(names: readonly string[], keep = 20): string[] {
   return [...names].sort().reverse().slice(keep)

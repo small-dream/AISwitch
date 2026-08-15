@@ -1,5 +1,9 @@
 import { BackupManager } from '@/adapters/backup/backup-manager'
-import { CLAUDE_ENV_KEYS, CLAUDE_SLOT_KEYS } from '@/constants/config-keys'
+import {
+  CLAUDE_ENV_KEYS,
+  CLAUDE_MANAGED_ENV_KEYS,
+  CLAUDE_SLOT_KEYS,
+} from '@/constants/config-keys'
 import { PATHS } from '@/constants/paths'
 import { AppError } from '@/domain/errors'
 import type { Preset, ToolStatus } from '@/domain/entities/preset'
@@ -10,15 +14,8 @@ import type { FileSystemPort } from '@/types/fs-port'
 import { readClaudeSettings } from './reader'
 import { writeClaudeSettings } from './writer'
 
-const MANAGED_ENV_KEYS = [
-  CLAUDE_ENV_KEYS.authToken,
-  CLAUDE_ENV_KEYS.model,
-  CLAUDE_ENV_KEYS.baseUrl,
-  CLAUDE_ENV_KEYS.smallFastModel,
-  CLAUDE_SLOT_KEYS.haiku,
-  CLAUDE_SLOT_KEYS.sonnet,
-  CLAUDE_SLOT_KEYS.opus,
-] as const
+/** 托管键清单唯一事实来源见 constants/config-keys.ts（与一键还原剥离共用） */
+const MANAGED_ENV_KEYS = CLAUDE_MANAGED_ENV_KEYS
 
 /** 当前生效模型：ANTHROPIC_MODEL → 槽位键（中转场景）→ 顶层 model（原生） */
 export function activeClaudeModel(settings: ClaudeSettings): string | undefined {

@@ -128,7 +128,7 @@ AISwitch/
 │   │   ├── features/            # 功能视图：preset-manage / switch-panel / backup
 │   │   └── layouts/
 │   ├── hooks/                   # 跨功能复用的自定义 hooks
-│   ├── services/                # 应用服务：switch / detect / preset / backup
+│   ├── services/                # 应用服务：switch / detect / preset / backup / restore
 │   ├── domain/
 │   │   ├── entities/            # Preset、ToolStatus 类型与不变式
 │   │   ├── rules/               # 纯函数：merge-config / diff-config / validate / active-preset
@@ -138,6 +138,7 @@ AISwitch/
 │   │   ├── codex/               # 同上结构，TOML 专属逻辑隔离于此
 │   │   ├── presets/             # PresetRepository（JSON 存储）
 │   │   ├── backup/              # BackupManager
+│   │   ├── baseline/            # BaselineManager（安装前基线，一键还原锚点）
 │   │   └── target-registry.ts   # ConfigTarget 注册表
 │   ├── stores/                  # Zustand：ui-store / theme-store（按域切片）
 │   ├── types/                   # 跨层共享接口（ConfigTarget 等）
@@ -178,6 +179,13 @@ sequenceDiagram
     H-->>V: Toast 成功/失败反馈
 ```
 
+「一键还原」数据流（US-16，入口在顶栏 RestoreButton）：
+
+- **捕获**：`SwitchService.switch()` 在 `apply()` 之前调用 `BaselineManager.captureIfAbsent(tool)`，把受管文件的安装前状态（内容副本 / absent 标记 / degraded 标记）写入 `~/.aiswitch/baseline/`（独立于 backups 目录，不受滚动清理影响）；捕获失败仅降级告警，不阻断切换。**副本经 `writeTextAtomic` 落盘**——基线是「精确还原」的锚点，半截副本一旦被还原将把坏配置写回磁盘，代价高于一次写失败。
+- **计划**：`RestoreService.plan()` 只读不写——逐文件判定动作（精确还原 / 近似还原最早备份 / 剥离托管键 / 删除 / 跳过），UI 预览如实展示近似性。
+- **执行**：`RestoreService.execute()` 逐文件 try/catch（单文件失败不中断、结果如实上报）；仅删除 absent 标记的文件，目录仅在「应用创建 + 已空」时移除；还原重建目录时仅对新创建目录收紧权限（0700），**用户已有目录权限不被改动**；计划与执行间的竞态（文件已不存在）按已达成目标跳过；`~/.aiswitch` 完全不动。
+- **交互**：三步弹窗（预览 → 输入「还原」确认 → 结果），经 `hooks/use-restore.ts` 的 Query/Mutation，与既有 hooks 模式一致。
+
 ## 5. 错误处理架构
 
 - 统一错误类型 `AppError { code, message, context }`，错误码枚举分域见 `src/constants/error-codes.ts`；
@@ -197,7 +205,7 @@ sequenceDiagram
 
 1. **最小权限**：fs 读写仅限 `~/.claude`、`~/.codex`、`~/.aiswitch` 三目录；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；未使用的插件（shell / dialog 等）一律不注册；
 2. **HTTP 出口**：连通性测试经 tauri-plugin-http，scope 为 `https://**` + 本机回环 `http`（`localhost` / `127.0.0.1` / `[::1]`，含端口通配）；明文 http 出口被 capability 与 domain 规则（`domain/rules/base-url.ts`，表单与探测器共用）双重拦截，防止 API Key 明文外发；
-3. **文件权限**：所有含密钥文件（presets.json、备份、settings.json、auth.json、config.toml）落盘时经 `restrict_to_owner` 命令收紧到 0600，`~/.aiswitch` 目录 0700（见 `adapters/fs/atomic-write.ts` 与 `commands/permissions.rs`）；写路径收紧失败视为硬失败（回滚链路兜底），读路径 best-effort 收紧历史文件；
+3. **文件权限**：所有含密钥文件（presets.json、备份、基线副本、settings.json、auth.json、config.toml）落盘时经 `restrict_to_owner` 命令收紧到 0600，`~/.aiswitch` 目录 0700（见 `adapters/fs/atomic-write.ts` 与 `commands/permissions.rs`）；写路径收紧失败视为硬失败（回滚链路兜底），读路径 best-effort 收紧历史文件；
 4. **API Key**：仅本地存储（v0.1 JSON + 0600 文件权限；v0.2 评估 OS Keychain，见 PRD §7.3）；
 5. **CSP**：已配置严格 CSP（`script-src 'self'`，IPC 白名单），探测请求在 Rust 侧发起、不占 webview connect-src。
 
