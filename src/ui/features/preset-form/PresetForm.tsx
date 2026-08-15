@@ -101,6 +101,15 @@ function PresetFormFields({
   )
 }
 
+/** 导入草稿携带密钥时的显式告知（隐私透明） */
+function DraftKeyNotice() {
+  return (
+    <p className="rounded-md border border-app-border bg-app-sunken px-3 py-2 text-xs text-app-muted">
+      已从本机配置读取 API Key，保存后将写入 ~/.aiswitch/presets.json（仅当前用户可读）。
+    </p>
+  )
+}
+
 /** 操作行固定于弹窗底部，不随字段区滚动 */
 function PresetFormActions({
   submitting,
@@ -164,6 +173,7 @@ export function PresetForm({
     >
       {/* 字段区：超高时在弹窗内滚动，操作按钮不随之移出视口 */}
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+        {draft?.apiKey ? <DraftKeyNotice /> : null}
         <PresetFormFields register={register} errors={errors} tool={watch('tool')} />
       </div>
       <PresetFormActions submitting={submitting} onCancel={onCancel} />
