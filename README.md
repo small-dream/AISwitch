@@ -91,7 +91,22 @@ pnpm icon           # regenerate app icons (scripts/app-icon.png → src-tauri/i
 2. Commit, then tag & push: `git tag vX.Y.Z && git push origin vX.Y.Z`
 3. The [Release workflow](.github/workflows/release.yml) builds all platforms (macOS universal · Windows msi/nsis · Linux deb/appimage) and uploads them to a **draft** GitHub Release — review, then publish
 
-Every push/PR also runs the [CI workflow](.github/workflows/ci.yml): lint / typecheck / tests plus a `cargo check` matrix across macOS, Windows & Linux (platform-conditional code can't be fully verified on a single dev machine). Installers are currently unsigned — expect Gatekeeper/SmartScreen warnings on first launch.
+Every push/PR also runs the [CI workflow](.github/workflows/ci.yml): lint / typecheck / tests plus a `cargo check` matrix across macOS, Windows & Linux (platform-conditional code can't be fully verified on a single dev machine).
+
+Installers are currently unsigned. If you downloaded one from [Releases](https://github.com/small-dream/AISwitch/releases):
+
+- **macOS** — after dragging the app into `Applications`, remove the quarantine flag so Gatekeeper lets it open:
+
+  ```bash
+  xattr -cr /Applications/AISwitch.app
+  ```
+
+- **Windows** — if SmartScreen blocks the installer, click *More info* → *Run anyway*, or clear the mark of the web first:
+
+  ```powershell
+  Unblock-File .\AISwitch_<version>_x64-setup.exe
+  ```
+- **Linux** — `.deb` / `.rpm` / `.AppImage` install directly without prompts.
 
 ## Project Structure
 

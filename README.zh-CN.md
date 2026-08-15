@@ -91,7 +91,23 @@ pnpm icon           # 重新生成应用图标（scripts/app-icon.png → src-ta
 2. 提交后打标签并推送：`git tag vX.Y.Z && git push origin vX.Y.Z`
 3. [Release workflow](.github/workflows/release.yml) 自动构建全平台安装包（macOS 双架构 · Windows msi/nsis · Linux deb/appimage）并上传到**草稿** GitHub Release——核对无误后手动发布
 
-每次 push / PR 还会跑 [CI workflow](.github/workflows/ci.yml)：lint / 类型检查 / 测试，外加 macOS、Windows、Linux 三平台的 `cargo check` 矩阵（平台条件代码无法在单一开发机上完全验证）。安装包当前未签名——首次启动可能遇到 Gatekeeper / SmartScreen 提示。
+每次 push / PR 还会跑 [CI workflow](.github/workflows/ci.yml)：lint / 类型检查 / 测试，外加 macOS、Windows、Linux 三平台的 `cargo check` 矩阵（平台条件代码无法在单一开发机上完全验证）。
+
+安装包当前未签名。若你从 [Releases](https://github.com/small-dream/AISwitch/releases) 下载了安装包：
+
+- **macOS** —— 拖入「应用程序」后，执行以下命令移除隔离标记，Gatekeeper 即可放行：
+
+  ```bash
+  xattr -cr /Applications/AISwitch.app
+  ```
+
+- **Windows** —— 若 SmartScreen 拦截安装包，点「更多信息」→「仍要运行」，或先清除网络下载标记：
+
+  ```powershell
+  Unblock-File .\AISwitch_<版本号>_x64-setup.exe
+  ```
+
+- **Linux** —— `.deb` / `.rpm` / `.AppImage` 可直接安装，无拦截提示。
 
 ## 目录结构
 
