@@ -106,7 +106,7 @@ export interface ConfigTarget {
 
 **D6 · 托盘数据流（US-08）**：业务数据仅存 TS 侧——前端经 `tray_update` 命令推送预设快照、Rust（`src-tauri/src/tray.rs`）只做菜单装配；托盘点击经 `tray://switch` 事件回到前端，复用 `SwitchService` 单一切换链路。Rust 不持有业务状态，切换语义与主窗口完全一致。
 
-**D7 · 主题令牌体系（US-15）**：UI 一律使用语义工具类（`bg-app-*` / `text-app-*` / `border-app-*`，定义于 `src/styles/global.css` 的 `@theme`），**禁止硬编码 zinc-_/emerald-_ 等色值**（StatusDot 等双主题通用色除外）；暗色主题通过 `.dark` 作用域整体覆盖同名变量实现，主题选择持久化于 localStorage 并在首帧前应用（防闪烁）。
+**D7 · 主题令牌体系（US-15）**：UI 一律使用语义工具类（`bg-app-*` / `text-app-*` / `border-app-*`，定义于 `src/styles/global.css` 的 `@theme`），**禁止硬编码 zinc-_/emerald-_/indigo-\_ 等色值**（StatusDot 等双主题通用色除外）；品牌色统一走 `--color-app-accent` 系列令牌（accent / accent-hover / accent-soft / accent-text），亮色用 indigo-600 系、暗色提亮至 indigo-300 系保证对比度。暗色主题通过 `.dark` 作用域整体覆盖同名变量实现，主题选择持久化于 localStorage 并在首帧前应用（防闪烁）。统一动效（`animate-dialog-in` / `animate-toast-in` / `animate-fade-in` / `animate-pulse-dot`）亦定义于 global.css，全部包裹在 `prefers-reduced-motion: no-preference` 媒体查询内；图标统一使用 `lucide-react`，禁止 emoji 充当图标。
 
 ## 3. 目录结构
 
@@ -131,7 +131,7 @@ JakeAITools/
 │   ├── services/                # 应用服务：switch / detect / preset / backup
 │   ├── domain/
 │   │   ├── entities/            # Preset、ToolStatus 类型与不变式
-│   │   ├── rules/               # 纯函数：merge-config / diff-config / validate
+│   │   ├── rules/               # 纯函数：merge-config / diff-config / validate / active-preset
 │   │   └── schemas/             # Zod：claude-config / codex-config / preset
 │   ├── adapters/
 │   │   ├── claude/              # reader.ts / writer.ts / transformer.ts

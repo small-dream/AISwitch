@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { AlertCircle, CheckCircle2 } from 'lucide-react'
 
 import { useToastStore } from '@/stores/toast-store'
 
@@ -19,13 +20,18 @@ export function Toaster() {
             dismiss(toast.id)
           }}
           className={clsx(
-            'cursor-pointer rounded-lg border px-4 py-3 text-sm shadow-lg',
+            'animate-toast-in flex cursor-pointer items-start gap-2.5 rounded-xl border px-4 py-3 text-sm shadow-lg backdrop-blur',
             toast.kind === 'success'
-              ? 'border-app-ok-border bg-app-ok-bg text-app-ok-text'
-              : 'border-app-danger-border bg-app-danger-bg text-app-danger-text'
+              ? 'border-app-ok-border bg-app-ok-bg/95 text-app-ok-text'
+              : 'border-app-danger-border bg-app-danger-bg/95 text-app-danger-text'
           )}
         >
-          {toast.message}
+          {toast.kind === 'success' ? (
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          ) : (
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          )}
+          <span className="min-w-0">{toast.message}</span>
         </div>
       ))}
     </div>

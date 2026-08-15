@@ -1,4 +1,7 @@
-import type { ToolInstallStatus, ToolStatus } from '@/domain/entities/preset'
+import { Bot, Terminal } from 'lucide-react'
+import type { ComponentType } from 'react'
+
+import type { TargetTool, ToolInstallStatus, ToolStatus } from '@/domain/entities/preset'
 import { TOOL_META } from '@/constants/tools'
 import { useToolStatus } from '@/hooks/use-tool-status'
 import { useVscodePresence } from '@/hooks/use-vscode-presence'
@@ -13,13 +16,36 @@ const STATUS_TEXT: Record<ToolInstallStatus, string> = {
   unknown: '状态未知',
 }
 
+const TOOL_ICON: Record<TargetTool, ComponentType<{ className?: string }>> = {
+  'claude-code': Bot,
+  codex: Terminal,
+}
+
+function StatusCardSkeleton() {
+  return (
+    <Card className="animate-pulse p-4">
+      <div className="flex items-center justify-between">
+        <div className="h-4 w-24 rounded bg-app-hover" />
+        <div className="h-4 w-16 rounded bg-app-hover" />
+      </div>
+      <div className="mt-4 space-y-2">
+        <div className="h-3 w-3/4 rounded bg-app-hover" />
+        <div className="h-3 w-1/2 rounded bg-app-hover" />
+      </div>
+    </Card>
+  )
+}
+
 export function StatusCards() {
   const { data: statuses, isLoading } = useToolStatus()
   const { data: presence } = useVscodePresence()
 
   if (isLoading) {
     return (
-      <Card className="p-6 text-sm text-app-muted">正在探测本机 Claude Code / Codex 环境…</Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <StatusCardSkeleton />
+        <StatusCardSkeleton />
+      </div>
     )
   }
 
@@ -44,14 +70,20 @@ function ToolStatusCard({
   vscodeDetected: boolean
 }) {
   const meta = TOOL_META[status.tool]
+  const ToolIcon = TOOL_ICON[status.tool]
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <Card hoverable className="animate-fade-in p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-app-accent-soft text-app-accent">
+            <ToolIcon className="h-4 w-4" aria-hidden />
+          </span>
+          <span className="truncate font-medium">{meta.label}</span>
           <StatusDot status={status.status} />
-          <span className="font-medium">{meta.label}</span>
         </div>
-        <span className="text-xs text-app-muted">{STATUS_TEXT[status.status]}</span>
+        <Badge tone={status.status === 'installed' ? 'success' : 'default'}>
+          {STATUS_TEXT[status.status]}
+        </Badge>
       </div>
       <div className="mt-3 space-y-1">
         <p className="truncate font-mono text-xs text-app">{status.activeModel ?? '—'}</p>

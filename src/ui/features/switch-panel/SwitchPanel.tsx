@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { Layers } from 'lucide-react'
 import { useState } from 'react'
 
 import { TARGET_TOOLS, TOOL_META } from '@/constants/tools'
@@ -20,7 +21,7 @@ function ToolTabs({
   onChange: (tool: TargetTool) => void
 }) {
   return (
-    <div className="mb-4 flex gap-1 rounded-lg bg-app-sunken p-1">
+    <div className="mb-4 flex gap-1 rounded-lg border border-app-border bg-app-sunken p-1">
       {TARGET_TOOLS.map((tool) => (
         <button
           key={tool}
@@ -29,8 +30,10 @@ function ToolTabs({
             onChange(tool)
           }}
           className={clsx(
-            'flex-1 rounded-md px-3 py-1.5 text-sm transition-colors',
-            activeTool === tool ? 'bg-app-tab-active text-app' : 'text-app-muted hover:text-app'
+            'flex-1 rounded-md px-3 py-1.5 text-sm transition-all duration-150',
+            activeTool === tool
+              ? 'bg-app-tab-active font-medium text-app shadow-sm shadow-black/[0.04]'
+              : 'text-app-muted hover:text-app'
           )}
         >
           {TOOL_META[tool].label}
@@ -100,7 +103,10 @@ export function SwitchPanel() {
   return (
     <Card className="p-4">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold">模型预设</h2>
+        <h2 className="flex items-center gap-2 text-base font-semibold">
+          <Layers className="h-4 w-4 text-app-accent" aria-hidden />
+          模型预设
+        </h2>
         <PanelActions tool={activeTool} onCreate={openCreate} onImported={openImported} />
       </div>
 

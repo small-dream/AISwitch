@@ -1,3 +1,5 @@
+import { SlidersHorizontal } from 'lucide-react'
+
 import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
 import { useCreatePreset, useUpdatePreset } from '@/hooks/use-presets'
 import { toastError, toastSuccess } from '@/stores/toast-store'
@@ -62,12 +64,15 @@ export function PresetDialog({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
+      className="animate-overlay-in fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
     >
-      <div className="flex max-h-[calc(100vh-8rem)] w-full max-w-md flex-col rounded-xl border border-app-border bg-app-card p-6">
-        <h2 className="mb-4 shrink-0 text-base font-semibold">{title}</h2>
+      <div className="animate-dialog-in flex max-h-[calc(100vh-8rem)] w-full max-w-md flex-col rounded-2xl border border-app-border bg-app-card p-6 shadow-2xl">
+        <h2 className="mb-4 flex shrink-0 items-center gap-2 text-base font-semibold">
+          <SlidersHorizontal className="h-4 w-4 text-app-accent" aria-hidden />
+          {title}
+        </h2>
         <PresetForm
           preset={preset}
           draft={draft}

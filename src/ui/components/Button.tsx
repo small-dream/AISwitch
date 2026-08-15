@@ -10,9 +10,11 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASSES: Record<Variant, string> = {
-  primary: 'bg-indigo-600 text-white hover:bg-indigo-500',
-  secondary: 'border border-app-border-strong bg-app-sunken text-app hover:bg-app-hover',
-  danger: 'bg-red-600 text-white hover:bg-red-500',
+  primary:
+    'bg-app-accent text-app-accent-text shadow-sm shadow-app-accent/25 hover:bg-app-accent-hover',
+  secondary:
+    'border border-app-border bg-app-card text-app hover:border-app-border-strong hover:bg-app-hover',
+  danger: 'bg-app-danger text-white shadow-sm shadow-app-danger/25 hover:bg-app-danger-hover',
 }
 
 const SIZE_CLASSES: Record<Size, string> = {
@@ -31,9 +33,10 @@ export function Button({
     <button
       type={type}
       className={clsx(
-        'inline-flex items-center justify-center gap-1 rounded-md font-medium transition-colors',
-        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400',
-        'disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex items-center justify-center gap-1.5 rounded-lg font-medium',
+        'transition-all duration-150 active:scale-[0.97]',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-accent',
+        'disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100',
         VARIANT_CLASSES[variant],
         SIZE_CLASSES[size],
         className

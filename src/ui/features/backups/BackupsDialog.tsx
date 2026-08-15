@@ -1,3 +1,5 @@
+import { History } from 'lucide-react'
+
 import type { TargetTool } from '@/domain/entities/preset'
 import { useBackups, useRemoveBackup, useRestoreBackup } from '@/hooks/use-backups'
 import { useRollback } from '@/hooks/use-switch'
@@ -76,13 +78,16 @@ export function BackupsDialog({ tool, onClose }: { tool: TargetTool; onClose: ()
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
+      className="animate-overlay-in fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
     >
-      <div className="flex max-h-[80vh] w-full max-w-md flex-col rounded-xl border border-app-border bg-app-card p-6">
+      <div className="animate-dialog-in flex max-h-[80vh] w-full max-w-md flex-col rounded-2xl border border-app-border bg-app-card p-6 shadow-2xl">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-base font-semibold">{TOOL_META[tool].label} · 备份管理</h2>
+          <h2 className="flex items-center gap-2 text-base font-semibold">
+            <History className="h-4 w-4 text-app-accent" aria-hidden />
+            {TOOL_META[tool].label} · 备份管理
+          </h2>
           <Button size="sm" variant="secondary" onClick={onClose}>
             关闭
           </Button>

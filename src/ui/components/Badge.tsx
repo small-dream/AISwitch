@@ -13,7 +13,7 @@ export function Badge({ tone = 'default', children }: { tone?: Tone; children: R
   return (
     <span
       className={clsx(
-        'inline-flex items-center rounded border px-1.5 py-0.5 text-[11px] leading-none',
+        'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium leading-none',
         TONE_CLASSES[tone]
       )}
     >

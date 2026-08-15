@@ -11,7 +11,11 @@ const COLOR_BY_STATUS: Record<ToolInstallStatus, string> = {
 export function StatusDot({ status }: { status: ToolInstallStatus }) {
   return (
     <span
-      className={clsx('h-2 w-2 shrink-0 rounded-full', COLOR_BY_STATUS[status])}
+      className={clsx(
+        'h-2 w-2 shrink-0 rounded-full',
+        COLOR_BY_STATUS[status],
+        status === 'installed' && 'animate-pulse-dot'
+      )}
       aria-label={status}
     />
   )

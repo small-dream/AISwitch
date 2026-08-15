@@ -3,25 +3,29 @@
 /*
  * 语义色彩令牌（ARCHITECTURE D7）：
  * 组件一律使用 bg-app-* / text-app-* / border-app-* 等语义工具类，
- * 禁止硬编码 zinc-*；主题切换只覆盖 .dark 下的变量，不逐组件改色。
+ * 禁止硬编码 zinc-* / indigo-*；主题切换只覆盖 .dark 下的变量，不逐组件改色。
  */
 @theme {
   --font-sans:
     'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
 
-  /* 亮色（默认）：zinc 系 */
-  --color-app-bg: #fafafa;
+  /* 亮色（默认）：中性底 + indigo 品牌色 */
+  --color-app-bg: #f7f7f8;
   --color-app-card: #ffffff;
   --color-app-sunken: #f4f4f5;
-  --color-app-hover: #e4e4e7;
+  --color-app-hover: #ececef;
   --color-app-input: #ffffff;
-  --color-app-tab-active: #e4e4e7;
-  --color-app-border: #e4e4e7;
-  --color-app-border-strong: #d4d4d8;
+  --color-app-tab-active: #ffffff;
+  --color-app-border: #e7e7ea;
+  --color-app-border-strong: #d9d9de;
   --color-app: #18181b;
   --color-app-muted: #52525b;
   --color-app-faint: #a1a1aa;
+  --color-app-accent: #4f46e5;
+  --color-app-accent-hover: #4338ca;
+  --color-app-accent-soft: #eef2ff;
+  --color-app-accent-text: #ffffff;
   --color-app-ok-text: #047857;
   --color-app-ok-bg: #ecfdf5;
   --color-app-ok-border: #6ee7b7;
@@ -31,21 +35,27 @@
   --color-app-danger-text: #b91c1c;
   --color-app-danger-bg: #fef2f2;
   --color-app-danger-border: #fca5a5;
+  --color-app-danger: #dc2626;
+  --color-app-danger-hover: #b91c1c;
 }
 
 .dark {
-  /* 暗色 */
-  --color-app-bg: #09090b;
-  --color-app-card: #18181b;
-  --color-app-sunken: #1f1f23;
-  --color-app-hover: #27272a;
-  --color-app-input: #101012;
-  --color-app-tab-active: #3f3f46;
-  --color-app-border: #27272a;
-  --color-app-border-strong: #3f3f46;
+  /* 暗色：更深的底色拉开卡片层次，品牌色提亮保证可读 */
+  --color-app-bg: #0b0b0d;
+  --color-app-card: #17171b;
+  --color-app-sunken: #1f1f24;
+  --color-app-hover: #2a2a31;
+  --color-app-input: #101013;
+  --color-app-tab-active: #2e2e36;
+  --color-app-border: #26262c;
+  --color-app-border-strong: #3a3a42;
   --color-app: #f4f4f5;
   --color-app-muted: #a1a1aa;
-  --color-app-faint: #52525b;
+  --color-app-faint: #5c5c66;
+  --color-app-accent: #818cf8;
+  --color-app-accent-hover: #a5b4fc;
+  --color-app-accent-soft: #23204a;
+  --color-app-accent-text: #11111a;
   --color-app-ok-text: #a7f3d0;
   --color-app-ok-bg: #052e2b;
   --color-app-ok-border: #065f46;
@@ -55,10 +65,147 @@
   --color-app-danger-text: #fecaca;
   --color-app-danger-bg: #450a0a;
   --color-app-danger-border: #b91c1c;
+  --color-app-danger: #ef4444;
+  --color-app-danger-hover: #f87171;
+}
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 body {
   background-color: var(--color-app-bg);
   color: var(--color-app);
   -webkit-font-smoothing: antialiased;
+}
+
+/* 极淡的品牌色光晕，拉开背景层次（亮暗双版） */
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+  background:
+    radial-gradient(600px 320px at 12% -8%, rgb(79 70 229 / 0.06), transparent 70%),
+    radial-gradient(520px 300px at 95% 0%, rgb(14 165 233 / 0.05), transparent 70%);
+}
+
+.dark body::before {
+  background:
+    radial-gradient(600px 320px at 12% -8%, rgb(129 140 248 / 0.1), transparent 70%),
+    radial-gradient(520px 300px at 95% 0%, rgb(56 189 248 / 0.07), transparent 70%);
+}
+
+::selection {
+  color: var(--color-app-accent-text);
+  background-color: var(--color-app-accent);
+}
+
+/* 细半透明滚动条，hover 加深 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-app-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-app-border-strong);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-app-faint);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 统一动效（D7）：尊重 prefers-reduced-motion */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.97);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes overlay-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgb(16 185 129 / 0.45);
+    }
+
+    50% {
+      box-shadow: 0 0 0 5px rgb(16 185 129 / 0);
+    }
+  }
+
+  .animate-dialog-in {
+    animation: dialog-in 0.18s ease-out;
+  }
+
+  .animate-overlay-in {
+    animation: overlay-in 0.15s ease-out;
+  }
+
+  .animate-toast-in {
+    animation: toast-in 0.22s cubic-bezier(0.21, 1.02, 0.73, 1);
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.25s ease-out both;
+  }
+
+  .animate-pulse-dot {
+    animation: pulse-dot 2.4s ease-in-out infinite;
+  }
 }

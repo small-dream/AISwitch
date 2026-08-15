@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
 import { Input, type InputProps } from './Input'
 
@@ -11,16 +12,17 @@ export function PasswordInput({ className, ...rest }: InputProps) {
         {...rest}
         type={visible ? 'text' : 'password'}
         autoComplete="off"
-        className={clsx('pr-12', className)}
+        className={clsx('pr-9', className)}
       />
       <button
         type="button"
+        aria-label={visible ? '隐藏密钥' : '显示密钥'}
         onClick={() => {
           setVisible((current) => !current)
         }}
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1 text-xs text-app-muted hover:text-app"
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-app-faint transition-colors hover:text-app"
       >
-        {visible ? '隐藏' : '显示'}
+        {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
       </button>
     </div>
   )
