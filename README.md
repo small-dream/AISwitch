@@ -1,39 +1,92 @@
-# JakeAITools
+<div align="center">
 
-> 跨平台（Windows / macOS / Linux）桌面工具：一键切换 Claude Code 与 Codex CLI 的全局模型/供应商配置，告别手工编辑配置文件。
+# AISwitch
 
-## 文档（三文档驱动）
+**One-click model & provider switching for [Claude Code](https://claude.com/claude-code) and [Codex CLI](https://github.com/openai/codex).**
 
-- [docs/PRD.md](docs/PRD.md) —— 产品需求
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) —— 架构与选型
-- [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) —— 编码规范与防腐化红线
+No more hand-editing `~/.claude/settings.json` or `~/.codex/config.toml`.
 
-## 技术栈
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-2-orange.svg)](https://tauri.app)
+[![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)](#development)
 
-Tauri 2（Rust 薄壳）· React 19 · TypeScript(strict) · Vite · Tailwind CSS v4 · Zustand · TanStack Query · Zod · Vitest
+English | [简体中文](./README.zh-CN.md)
 
-## 环境要求
+</div>
 
-| 项   | 要求                             |
-| ---- | -------------------------------- |
-| Node | ≥ 20（推荐 24 LTS）              |
-| Rust | ≥ 1.82（Windows 需 MSVC 工具链） |
+---
 
-## 常用命令
+## Why
+
+If you switch between the official API and third-party providers (GLM, DeepSeek, Kimi, relay endpoints, …) while coding with Claude Code or Codex CLI, you probably do this several times a day:
+
+1. Open `~/.claude/settings.json` / `~/.codex/config.toml` + `auth.json`
+2. Paste a long API key, fix the base URL, pick the model name
+3. Hope you didn't break the JSON/TOML
+
+AISwitch turns that into a single click — with validation, backups, and instant rollback.
+
+## Features
+
+- 🔍 **Auto-detection** — on launch, reads the global config of Claude Code & Codex CLI and shows the currently active provider/model for each (no dependency on CLI being on `PATH`).
+- 🗂 **Presets** — save reusable provider profiles (Base URL + API Key + model names). Keys are masked by default; delete requires confirmation; names are unique per tool.
+- ⚡ **One-click switch** — writes the target config via temp-file + atomic replace, reads it back to verify, typically under 1 second.
+- 🔙 **Automatic backup & rollback** — every write is preceded by a backup; failed writes roll back automatically; restore the latest backup in one click.
+- 🧩 **Codex `models.json` hosting** — paste a single entry or a whole `models.json`; the file is stored verbatim and family models all appear in the picker. `display_name` is auto-filled when missing.
+- 🖥 **Tray menu** — switch presets straight from the system tray; the active preset is check-marked.
+
+## Tech Stack
+
+Tauri 2 (thin Rust shell) · React 19 · TypeScript (strict) · Vite · Tailwind CSS v4 · Zustand · TanStack Query · Zod · Vitest
+
+## Development
+
+### Prerequisites
+
+| Item | Requirement                                 |
+| ---- | ------------------------------------------- |
+| Node | ≥ 20 (24 LTS recommended)                   |
+| Rust | ≥ 1.82 (MSVC toolchain required on Windows) |
+
+### Common commands
 
 ```bash
-pnpm install      # 安装依赖（包管理器：pnpm）
-pnpm desktop:run  # 桌面应用开发模式（跨平台）
-pnpm desktop:build # 编译桌面 Release 二进制（不打包安装器，速度快）
-pnpm desktop:bundle # 打包各平台安装器（msi/nsis · dmg/app · deb/appimage）
-pnpm dev          # 纯前端开发调试（浏览器）
-pnpm test         # 单元测试
-pnpm lint         # ESLint（含 300 行 / 50 行红线）
-pnpm typecheck    # TypeScript 严格检查
-pnpm icon         # 重新生成应用图标（scripts/app-icon.png → src-tauri/icons）
+pnpm install        # install dependencies (package manager: pnpm)
+pnpm desktop:run    # run the desktop app in dev mode
+pnpm desktop:build  # compile a Release binary (no installer, fast)
+pnpm desktop:bundle # bundle installers (msi/nsis · dmg/app · deb/appimage)
+pnpm dev            # frontend-only dev in the browser
+pnpm test           # unit tests
+pnpm lint           # ESLint (incl. 300-line / 50-line hard limits)
+pnpm typecheck      # strict TypeScript check
+pnpm icon           # regenerate app icons (scripts/app-icon.png → src-tauri/icons)
 ```
 
-## 目录导览
+## Project Structure
 
-详见 [docs/ARCHITECTURE.md §3](docs/ARCHITECTURE.md)。核心分层：
-`src/ui`（渲染）→ `src/hooks`（交互）→ `src/services`（用例）→ `src/domain`（纯逻辑）+ `src/adapters`（基础设施，策略模式按工具解耦）。
+Layered for testability — UI never touches the filesystem directly:
+
+```text
+src/ui        → rendering (React components)
+src/hooks     → interaction
+src/services  → use cases
+src/domain    → pure logic (fully unit-tested)
+src/adapters  → infrastructure (strategy pattern, one adapter per target CLI)
+```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full tour.
+
+## Documentation
+
+- [docs/PRD.md](docs/PRD.md) — product requirements
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — architecture & design decisions
+- [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) — coding standards & anti-rot rules
+
+## Contributing
+
+Issues and PRs are welcome. For non-trivial changes, please open an issue first to discuss what you'd like to change, and make sure `pnpm lint && pnpm typecheck && pnpm test` passes.
+
+## License
+
+[MIT](./LICENSE) © small-dream
