@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { presetFormSchema } from '@/ui/features/preset-form/preset-form-schema'
+import { translate } from '@/i18n/index'
+import type { TFn } from '@/i18n/index'
+import { buildPresetFormSchema } from '@/ui/features/preset-form/preset-form-schema'
 import { makePresetInput } from '../helpers/make-preset'
+
+const tZh: TFn = (key, params) => translate('zh-CN', key, params)
+const presetFormSchema = buildPresetFormSchema(tZh)
 
 /** 表单态输入：presetInputSchema 字段 + 表单扩展字段 */
 function formValues(overrides: Record<string, unknown> = {}): Record<string, unknown> {

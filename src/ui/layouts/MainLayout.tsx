@@ -1,6 +1,7 @@
 import { Moon, Sparkles, Sun } from 'lucide-react'
 import type { ReactNode } from 'react'
 
+import { useLocaleStore, useT } from '@/i18n/index'
 import { useThemeStore } from '@/stores/theme-store'
 import { Badge } from '@/ui/components/Badge'
 import { RestoreButton } from '@/ui/features/restore/RestoreButton'
@@ -8,6 +9,9 @@ import { RestoreButton } from '@/ui/features/restore/RestoreButton'
 export function MainLayout({ children }: { children: ReactNode }) {
   const theme = useThemeStore((state) => state.theme)
   const toggleTheme = useThemeStore((state) => state.toggleTheme)
+  const locale = useLocaleStore((state) => state.locale)
+  const toggleLocale = useLocaleStore((state) => state.toggleLocale)
+  const t = useT()
 
   return (
     <div className="flex h-screen flex-col bg-app-bg text-app">
@@ -26,7 +30,19 @@ export function MainLayout({ children }: { children: ReactNode }) {
         <RestoreButton />
         <button
           type="button"
-          aria-label="切换主题"
+          aria-label={t('header.toggleLang')}
+          title={t('header.toggleLang')}
+          onClick={() => {
+            toggleLocale()
+          }}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-app-border bg-app-card text-xs font-semibold text-app-muted transition-all duration-150 hover:border-app-border-strong hover:text-app active:scale-95"
+        >
+          {/* 显示目标语言：中文界面显示 EN，英文界面显示中 */}
+          {locale === 'zh-CN' ? 'EN' : '中'}
+        </button>
+        <button
+          type="button"
+          aria-label={t('header.toggleTheme')}
           onClick={() => {
             toggleTheme()
           }}

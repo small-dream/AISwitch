@@ -1,11 +1,13 @@
 import clsx from 'clsx'
 import { Eye, EyeOff } from 'lucide-react'
 import { useState } from 'react'
+import { useT } from '@/i18n/index'
 import { Input, type InputProps } from './Input'
 
 /** API Key 输入框：默认遮蔽，可切换明文（PRD US-02） */
 export function PasswordInput({ className, ...rest }: InputProps) {
   const [visible, setVisible] = useState(false)
+  const t = useT()
   return (
     <div className="relative">
       <Input
@@ -16,7 +18,7 @@ export function PasswordInput({ className, ...rest }: InputProps) {
       />
       <button
         type="button"
-        aria-label={visible ? '隐藏密钥' : '显示密钥'}
+        aria-label={visible ? t('password.hide') : t('password.show')}
         onClick={() => {
           setVisible((current) => !current)
         }}

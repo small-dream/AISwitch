@@ -3,6 +3,7 @@ import type { ComponentType } from 'react'
 
 import type { TargetTool, ToolInstallStatus, ToolStatus } from '@/domain/entities/preset'
 import { TOOL_META } from '@/constants/tools'
+import { useT, type TranslationKey } from '@/i18n/index'
 import { useToolStatus } from '@/hooks/use-tool-status'
 import { useVscodePresence } from '@/hooks/use-vscode-presence'
 import { BackupsButton } from '@/ui/features/backups/BackupsButton'
@@ -10,10 +11,10 @@ import { Badge } from '@/ui/components/Badge'
 import { Card } from '@/ui/components/Card'
 import { StatusDot } from '@/ui/components/StatusDot'
 
-const STATUS_TEXT: Record<ToolInstallStatus, string> = {
-  installed: '已配置',
-  'not-configured': '未检测到配置',
-  unknown: '状态未知',
+const STATUS_TEXT: Record<ToolInstallStatus, TranslationKey> = {
+  installed: 'status.installed',
+  'not-configured': 'status.notConfigured',
+  unknown: 'status.unknown',
 }
 
 const TOOL_ICON: Record<TargetTool, ComponentType<{ className?: string }>> = {
@@ -71,6 +72,7 @@ function ToolStatusCard({
 }) {
   const meta = TOOL_META[status.tool]
   const ToolIcon = TOOL_ICON[status.tool]
+  const t = useT()
   return (
     <Card hoverable className="animate-fade-in p-4">
       <div className="flex items-center justify-between gap-2">
@@ -82,7 +84,7 @@ function ToolStatusCard({
           <StatusDot status={status.status} />
         </div>
         <Badge tone={status.status === 'installed' ? 'success' : 'default'}>
-          {STATUS_TEXT[status.status]}
+          {t(STATUS_TEXT[status.status])}
         </Badge>
       </div>
       <div className="mt-3 space-y-1">
@@ -92,11 +94,9 @@ function ToolStatusCard({
         </p>
         {status.status === 'not-configured' ? (
           vscodeDetected ? (
-            <Badge tone="success">检测到 VS Code 插件，切换后即可生效</Badge>
+            <Badge tone="success">{t('status.vscodeDetected')}</Badge>
           ) : (
-            <p className="text-[11px] leading-4 text-app-faint">
-              首次切换将自动创建全局配置，VS Code 插件方式使用同样生效
-            </p>
+            <p className="text-[11px] leading-4 text-app-faint">{t('status.firstSwitchHint')}</p>
           )
         ) : null}
       </div>

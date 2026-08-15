@@ -1,6 +1,7 @@
 import { Inbox } from 'lucide-react'
 
 import type { TargetTool, Preset } from '@/domain/entities/preset'
+import { useT } from '@/i18n/index'
 import { usePresets } from '@/hooks/use-presets'
 import { EmptyState } from '@/ui/components/EmptyState'
 import { PresetRow } from './PresetRow'
@@ -13,6 +14,7 @@ export function PresetList({
   onEdit: (preset: Preset) => void
 }) {
   const { data: presets, isLoading } = usePresets()
+  const t = useT()
 
   if (isLoading) {
     return (
@@ -28,8 +30,8 @@ export function PresetList({
     return (
       <EmptyState
         icon={<Inbox className="h-8 w-8" strokeWidth={1.5} />}
-        title="暂无预设"
-        description="点击右上角「新建预设」，创建第一个可复用的模型配置档案"
+        title={t('presetList.emptyTitle')}
+        description={t('presetList.emptyDescription')}
       />
     )
   }

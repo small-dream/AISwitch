@@ -1,5 +1,6 @@
 import type { RestorePlan } from '@/services/restore-service'
 import { TOOL_META } from '@/constants/tools'
+import { useT } from '@/i18n/index'
 import { Badge } from '@/ui/components/Badge'
 import { RESTORE_ACTION_LABELS } from './restore-labels'
 
@@ -9,6 +10,7 @@ function basename(path: string): string {
 
 /** 还原计划预览列表：逐文件展示将执行的动作，近似还原如实标注 */
 export function RestorePlanList({ plan }: { plan: RestorePlan }) {
+  const t = useT()
   return (
     <ul className="space-y-2">
       {plan.files.map((item) => {
@@ -22,7 +24,7 @@ export function RestorePlanList({ plan }: { plan: RestorePlan }) {
               <p className="truncate font-mono text-xs text-app">{basename(item.file)}</p>
               <p className="text-[11px] text-app-muted">{TOOL_META[item.tool].label}</p>
             </div>
-            <Badge tone={meta.tone}>{meta.label}</Badge>
+            <Badge tone={meta.tone}>{t(meta.key)}</Badge>
           </li>
         )
       })}

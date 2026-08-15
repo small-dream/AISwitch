@@ -1,6 +1,7 @@
 import { CheckCircle2, Info, XCircle } from 'lucide-react'
 
 import type { RestoreResult } from '@/services/restore-service'
+import { localizeMessage } from '@/i18n/messages'
 
 function basename(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1)
@@ -24,7 +25,9 @@ export function RestoreResultList({ result }: { result: RestoreResult }) {
           )}
           <div className="min-w-0">
             <p className="truncate font-mono text-xs text-app">{basename(item.file)}</p>
-            {item.detail ? <p className="text-[11px] text-app-muted">{item.detail}</p> : null}
+            {item.detail ? (
+              <p className="text-[11px] text-app-muted">{localizeMessage(item.detail)}</p>
+            ) : null}
           </div>
         </li>
       ))}

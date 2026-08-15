@@ -4,6 +4,7 @@ import { useState } from 'react'
 
 import { TARGET_TOOLS, TOOL_META } from '@/constants/tools'
 import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
+import { useT } from '@/i18n/index'
 import { useImportPreset } from '@/hooks/use-import-preset'
 import { useUIStore } from '@/stores/ui-store'
 import { toastError } from '@/stores/toast-store'
@@ -54,6 +55,7 @@ function PanelActions({
   onImported: (input: PresetInput) => void
 }) {
   const importMutation = useImportPreset()
+  const t = useT()
 
   const handleImport = () => {
     importMutation.mutate(tool, {
@@ -72,16 +74,17 @@ function PanelActions({
         disabled={importMutation.isPending}
         onClick={handleImport}
       >
-        {importMutation.isPending ? '导入中…' : '导入当前配置'}
+        {importMutation.isPending ? t('switchPanel.importing') : t('switchPanel.importCurrent')}
       </Button>
       <Button size="sm" onClick={onCreate}>
-        新建预设
+        {t('switchPanel.createPreset')}
       </Button>
     </div>
   )
 }
 
 export function SwitchPanel() {
+  const t = useT()
   const activeTool = useUIStore((state) => state.activeTool)
   const setActiveTool = useUIStore((state) => state.setActiveTool)
   const [editing, setEditing] = useState<Preset | null>(null)
@@ -105,7 +108,7 @@ export function SwitchPanel() {
       <div className="mb-4 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-base font-semibold">
           <Layers className="h-4 w-4 text-app-accent" aria-hidden />
-          模型预设
+          {t('switchPanel.title')}
         </h2>
         <PanelActions tool={activeTool} onCreate={openCreate} onImported={openImported} />
       </div>

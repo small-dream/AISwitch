@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm, type FieldErrors, type UseFormRegister } from 'react-hook-form'
 
 import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
+import { useT } from '@/i18n/index'
 import { Button } from '@/ui/components/Button'
 import { FormField } from '@/ui/components/FormField'
 import { Input } from '@/ui/components/Input'
@@ -10,7 +11,7 @@ import { PasswordInput } from '@/ui/components/PasswordInput'
 import { Select } from '@/ui/components/Select'
 import { CodexMetadataSection } from './CodexMetadataSection'
 import { metadataToFieldText, parseModelMetadataField } from './model-metadata'
-import { type PresetFormValues, presetFormSchema } from './preset-form-schema'
+import { buildPresetFormSchema, type PresetFormValues } from './preset-form-schema'
 
 const EMPTY_VALUES: Omit<PresetFormValues, 'tool'> = {
   name: '',
@@ -26,7 +27,7 @@ const EMPTY_VALUES: Omit<PresetFormValues, 'tool'> = {
 function toFormValues(
   preset: Preset | null,
   draft: PresetInput | null,
-  defaultTool: TargetTool,
+  defaultTool: TargetTool
 ): PresetFormValues {
   const source: PresetInput | null = preset ?? draft
   if (!source) {
@@ -65,35 +66,36 @@ function PresetFormFields({
   errors: FieldErrors<PresetFormValues>
   tool: TargetTool
 }) {
+  const t = useT()
   return (
     <>
-      <FormField label="目标工具" error={errors.tool?.message}>
+      <FormField label={t('presetForm.targetTool')} error={errors.tool?.message}>
         <Select {...register('tool')}>
           <option value="claude-code">Claude Code</option>
           <option value="codex">Codex CLI</option>
         </Select>
       </FormField>
-      <FormField label="预设名称" error={errors.name?.message}>
-        <Input {...register('name')} placeholder="如：GLM-4.6" />
+      <FormField label={t('presetForm.name')} error={errors.name?.message}>
+        <Input {...register('name')} placeholder={t('presetForm.namePlaceholder')} />
       </FormField>
-      <FormField label="供应商名称" error={errors.providerName?.message}>
-        <Input {...register('providerName')} placeholder="如：智谱 GLM" />
+      <FormField label={t('presetForm.provider')} error={errors.providerName?.message}>
+        <Input {...register('providerName')} placeholder={t('presetForm.providerPlaceholder')} />
       </FormField>
-      <FormField label="Base URL（留空 = 官方 API）" error={errors.baseUrl?.message}>
+      <FormField label={t('presetForm.baseUrl')} error={errors.baseUrl?.message}>
         <Input {...register('baseUrl')} placeholder="https://open.bigmodel.cn/api/anthropic" />
       </FormField>
       <FormField label="API Key" error={errors.apiKey?.message}>
         <PasswordInput {...register('apiKey')} placeholder="sk-…" />
       </FormField>
-      <FormField label="模型名" error={errors.model?.message}>
-        <Input {...register('model')} placeholder="如：glm-4.6" />
+      <FormField label={t('presetForm.model')} error={errors.model?.message}>
+        <Input {...register('model')} placeholder={t('presetForm.modelPlaceholder')} />
       </FormField>
       {tool === 'claude-code' ? (
-        <FormField
-          label="小模型 ANTHROPIC_SMALL_FAST_MODEL（可选）"
-          error={errors.smallFastModel?.message}
-        >
-          <Input {...register('smallFastModel')} placeholder="如：glm-4.6-air" />
+        <FormField label={t('presetForm.smallFast')} error={errors.smallFastModel?.message}>
+          <Input
+            {...register('smallFastModel')}
+            placeholder={t('presetForm.smallFastPlaceholder')}
+          />
         </FormField>
       ) : null}
       {tool === 'codex' ? <CodexMetadataSection register={register} errors={errors} /> : null}
@@ -103,9 +105,10 @@ function PresetFormFields({
 
 /** 导入草稿携带密钥时的显式告知（隐私透明） */
 function DraftKeyNotice() {
+  const t = useT()
   return (
     <p className="rounded-md border border-app-border bg-app-sunken px-3 py-2 text-xs text-app-muted">
-      已从本机配置读取 API Key，保存后将写入 ~/.aiswitch/presets.json（仅当前用户可读）。
+      {t('presetForm.draftKeyNotice')}
     </p>
   )
 }
@@ -118,13 +121,14 @@ function PresetFormActions({
   submitting: boolean
   onCancel: () => void
 }) {
+  const t = useT()
   return (
     <div className="flex shrink-0 justify-end gap-2 pt-4">
       <Button variant="secondary" onClick={onCancel}>
-        取消
+        {t('common.cancel')}
       </Button>
       <Button type="submit" disabled={submitting}>
-        {submitting ? '保存中…' : '保存'}
+        {submitting ? t('common.saving') : t('common.save')}
       </Button>
     </div>
   )
@@ -145,6 +149,9 @@ export function PresetForm({
   onSubmit: (input: PresetInput) => void
   onCancel: () => void
 }) {
+  const t = useT()
+  const schema = useMemo(() => buildPresetFormSchema(t), [t])
+
   const {
     register,
     handleSubmit,
@@ -152,7 +159,7 @@ export function PresetForm({
     watch,
     formState: { errors },
   } = useForm<PresetFormValues>({
-    resolver: zodResolver(presetFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: toFormValues(preset, draft, defaultTool),
   })
 

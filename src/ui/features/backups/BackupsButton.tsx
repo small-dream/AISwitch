@@ -1,12 +1,14 @@
 import { useState } from 'react'
 
 import type { TargetTool } from '@/domain/entities/preset'
+import { useT } from '@/i18n/index'
 import { Button } from '@/ui/components/Button'
 import { BackupsDialog } from './BackupsDialog'
 
 /** 备份管理入口（US-10）：打开所属工具的备份弹窗 */
 export function BackupsButton({ tool }: { tool: TargetTool }) {
   const [open, setOpen] = useState(false)
+  const t = useT()
   return (
     <>
       <Button
@@ -16,7 +18,7 @@ export function BackupsButton({ tool }: { tool: TargetTool }) {
           setOpen(true)
         }}
       >
-        备份管理
+        {t('backups.manage')}
       </Button>
       {open ? (
         <BackupsDialog

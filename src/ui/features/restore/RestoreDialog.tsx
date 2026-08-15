@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 import { useExecuteRestore, useRestorePlan } from '@/hooks/use-restore'
 import type { RestoreResult } from '@/services/restore-service'
+import { useT } from '@/i18n/index'
 import { toastError, toastSuccess } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
 import { Button } from '@/ui/components/Button'
@@ -17,6 +18,7 @@ function useRestoreFlow() {
   const [step, setStep] = useState<Step>('preview')
   const [result, setResult] = useState<RestoreResult | null>(null)
   const execute = useExecuteRestore()
+  const t = useT()
 
   const handleExecute = () => {
     execute.mutate(undefined, {
@@ -24,9 +26,9 @@ function useRestoreFlow() {
         setResult(restoreResult)
         setStep('result')
         if (restoreResult.allSucceeded) {
-          toastSuccess('已还原到安装 AISwitch 之前的状态')
+          toastSuccess(t('restore.successToast'))
         } else {
-          toastError('部分文件未能还原，请在结果中查看详情')
+          toastError(t('restore.partialToast'))
         }
       },
       onError: (error) => {
@@ -52,6 +54,7 @@ function useRestoreFlow() {
 /** 一键还原弹窗（US-一键还原）：预览 → 输入确认 → 执行结果，三步状态机 */
 export function RestoreDialog({ onClose }: { onClose: () => void }) {
   const flow = useRestoreFlow()
+  const t = useT()
   return (
     <div
       className="animate-overlay-in fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
@@ -61,7 +64,7 @@ export function RestoreDialog({ onClose }: { onClose: () => void }) {
       <div className="animate-dialog-in flex max-h-[80vh] w-full max-w-md flex-col rounded-2xl border border-app-border bg-app-card p-6 shadow-2xl">
         <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
           <RotateCcw className="h-4 w-4 text-app-danger" aria-hidden />
-          一键还原到安装前
+          {t('restore.dialogTitle')}
         </h2>
         {flow.step === 'preview' ? <PreviewStep onNext={flow.toConfirm} onClose={onClose} /> : null}
         {flow.step === 'confirm' ? (
@@ -80,25 +83,24 @@ export function RestoreDialog({ onClose }: { onClose: () => void }) {
 }
 
 function WarningBanner() {
+  const t = useT()
   return (
     <div className="mb-3 flex items-start gap-2 rounded-lg border border-app-danger-border bg-app-danger-bg/50 p-3">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-app-danger-text" aria-hidden />
-      <p className="text-xs leading-relaxed text-app-danger-text">
-        将把 Claude Code 与 Codex CLI 的配置恢复到安装 AISwitch
-        之前的状态，操作不可撤销。你的预设、密钥与备份会保留在 ~/.aiswitch 中，不受影响。
-      </p>
+      <p className="text-xs leading-relaxed text-app-danger-text">{t('restore.warning')}</p>
     </div>
   )
 }
 
 function PreviewStep({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
   const { data: plan, isLoading, isError, error } = useRestorePlan(true)
+  const t = useT()
   const hasActionable = plan?.files.some((item) => item.action !== 'keep') ?? false
   return (
     <>
       <WarningBanner />
       {isLoading ? (
-        <p className="py-6 text-center text-sm text-app-muted">正在分析配置…</p>
+        <p className="py-6 text-center text-sm text-app-muted">{t('restore.analyzing')}</p>
       ) : isError ? (
         <p className="py-6 text-center text-sm text-app-danger-text">{errorMessage(error)}</p>
       ) : plan ? (
@@ -111,32 +113,28 @@ function PreviewStep({ onNext, onClose }: { onNext: () => void; onClose: () => v
             }`}
           >
             <ShieldCheck className="h-3.5 w-3.5 shrink-0" aria-hidden />
-            {plan.hasBaseline
-              ? '已检测到安装前基线，可精确还原'
-              : '未检测到安装前基线，将尽力近似还原'}
+            {plan.hasBaseline ? t('restore.baselineFound') : t('restore.baselineMissing')}
           </p>
           {hasActionable ? (
             <RestorePlanList plan={plan} />
           ) : (
-            <p className="py-6 text-center text-sm text-app-muted">
-              没有需要还原的配置，你的工具配置已是未安装 AISwitch 时的状态。
-            </p>
+            <p className="py-6 text-center text-sm text-app-muted">{t('restore.nothingToDo')}</p>
           )}
         </>
       ) : null}
       <div className="mt-4 flex justify-end gap-2">
         <Button size="sm" variant="secondary" onClick={onClose}>
-          取消
+          {t('common.cancel')}
         </Button>
         <Button size="sm" disabled={!plan || !hasActionable} onClick={onNext}>
-          下一步
+          {t('common.next')}
         </Button>
       </div>
     </>
   )
 }
 
-/** 输入「还原」二段确认：不可逆且改写磁盘配置，强度须高于两段式点击 */
+/** 输入确认词二段确认：不可逆且改写磁盘配置，强度须高于两段式点击 */
 function ConfirmStep({
   onBack,
   onConfirm,
@@ -147,32 +145,36 @@ function ConfirmStep({
   pending: boolean
 }) {
   const [text, setText] = useState('')
+  const t = useT()
+  const confirmWord = t('restore.confirmWord')
   return (
     <>
       <WarningBanner />
       <p className="mb-2 text-xs text-app-muted">
-        请输入 <span className="font-semibold text-app">还原</span> 以确认执行：
+        {t('restore.confirmPromptPrefix')}{' '}
+        <span className="font-semibold text-app">{confirmWord}</span>{' '}
+        {t('restore.confirmPromptSuffix')}
       </p>
       <Input
         value={text}
         onChange={(event) => {
           setText(event.target.value)
         }}
-        placeholder="还原"
+        placeholder={confirmWord}
         autoComplete="off"
-        aria-label="输入还原以确认"
+        aria-label={t('restore.confirmAria', { word: confirmWord })}
       />
       <div className="mt-4 flex justify-end gap-2">
         <Button size="sm" variant="secondary" onClick={onBack}>
-          返回
+          {t('common.back')}
         </Button>
         <Button
           size="sm"
           variant="danger"
-          disabled={text !== '还原' || pending}
+          disabled={text.trim() !== confirmWord || pending}
           onClick={onConfirm}
         >
-          {pending ? '正在还原…' : '确认还原'}
+          {pending ? t('restore.confirming') : t('restore.confirmButton')}
         </Button>
       </div>
     </>
@@ -180,17 +182,16 @@ function ConfirmStep({
 }
 
 function ResultStep({ result, onClose }: { result: RestoreResult; onClose: () => void }) {
+  const t = useT()
   return (
     <>
       <p className="mb-3 text-sm text-app">
-        {result.allSucceeded
-          ? '已还原到安装 AISwitch 之前的状态。'
-          : '部分文件未能还原，详情如下：'}
+        {result.allSucceeded ? t('restore.resultSuccess') : t('restore.resultPartial')}
       </p>
       <RestoreResultList result={result} />
       <div className="mt-4 flex justify-end">
         <Button size="sm" variant="secondary" onClick={onClose}>
-          关闭
+          {t('common.close')}
         </Button>
       </div>
     </>

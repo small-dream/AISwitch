@@ -11,6 +11,14 @@
         'dark',
         (localStorage.getItem('jake.theme') ?? 'dark') !== 'light'
       )
+      // 首帧前同步 <html lang>（与 locale-store 的解析规则一致：存储优先，否则跟随系统语言）
+      var savedLocale = localStorage.getItem('jake.locale')
+      document.documentElement.lang =
+        savedLocale === 'en' || savedLocale === 'zh-CN'
+          ? savedLocale
+          : (navigator.language || 'zh-CN').toLowerCase().startsWith('zh')
+            ? 'zh-CN'
+            : 'en'
     </script>
   </head>
   <body>

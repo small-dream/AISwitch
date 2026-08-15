@@ -1,17 +1,20 @@
 import { RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 
+import { useT } from '@/i18n/index'
+
 import { RestoreDialog } from './RestoreDialog'
 
 /** 一键还原入口（US-一键还原）：顶栏危险操作图标按钮，打开三步确认弹窗 */
 export function RestoreButton() {
   const [open, setOpen] = useState(false)
+  const t = useT()
   return (
     <>
       <button
         type="button"
-        aria-label="一键还原到安装前"
-        title="一键还原到安装前"
+        aria-label={t('restore.buttonTitle')}
+        title={t('restore.buttonTitle')}
         onClick={() => {
           setOpen(true)
         }}

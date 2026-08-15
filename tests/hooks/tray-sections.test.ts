@@ -14,16 +14,24 @@ function makeStatus(overrides: Partial<ToolStatus> = {}): ToolStatus {
   }
 }
 
+const STRINGS = {
+  showMain: '显示主窗口',
+  quit: '退出',
+  noPresets: '暂无预设',
+  tooltip: 'AISwitch · 点击菜单快捷切换模型',
+}
+
 describe('toTraySections', () => {
-  it('按工具分组并只保留菜单所需字段', () => {
+  it('按工具分组并只保留菜单所需字段，附带本地化静态文案', () => {
     const claudeA = makePreset({ id: 'a', name: 'GLM-4.6' })
     const claudeB = makePreset({ id: 'b', name: 'Kimi', apiKey: 'sk-other', model: 'kimi-k2' })
     const codex = makePreset({ id: 'c', name: 'DeepSeek', tool: 'codex' })
 
-    const payload = toTraySections([claudeA, claudeB, codex], [
-      makeStatus(),
-      makeStatus({ tool: 'codex', activeModel: 'deepseek-chat' }),
-    ])
+    const payload = toTraySections(
+      [claudeA, claudeB, codex],
+      [makeStatus(), makeStatus({ tool: 'codex', activeModel: 'deepseek-chat' })],
+      STRINGS
+    )
 
     expect(payload.sections).toEqual([
       {
@@ -40,10 +48,11 @@ describe('toTraySections', () => {
         presets: [{ id: 'c', name: 'DeepSeek', active: false }],
       },
     ])
+    expect(payload.strings).toEqual(STRINGS)
   })
 
   it('无预设时各分区为空数组（Rust 侧显示「暂无预设」）', () => {
-    const payload = toTraySections([], [])
+    const payload = toTraySections([], [], STRINGS)
     expect(payload.sections.map((section) => section.presets)).toEqual([[], []])
   })
 })

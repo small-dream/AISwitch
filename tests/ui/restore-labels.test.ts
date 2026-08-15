@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { translate } from '@/i18n/index'
 import type { RestoreAction } from '@/services/restore-service'
 import { RESTORE_ACTION_LABELS } from '@/ui/features/restore/restore-labels'
 
@@ -12,9 +13,11 @@ const ALL_ACTIONS: RestoreAction[] = [
 ]
 
 describe('RESTORE_ACTION_LABELS', () => {
-  it('每个还原动作都有非空中文标签（UI 预览完备性）', () => {
+  it('每个还原动作都有词条且双语可译（UI 预览完备性）', () => {
     for (const action of ALL_ACTIONS) {
-      expect(RESTORE_ACTION_LABELS[action].label.length).toBeGreaterThan(0)
+      const { key } = RESTORE_ACTION_LABELS[action]
+      expect(translate('zh-CN', key).length).toBeGreaterThan(0)
+      expect(translate('en', key).length).toBeGreaterThan(0)
     }
     expect(Object.keys(RESTORE_ACTION_LABELS).length).toBe(ALL_ACTIONS.length)
   })

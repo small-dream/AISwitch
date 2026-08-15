@@ -4,6 +4,7 @@ import type { TargetTool } from '@/domain/entities/preset'
 import { useBackups, useRemoveBackup, useRestoreBackup } from '@/hooks/use-backups'
 import { useRollback } from '@/hooks/use-switch'
 import { TOOL_META } from '@/constants/tools'
+import { useT } from '@/i18n/index'
 import { toastError, toastSuccess } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
 import { Button } from '@/ui/components/Button'
@@ -16,6 +17,7 @@ function formatTimestamp(timestamp: string): string {
 function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
   const restore = useRestoreBackup(tool)
   const remove = useRemoveBackup(tool)
+  const t = useT()
   return (
     <li className="flex items-center justify-between gap-2 rounded-md border border-app-border bg-app-sunken px-3 py-2">
       <div className="min-w-0">
@@ -30,7 +32,7 @@ function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
           onClick={() => {
             restore.mutate(entry, {
               onSuccess: () => {
-                toastSuccess(`已恢复 ${entry.basename}`)
+                toastSuccess(t('backups.restoredEntry', { name: entry.basename }))
               },
               onError: (error) => {
                 toastError(errorMessage(error))
@@ -38,7 +40,7 @@ function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
             })
           }}
         >
-          恢复
+          {t('common.restore')}
         </Button>
         <Button
           size="sm"
@@ -48,7 +50,7 @@ function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
             remove.mutate(entry.name)
           }}
         >
-          删除
+          {t('common.delete')}
         </Button>
       </div>
     </li>
@@ -59,15 +61,16 @@ function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
 export function BackupsDialog({ tool, onClose }: { tool: TargetTool; onClose: () => void }) {
   const { data: entries, isLoading } = useBackups(tool)
   const rollback = useRollback()
+  const t = useT()
   const list = entries ?? []
 
   const handleRollbackLatest = () => {
     rollback.mutate(tool, {
       onSuccess: (restored) => {
         if (restored) {
-          toastSuccess('已恢复最近一份备份')
+          toastSuccess(t('backups.restoredLatest'))
         } else {
-          toastError('没有可用备份')
+          toastError(t('backups.noneAvailable'))
         }
       },
       onError: (error) => {
@@ -86,10 +89,10 @@ export function BackupsDialog({ tool, onClose }: { tool: TargetTool; onClose: ()
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-semibold">
             <History className="h-4 w-4 text-app-accent" aria-hidden />
-            {TOOL_META[tool].label} · 备份管理
+            {TOOL_META[tool].label} · {t('backups.manage')}
           </h2>
           <Button size="sm" variant="secondary" onClick={onClose}>
-            关闭
+            {t('common.close')}
           </Button>
         </div>
         <div className="mb-3">
@@ -98,7 +101,7 @@ export function BackupsDialog({ tool, onClose }: { tool: TargetTool; onClose: ()
             disabled={rollback.isPending || list.length === 0}
             onClick={handleRollbackLatest}
           >
-            恢复最近一份备份
+            {t('backups.restoreLatest')}
           </Button>
         </div>
         <BackupList tool={tool} entries={list} isLoading={isLoading} />
@@ -116,11 +119,12 @@ function BackupList({
   entries: BackupEntry[]
   isLoading: boolean
 }) {
+  const t = useT()
   if (isLoading) {
-    return <p className="py-6 text-center text-sm text-app-muted">加载中…</p>
+    return <p className="py-6 text-center text-sm text-app-muted">{t('common.loading')}</p>
   }
   if (entries.length === 0) {
-    return <p className="py-6 text-center text-sm text-app-muted">暂无备份</p>
+    return <p className="py-6 text-center text-sm text-app-muted">{t('backups.empty')}</p>
   }
   return (
     <ul className="flex-1 space-y-2 overflow-y-auto">

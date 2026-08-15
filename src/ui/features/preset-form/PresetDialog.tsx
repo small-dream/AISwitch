@@ -2,6 +2,7 @@ import { SlidersHorizontal } from 'lucide-react'
 
 import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
 import { useCreatePreset, useUpdatePreset } from '@/hooks/use-presets'
+import { useT, type TranslationKey } from '@/i18n/index'
 import { toastError, toastSuccess } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
 import { PresetForm } from './PresetForm'
@@ -9,6 +10,7 @@ import { PresetForm } from './PresetForm'
 function useSubmitPreset(preset: Preset | null, onClose: () => void) {
   const create = useCreatePreset()
   const update = useUpdatePreset()
+  const t = useT()
 
   const handleError = (error: unknown) => {
     toastError(errorMessage(error))
@@ -20,7 +22,7 @@ function useSubmitPreset(preset: Preset | null, onClose: () => void) {
         { id: preset.id, input },
         {
           onSuccess: () => {
-            toastSuccess('预设已更新')
+            toastSuccess(t('presetForm.updated'))
             onClose()
           },
           onError: handleError,
@@ -30,7 +32,7 @@ function useSubmitPreset(preset: Preset | null, onClose: () => void) {
     }
     create.mutate(input, {
       onSuccess: () => {
-        toastSuccess('预设已创建')
+        toastSuccess(t('presetForm.created'))
         onClose()
       },
       onError: handleError,
@@ -55,12 +57,18 @@ export function PresetDialog({
   onClose: () => void
 }) {
   const { submitting, submit } = useSubmitPreset(preset, onClose)
+  const t = useT()
 
   if (!open) {
     return null
   }
 
-  const title = preset ? '编辑预设' : draft ? '导入配置为预设' : '新建预设'
+  const titleKey: TranslationKey = preset
+    ? 'presetForm.title.edit'
+    : draft
+      ? 'presetForm.title.import'
+      : 'presetForm.title.create'
+  const title = t(titleKey)
 
   return (
     <div

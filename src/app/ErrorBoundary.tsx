@@ -1,5 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 
+import { t } from '@/i18n/index'
+
 interface ErrorBoundaryProps {
   children: ReactNode
 }
@@ -27,7 +29,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           role="alert"
           className="flex h-screen flex-col items-center justify-center gap-3 bg-app-bg p-8 text-center"
         >
-          <h1 className="text-lg font-semibold text-app">界面出现异常</h1>
+          <h1 className="text-lg font-semibold text-app">{t('errorBoundary.title')}</h1>
           <p className="max-w-md text-sm text-app-muted">{this.state.error.message}</p>
           <button
             type="button"
@@ -36,7 +38,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             }}
             className="mt-2 rounded-md bg-indigo-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-400"
           >
-            重新加载
+            {t('errorBoundary.reload')}
           </button>
         </div>
       )
