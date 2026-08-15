@@ -1,10 +1,33 @@
+import { getVersion } from '@tauri-apps/api/app'
 import { Moon, Sparkles, Sun } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import { useLocaleStore, useT } from '@/i18n/index'
 import { useThemeStore } from '@/stores/theme-store'
 import { Badge } from '@/ui/components/Badge'
 import { RestoreButton } from '@/ui/features/restore/RestoreButton'
+
+function VersionBadge() {
+  const [version, setVersion] = useState('')
+  useEffect(() => {
+    getVersion()
+      .then((v) => {
+        setVersion(v)
+      })
+      .catch(() => {
+        setVersion('')
+      })
+  }, [])
+
+  if (version === '') {
+    return null
+  }
+  return (
+    <Badge>
+      <span className="font-mono">v{version}</span>
+    </Badge>
+  )
+}
 
 export function MainLayout({ children }: { children: ReactNode }) {
   const theme = useThemeStore((state) => state.theme)
@@ -23,9 +46,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
           <Sparkles className="h-4 w-4" />
         </span>
         <h1 className="text-lg font-semibold tracking-tight">AISwitch</h1>
-        <Badge>
-          <span className="font-mono">v0.1.0</span>
-        </Badge>
+        <VersionBadge />
         <div className="flex-1" />
         <RestoreButton />
         <button
