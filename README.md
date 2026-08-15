@@ -27,14 +27,36 @@ If you switch between the official API and third-party providers (GLM, DeepSeek,
 
 AISwitch turns that into a single click — with validation, backups, and instant rollback.
 
+## Highlights
+
+- 🔒 **Privacy by design** — 100% local. No account, no cloud, no telemetry, no analytics. Your API keys are stored only in `~/.aiswitch/` on your own disk and are sent nowhere except the provider endpoint you explicitly configure.
+- 🛡 **Security hardened** — strict CSP, no shell/dialog plugins, owner-only permissions (0600/0700) on every key-bearing file, HTTPS-only network probes (plain HTTP allowed only for loopback), and keys always masked in the UI.
+- 🎯 **Does one thing, well** — AISwitch only reads and writes the config files of Claude Code & Codex CLI. No built-in proxy, no request logging, no extra layer between you and your provider. Remove it and your CLI goes back to exactly how it was — that's a feature, see [one-click restore](#features).
+
 ## Features
 
 - 🔍 **Auto-detection** — on launch, reads the global config of Claude Code & Codex CLI and shows the currently active provider/model for each (no dependency on CLI being on `PATH`).
 - 🗂 **Presets** — save reusable provider profiles (Base URL + API Key + model names). Keys are masked by default; delete requires confirmation; names are unique per tool.
 - ⚡ **One-click switch** — writes the target config via temp-file + atomic replace, reads it back to verify, typically under 1 second.
-- 🔙 **Automatic backup & rollback** — every write is preceded by a backup; failed writes roll back automatically; restore the latest backup in one click.
+- 🔙 **Automatic backup & rollback** — every write is preceded by a backup; failed writes roll back automatically; restore any backup in one click.
+- ♻️ **One-click restore to pre-install state** — a baseline of your configs is captured before the first switch; a three-step dialog (preview → confirm → per-file report) puts every file back exactly as it was, or cleanly removes what AISwitch created. User-owned files and presets are never touched.
+- 🧪 **Connectivity test** — probe a preset's endpoint before switching (HTTPS enforced; plain HTTP only for `localhost`/`127.0.0.1`/`[::1]`, so your key can never leak in plaintext).
 - 🧩 **Codex `models.json` hosting** — paste a single entry or a whole `models.json`; the file is stored verbatim and family models all appear in the picker. `display_name` is auto-filled when missing.
 - 🖥 **Tray menu** — switch presets straight from the system tray; the active preset is check-marked.
+- 🌐 **Bilingual UI** — Chinese & English, following your system language by default with a one-click toggle.
+- 🌗 **Light / dark theme** — semantic token theming with a one-click toggle.
+
+## Privacy & Security
+
+AISwitch handles your API keys, so it holds itself to a higher bar:
+
+| Layer | Guarantee |
+| ----- | --------- |
+| Data | Everything lives on your machine (`~/.aiswitch/`). No account, no sync, no telemetry — nothing to phish or breach. |
+| Filesystem | Key-bearing files (`presets.json`, backups, baselines) are restricted to owner-only (0600/0700); the temp file used by atomic writes is restricted *before* rename, so crash leftovers never leak secrets. Legacy loose permissions are tightened on load. |
+| Network | The only outbound requests are connectivity probes you trigger, and only to `https://` URLs (or plain HTTP on loopback) — validated by a shared rule at both save time and probe time. No proxy, no request interception. |
+| App | Strict CSP (`script-src 'self'` + nonces, `object-src 'none'`, IPC-only `connect-src`); unused plugins (shell, dialog) removed to shrink the attack surface. |
+| UI | Keys are always masked — even short ones are fully hidden, not partially shown. |
 
 ## Tech Stack
 
