@@ -7,7 +7,7 @@ import type { FileSystemPort } from '@/types/fs-port'
 
 const EMPTY_COLLECTION: PresetCollection = { version: 1, presets: [] }
 
-/** 预设库（~/.jakeaitools/presets.json）读写仓库 */
+/** 预设库（~/.aiswitch/presets.json）读写仓库 */
 export class PresetRepository {
   constructor(private readonly fs: FileSystemPort) {}
 

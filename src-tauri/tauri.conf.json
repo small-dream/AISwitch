@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "JakeAITools",
+  "productName": "AISwitch",
   "version": "0.1.0",
-  "identifier": "com.jakeaitools.desktop",
+  "identifier": "com.small-dream.aiswitch",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "JakeAITools",
+        "title": "AISwitch",
         "width": 960,
         "height": 640,
         "minWidth": 800,

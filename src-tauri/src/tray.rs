@@ -48,7 +48,7 @@ pub fn init_tray(app: &AppHandle) -> tauri::Result<()> {
     let menu = build_menu(app, &TraySectionsPayload::default())?;
     TrayIconBuilder::with_id(TRAY_ID)
         .icon(app.default_window_icon().expect("缺少应用图标").clone())
-        .tooltip("JakeAITools · 点击菜单快捷切换模型")
+        .tooltip("AISwitch · 点击菜单快捷切换模型")
         .menu(&menu)
         .show_menu_on_left_click(true)
         .on_menu_event(handle_menu_event)

@@ -65,12 +65,12 @@ async function performTraySwitch(
   try {
     await switchService.switch(tool, presetId)
     toastSuccess(`已切换到 ${name}`)
-    await notifyDesktop('JakeAITools', `已切换到 ${name}`)
+    await notifyDesktop('AISwitch', `已切换到 ${name}`)
     await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
   } catch (error) {
     const message = errorMessage(error)
     toastError(message)
-    await notifyDesktop('JakeAITools', `切换失败：${message}`)
+    await notifyDesktop('AISwitch', `切换失败：${message}`)
   }
 }
 

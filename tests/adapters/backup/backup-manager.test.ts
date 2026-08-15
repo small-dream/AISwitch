@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { BackupManager } from '@/adapters/backup/backup-manager'
 import { createMemoryFs } from '../../helpers/memory-fs'
 
-const DIR = '.jakeaitools/backups/claude-code'
+const DIR = '.aiswitch/backups/claude-code'
 
 describe('BackupManager · 备份与保留', () => {
   it('备份源文件为时间戳副本并返回文件名', async () => {

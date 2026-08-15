@@ -12,8 +12,8 @@
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools" },
-        { "path": "$HOME/.jakeaitools/**" },
+        { "path": "$HOME/.aiswitch" },
+        { "path": "$HOME/.aiswitch/**" },
         { "path": "$HOME/.vscode/**" },
         { "path": "$HOME/.vscode-insiders/**" }
       ]
@@ -25,8 +25,8 @@
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools" },
-        { "path": "$HOME/.jakeaitools/**" }
+        { "path": "$HOME/.aiswitch" },
+        { "path": "$HOME/.aiswitch/**" }
       ]
     },
     {
@@ -36,8 +36,8 @@
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools" },
-        { "path": "$HOME/.jakeaitools/**" }
+        { "path": "$HOME/.aiswitch" },
+        { "path": "$HOME/.aiswitch/**" }
       ]
     },
     {
@@ -47,8 +47,8 @@
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools" },
-        { "path": "$HOME/.jakeaitools/**" },
+        { "path": "$HOME/.aiswitch" },
+        { "path": "$HOME/.aiswitch/**" },
         { "path": "$HOME/.vscode/**" },
         { "path": "$HOME/.vscode-insiders/**" }
       ]
@@ -60,8 +60,8 @@
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools" },
-        { "path": "$HOME/.jakeaitools/**" }
+        { "path": "$HOME/.aiswitch" },
+        { "path": "$HOME/.aiswitch/**" }
       ]
     },
     {
@@ -71,8 +71,8 @@
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools" },
-        { "path": "$HOME/.jakeaitools/**" }
+        { "path": "$HOME/.aiswitch" },
+        { "path": "$HOME/.aiswitch/**" }
       ]
     },
     {
@@ -82,8 +82,8 @@
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/.jakeaitools" },
-        { "path": "$HOME/.jakeaitools/**" }
+        { "path": "$HOME/.aiswitch" },
+        { "path": "$HOME/.aiswitch/**" }
       ]
     },
     {

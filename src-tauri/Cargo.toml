@@ -1,11 +1,11 @@
 [package]
-name = "jakeaitools"
+name = "aiswitch"
 version = "0.1.0"
 description = "One-click model switching for Claude Code and Codex CLI"
 edition = "2021"
 
 [lib]
-name = "jakeaitools_lib"
+name = "aiswitch_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

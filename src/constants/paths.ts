@@ -9,7 +9,7 @@ export const PATHS = {
   codexConfig: '.codex/config.toml',
   codexAuth: '.codex/auth.json',
   codexModels: '.codex/models.json',
-  appDir: '.jakeaitools',
-  presetsFile: '.jakeaitools/presets.json',
-  backupsDir: '.jakeaitools/backups',
+  appDir: '.aiswitch',
+  presetsFile: '.aiswitch/presets.json',
+  backupsDir: '.aiswitch/backups',
 } as const

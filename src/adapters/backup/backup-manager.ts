@@ -21,7 +21,7 @@ function basenameOf(path: string): string {
   return last
 }
 
-/** 备份管理器：~/.jakeaitools/backups/<tool>/<时间戳>--<文件名> */
+/** 备份管理器：~/.aiswitch/backups/<tool>/<时间戳>--<文件名> */
 export class BackupManager {
   constructor(private readonly fs: FileSystemPort) {}
 

@@ -1,8 +1,8 @@
-# JakeAITools · 产品需求文档（PRD）
+# AISwitch · 产品需求文档（PRD）
 
 | 项目     | 内容                                                 |
 | -------- | ---------------------------------------------------- |
-| 产品名称 | JakeAITools                                          |
+| 产品名称 | AISwitch                                          |
 | 文档版本 | v0.1（Phase 1 基线，已评审确认）                     |
 | 维护角色 | 产品经理（PM）                                       |
 | 同步要求 | **活文档**：任何功能变更必须先更新本文档，再进入开发 |
@@ -13,7 +13,7 @@
 
 ### 1.1 一句话定位
 
-> JakeAITools 是一款跨平台（Windows / macOS / Linux）桌面工具，让开发者**一键切换 Claude Code 与 Codex CLI 的全局模型/供应商配置**，彻底告别手工编辑配置文件。
+> AISwitch 是一款跨平台（Windows / macOS / Linux）桌面工具，让开发者**一键切换 Claude Code 与 Codex CLI 的全局模型/供应商配置**，彻底告别手工编辑配置文件。
 
 ### 1.2 背景与痛点
 
@@ -83,7 +83,7 @@
 
 ```mermaid
 flowchart TD
-    A[启动 JakeAITools] --> B[环境探测服务]
+    A[启动 AISwitch] --> B[环境探测服务]
     B --> C{检测到目标 CLI?}
     C -- 未安装 --> D[展示引导态 EmptyState]
     C -- 已安装 --> E[读取并展示当前生效配置]
@@ -151,13 +151,13 @@ flowchart TD
 
 ### 5.3 预设存储
 
-- 位置：`~/.jakeaitools/presets.json`（结构 `{"version": 1, "presets": [...]}`）；
+- 位置：`~/.aiswitch/presets.json`（结构 `{"version": 1, "presets": [...]}`）；
 - 读写必须经 Zod Schema 校验（见 `ARCHITECTURE.md` §2.3）；
 - API Key 安全路线见 §7.3。
 
 ### 5.4 备份与回滚策略
 
-1. 每次写入前：将原文件复制至 `~/.jakeaitools/backups/<tool>/<yyyyMMdd-HHmmss>.<json|toml>`；
+1. 每次写入前：将原文件复制至 `~/.aiswitch/backups/<tool>/<yyyyMMdd-HHmmss>.<json|toml>`；
 2. 每个工具**保留最近 20 份**，超出滚动清理；
 3. 写入采用「临时文件 + 原子替换」，任何一步失败不得损坏原配置；
 4. 写后回读校验（verify），失败自动回滚；

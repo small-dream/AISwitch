@@ -11,7 +11,7 @@ function makeStatus(overrides: Partial<ToolStatus> = {}): ToolStatus {
     activeModel: 'glm-4.6',
     activeProviderName: 'https://open.bigmodel.cn/api/anthropic',
     ...overrides,
-  } as ToolStatus
+  }
 }
 
 describe('toTraySections', () => {

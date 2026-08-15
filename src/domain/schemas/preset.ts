@@ -21,7 +21,7 @@ export const presetSchema = z.object({
   updatedAt: z.iso.datetime(),
 })
 
-/** 预设库文件 ~/.jakeaitools/presets.json 的结构 */
+/** 预设库文件 ~/.aiswitch/presets.json 的结构 */
 export const presetCollectionSchema = z.object({
   version: z.literal(1),
   presets: z.array(presetSchema),

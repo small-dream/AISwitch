@@ -9,7 +9,7 @@ describe('errorMessage', () => {
   })
 
   it('Tauri 插件的字符串错误原样透传', () => {
-    expect(errorMessage('forbidden path: .jakeaitools')).toBe('forbidden path: .jakeaitools')
+    expect(errorMessage('forbidden path: .aiswitch')).toBe('forbidden path: .aiswitch')
   })
 
   it('Error 取 message，未知类型兜底', () => {

@@ -17,7 +17,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
         >
           <Sparkles className="h-4 w-4" />
         </span>
-        <h1 className="text-lg font-semibold tracking-tight">JakeAITools</h1>
+        <h1 className="text-lg font-semibold tracking-tight">AISwitch</h1>
         <Badge>
           <span className="font-mono">v0.1.0</span>
         </Badge>

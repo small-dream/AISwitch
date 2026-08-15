@@ -1,4 +1,4 @@
-# JakeAITools · 架构设计文档（ARCHITECTURE）
+# AISwitch · 架构设计文档（ARCHITECTURE）
 
 | 项目     | 内容                                                   |
 | -------- | ------------------------------------------------------ |
@@ -56,7 +56,7 @@ graph TB
         FS["fs / dialog / shell 插件 + commands/"]
     end
 
-    OS["OS 配置文件<br/>~/.claude/settings.json<br/>~/.codex/config.toml + auth.json (+ models.json)<br/>~/.jakeaitools/*"]
+    OS["OS 配置文件<br/>~/.claude/settings.json<br/>~/.codex/config.toml + auth.json (+ models.json)<br/>~/.aiswitch/*"]
 
     UI --> HK --> SVC
     ST --> HK
@@ -111,7 +111,7 @@ export interface ConfigTarget {
 ## 3. 目录结构
 
 ```text
-JakeAITools/
+AISwitch/
 ├── docs/                        # 三活文档：PRD / ARCHITECTURE / CODING_STANDARDS
 ├── scripts/                     # 工程脚本（图标生成等）
 ├── src-tauri/                   # Rust 薄壳（保持极薄）
@@ -195,7 +195,7 @@ sequenceDiagram
 
 ## 7. 安全模型
 
-1. **最小权限**：fs 读写仅限 `~/.claude`、`~/.codex`、`~/.jakeaitools` 三目录；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；连通性测试经 tauri-plugin-http，因供应商地址由用户预设决定，scope 放开 `https://**` / `http://**`；
+1. **最小权限**：fs 读写仅限 `~/.claude`、`~/.codex`、`~/.aiswitch` 三目录；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；连通性测试经 tauri-plugin-http，因供应商地址由用户预设决定，scope 放开 `https://**` / `http://**`；
 2. **API Key**：仅本地存储（v0.1 JSON + 收紧文件权限；v0.2 评估 OS Keychain，见 PRD §7.3）；
 3. **CSP**：当前开发期为 null，发布前必须配置严格 CSP（记入发布检查单）。
 
