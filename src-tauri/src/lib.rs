@@ -16,6 +16,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
+            commands::permissions::restrict_to_owner,
             commands::system::ping,
             commands::tray::tray_update
         ])

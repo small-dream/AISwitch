@@ -1,5 +1,6 @@
 import { writeTextAtomic } from '@/adapters/fs/atomic-write'
 import { PATHS } from '@/constants/paths'
+import { toAppError } from '@/domain/errors'
 import type { TargetTool } from '@/domain/entities/preset'
 import {
   backupFileName,
@@ -37,10 +38,37 @@ export class BackupManager {
     const content = await this.fs.readTextFile(sourcePath)
     const dir = this.dirFor(tool)
     await this.fs.mkdir(dir)
+    // 备份内容含明文密钥：目录 0700 + 文件 0600，逐层收紧
+    await this.restrict(PATHS.appDir)
+    await this.restrict(PATHS.backupsDir)
+    await this.restrict(dir)
     const name = backupFileName(basenameOf(sourcePath), new Date())
-    await this.fs.writeTextFile(`${dir}/${name}`, content)
+    const backupPath = `${dir}/${name}`
+    await this.fs.writeTextFile(backupPath, content)
+    await this.restrict(backupPath)
+    await this.tightenExisting(tool, name)
     await this.prune(tool)
     return name
+  }
+
+  /** best-effort 治愈历史遗留的 0644 备份文件（跳过刚写入并已收紧的 skipName）；单文件失败不影响备份主流程 */
+  private async tightenExisting(tool: TargetTool, skipName: string): Promise<void> {
+    const dir = this.dirFor(tool)
+    for (const name of await this.fs.readDir(dir)) {
+      if (name === skipName || parseBackupName(name) === null) {
+        continue
+      }
+      await this.fs.restrictPermissions(`${dir}/${name}`).catch(() => undefined)
+    }
+  }
+
+  /** 权限收紧失败是独立故障，不得混入普通备份错误 */
+  private async restrict(path: string): Promise<void> {
+    try {
+      await this.fs.restrictPermissions(path)
+    } catch (error) {
+      throw toAppError(error, 'E_FS_PERMISSION', '文件权限收紧失败', { path })
+    }
   }
 
   /** 指定工具全部备份文件名（新到旧）；目录不存在返回空 */

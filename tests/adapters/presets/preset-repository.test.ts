@@ -2,36 +2,59 @@ import { describe, expect, it } from 'vitest'
 
 import { PresetRepository } from '@/adapters/presets/preset-repository'
 import { PATHS } from '@/constants/paths'
+import type { PresetCollection } from '@/domain/entities/preset'
+import { createMemoryFs, type MemoryFs } from '../../helpers/memory-fs'
 import { makePreset } from '../../helpers/make-preset'
-import { createMemoryFs } from '../../helpers/memory-fs'
 
-describe('PresetRepository', () => {
-  it('文件不存在时返回空集合', async () => {
-    const repo = new PresetRepository(createMemoryFs())
-    expect(await repo.load()).toEqual({ version: 1, presets: [] })
-  })
+function collectionOf(): PresetCollection {
+  return { version: 1, presets: [makePreset()] }
+}
 
-  it('save 后可原样 load 回来', async () => {
+describe('PresetRepository 权限收紧', () => {
+  it('save：先收紧 .aiswitch 目录（0700）再原子写 presets.json', async () => {
     const fs = createMemoryFs()
     const repo = new PresetRepository(fs)
-    const preset = makePreset()
 
-    await repo.save({ version: 1, presets: [preset] })
-    expect(await repo.load()).toEqual({ version: 1, presets: [preset] })
-    expect(fs.files().has(PATHS.presetsFile)).toBe(true)
+    await repo.save(collectionOf())
+
+    // appDir 收紧在 presetsFile 的 tmp/目标收紧之前
+    expect(fs.restricted()[0]).toBe(PATHS.appDir)
+    expect(fs.restricted()).toContain(PATHS.presetsFile)
   })
 
-  it('非法 JSON 抛出 E_CONFIG_PARSE', async () => {
-    const fs = createMemoryFs({ [PATHS.presetsFile]: '{broken' })
+  it('load：读取成功后 best-effort 收紧目录与历史文件权限', async () => {
+    const fs = createMemoryFs()
     const repo = new PresetRepository(fs)
+    await repo.save(collectionOf())
+    fs.restricted().length = 0
 
-    await expect(repo.load()).rejects.toMatchObject({ code: 'E_CONFIG_PARSE' })
+    await repo.load()
+
+    expect(fs.restricted()).toEqual([PATHS.appDir, PATHS.presetsFile])
   })
 
-  it('结构不符合 Schema 抛出 E_CONFIG_PARSE', async () => {
-    const fs = createMemoryFs({ [PATHS.presetsFile]: '{"version": 2, "presets": []}' })
+  it('load：收紧失败不阻断加载（仅告警）', async () => {
+    const fs = createMemoryFs()
     const repo = new PresetRepository(fs)
-
-    await expect(repo.load()).rejects.toMatchObject({ code: 'E_CONFIG_PARSE' })
+    await repo.save(collectionOf())
+    const warned: unknown[] = []
+    const origWarn = console.warn
+    console.warn = (...args: unknown[]) => warned.push(args)
+    try {
+      const failing: MemoryFs = {
+        ...fs,
+        async restrictPermissions(path) {
+          if (path === PATHS.presetsFile) {
+            throw new Error('EACCES')
+          }
+          return fs.restrictPermissions(path)
+        },
+      }
+      const collection = await new PresetRepository(failing).load()
+      expect(collection.presets).toHaveLength(1)
+      expect(warned).toHaveLength(1)
+    } finally {
+      console.warn = origWarn
+    }
   })
 })

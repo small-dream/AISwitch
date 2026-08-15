@@ -3,6 +3,8 @@ import type { FileSystemPort } from '@/types/fs-port'
 export interface MemoryFs extends FileSystemPort {
   /** 暴露内部文件表，供断言使用 */
   files(): Map<string, string>
+  /** 记录 restrictPermissions 的调用顺序，供权限收紧断言使用 */
+  restricted(): string[]
 }
 
 /** 读取文件内容；不存在时抛出与真实 fs 一致的 ENOENT 语义 */
@@ -36,6 +38,7 @@ function firstLevelNames(store: Map<string, string>, path: string): string[] {
 /** FileSystemPort 内存替身：路径语义与生产实现一致（相对 HOME 正斜杠） */
 export function createMemoryFs(initial: Record<string, string> = {}): MemoryFs {
   const store = new Map<string, string>(Object.entries(initial))
+  const restrictedPaths: string[] = []
   return {
     homeDir() {
       return Promise.resolve(MEMORY_HOME)
@@ -71,8 +74,15 @@ export function createMemoryFs(initial: Record<string, string> = {}): MemoryFs {
       store.delete(from)
       return Promise.resolve()
     },
+    restrictPermissions(path) {
+      restrictedPaths.push(path)
+      return Promise.resolve()
+    },
     files() {
       return store
+    },
+    restricted() {
+      return restrictedPaths
     },
   }
 }

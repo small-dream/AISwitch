@@ -6,6 +6,7 @@ export const ERROR_CODES = [
   // 文件系统域
   'E_FS_READ',
   'E_FS_WRITE',
+  'E_FS_PERMISSION',
   // 配置解析与写入域
   'E_CONFIG_PARSE',
   'E_CONFIG_WRITE',

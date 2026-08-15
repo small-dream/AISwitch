@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { homeDir as tauriHomeDir } from '@tauri-apps/api/path'
 import {
   BaseDirectory,
@@ -39,5 +40,11 @@ export const tauriFs: FileSystemPort = {
   },
   async rename(from, to) {
     await renameFile(from, to, { oldPathBaseDir: HOME, newPathBaseDir: HOME })
+  },
+  async restrictPermissions(path) {
+    // 自定义命令不走 BaseDirectory 语义，需拼接绝对路径
+    const home = await tauriHomeDir()
+    const joined = home.endsWith('/') ? `${home}${path}` : `${home}/${path}`
+    await invoke('restrict_to_owner', { path: joined })
   },
 }

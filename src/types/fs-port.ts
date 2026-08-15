@@ -14,4 +14,6 @@ export interface FileSystemPort {
   mkdir(path: string): Promise<void>
   remove(path: string): Promise<void>
   rename(from: string, to: string): Promise<void>
+  /** 收紧到仅属主可访问（unix: 文件 0600 / 目录 0700）；含密钥文件落盘前必须调用 */
+  restrictPermissions(path: string): Promise<void>
 }
