@@ -43,10 +43,10 @@ jobs:
           EOF
           )
           # 优先复用已存在的 release（按 tag 查询）；不存在则用 API 创建，
-          # 响应自带 id。避免 create 后立刻列表查询因索引延迟拿不到 id，
-          # 导致 tauri-action 跳过上传。
-          release_id=$(gh api "repos/$REPO/releases/tags/$TAG" \
-            --jq '.id' 2>/dev/null || true)
+          # 响应自带 id。id 必须校验为纯数字——gh api 的错误 JSON 走标准
+          # 输出，捕获后会是 {"message":"Not Found",...} 这样的垃圾值。
+          release_id=$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.id' 2>/dev/null \
+            | grep -E '^[0-9]+$' || true)
           if [ -z "$release_id" ]; then
             release_id=$(gh api --method POST "repos/$REPO/releases" \
               -f tag_name="$TAG" -f name="AISwitch $TAG" -f body="$body" \
