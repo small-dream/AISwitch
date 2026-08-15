@@ -1,15 +1,16 @@
 name: Release
 
 # 推送 v* 标签触发：先升 package.json 与 tauri.conf.json 的 version，再
-# git tag vX.Y.Z && git push origin vX.Y.Z。产物先进入 Draft Release，
-# 人工核对后再发布。
+# git tag vX.Y.Z && git push origin vX.Y.Z。产物自动上传并直接发布，
+# 无需人工介入。
 on:
   push:
     tags: ['v*']
 
 jobs:
-  # 先单独创建唯一的 draft release，再由 matrix 上传，避免各 job 竞态
-  # 各自建 draft 导致产物分散到多个 release（v0.1.0 曾因此丢失 aarch64 包）。
+  # 先单独创建唯一的 release，再由 matrix 上传，避免各 job 竞态
+  # 各自建 release 导致产物分散（v0.1.0 曾因此丢失 aarch64 包）。
+  # 直接发布（非 draft），全流程无需人工介入。
   create-release:
     permissions:
       contents: write
@@ -17,7 +18,7 @@ jobs:
     outputs:
       release_id: ${{ steps.create.outputs.release_id }}
     steps:
-      - name: Create draft release
+      - name: Create release
         id: create
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -41,10 +42,10 @@ jobs:
           > - **Linux**：`.deb` / `.AppImage` 可直接安装，无拦截提示。
           EOF
           )
-          gh release create "$TAG" --repo "$REPO" --draft \
+          gh release create "$TAG" --repo "$REPO" \
             --title "AISwitch $TAG" --notes "$body"
           echo "release_id=$(gh api "repos/$REPO/releases" \
-            --jq ".[] | select(.tag_name == \"$TAG\" and .draft) | .id")" \
+            --jq ".[] | select(.tag_name == \"$TAG\") | .id")" \
             >> "$GITHUB_OUTPUT"
 
   publish-tauri:
