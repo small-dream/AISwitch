@@ -13,6 +13,8 @@ No more hand-editing `~/.claude/settings.json` or `~/.codex/config.toml`.
 
 English | [简体中文](./README.zh-CN.md)
 
+![AISwitch main window (dark theme)](docs/screenshot.jpg)
+
 </div>
 
 ---
@@ -106,6 +108,7 @@ Installers are currently unsigned. If you downloaded one from [Releases](https:/
   ```powershell
   Unblock-File .\AISwitch_<version>_x64-setup.exe
   ```
+
 - **Linux** — `.deb` / `.rpm` / `.AppImage` install directly without prompts.
 
 ## Project Structure

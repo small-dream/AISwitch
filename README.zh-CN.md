@@ -13,6 +13,8 @@
 
 [English](./README.md) | 简体中文
 
+![AISwitch 主界面（暗色主题）](docs/screenshot.jpg)
+
 </div>
 
 ---
