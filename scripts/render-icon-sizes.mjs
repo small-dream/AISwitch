@@ -1,5 +1,6 @@
 // 在 tauri icon 之后运行：用渲染器「原生尺寸」重写小尺寸 PNG 与 icon.ico，
 // 避免缩放导致的锯齿（每个尺寸独立 8x 超采样渲染，含 ICO 内嵌各层）。
+// icon.icns 用 'rounded' 风格原生重建：macOS 不自动裁圆，圆角必须画进图标里。
 import { readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -14,8 +15,8 @@ function pngSize(file) {
   return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) }
 }
 
-function renderPng(size) {
-  return encodePng(size, renderRgba(size, SS))
+function renderPng(size, style = 'square') {
+  return encodePng(size, renderRgba(size, SS, style))
 }
 
 function rewritePngSizes() {
@@ -59,3 +60,37 @@ rewritePngSizes()
 const icoFile = join(ICONS_DIR, 'icon.ico')
 writeFileSync(icoFile, buildIco([16, 24, 32, 48, 64, 128, 256]))
 console.log('icon.ico rebuilt with natively rendered layers (16-256)')
+
+/** icns：PNG 内嵌格式，对应 iconutil 的 iconset 全档位（1x + @2x），圆角风格 */
+function buildIcns() {
+  // [类型码, 渲染尺寸] —— @2x 档位直接按物理分辨率原生渲染，无需缩放
+  const entries = [
+    ['icp4', 16], // icon_16x16
+    ['ic11', 32], // icon_16x16@2x
+    ['icp5', 32], // icon_32x32
+    ['ic12', 64], // icon_32x32@2x
+    ['ic07', 128], // icon_128x128
+    ['ic13', 256], // icon_128x128@2x
+    ['ic08', 256], // icon_256x256
+    ['ic14', 512], // icon_256x256@2x
+    ['ic09', 512], // icon_512x512
+    ['ic10', 1024], // icon_512x512@2x
+  ]
+  const chunks = entries.map(([type, size]) => {
+    const png = renderPng(size, 'rounded')
+    const chunk = Buffer.alloc(8 + png.length)
+    chunk.write(type, 0, 'ascii')
+    chunk.writeUInt32BE(8 + png.length, 4)
+    png.copy(chunk, 8)
+    return chunk
+  })
+  const total = chunks.reduce((sum, c) => sum + c.length, 0) + 8
+  const header = Buffer.alloc(8)
+  header.write('icns', 0, 'ascii')
+  header.writeUInt32BE(total, 4)
+  return Buffer.concat([header, ...chunks])
+}
+
+const icnsFile = join(ICONS_DIR, 'icon.icns')
+writeFileSync(icnsFile, buildIcns())
+console.log('icon.icns rebuilt with rounded macOS style (16-1024)')

@@ -1,7 +1,8 @@
-// 应用图标渲染器：品牌靛蓝底 + 白色几何「AI」字形（全出血不透明，全平台兼容）
-// - 直接执行：生成 1024 源图 scripts/app-icon.png
+// 应用图标渲染器：品牌靛蓝底 + 白色几何「AI」字形（等宽笔画、无衬线）
+// - 直接执行：生成 1024 源图 scripts/app-icon.png（全出血方形，供 Windows/Linux/iOS/Android）
 // - 作为模块：导出 renderRgba/encodePng，供 render-icon-sizes.mjs 原生渲染各尺寸
-// 运行 npm run icon 会接着调用 tauri icon 与 render-icon-sizes 补齐原生小尺寸
+//   renderRgba 支持 'square'（全出血）与 'rounded'（macOS 圆角矩形 + 透明角落）两种风格
+// 运行 npm run icon 会接着调用 tauri icon 与 render-icon-sizes 补齐原生小尺寸与 icns
 import { writeFileSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
 import { dirname, join } from 'node:path'
@@ -46,33 +47,18 @@ function buildA() {
   ]
 }
 
-// 「I」：竖笔画 + 上下短横（确保读作大写 I）
+// 「I」：与 A 同宽（88）的纯竖笔画，无衬线，紧邻 A 时读作大写 I
 function buildI() {
-  const xL = 705
-  const xR = 793
+  const xL = 695
+  const xR = 783
   const y0 = 300
   const y1 = 724
-  const serif = 56
-  const serifHalf = 150
-  const mid = (xL + xR) / 2
   return [
     [
-      [xL, y0 + serif],
+      [xL, y0],
       [xL, y1],
       [xR, y1],
-      [xR, y0 + serif],
-    ],
-    [
-      [mid - serifHalf, y0],
-      [mid + serifHalf, y0],
-      [mid + serifHalf, y0 + serif],
-      [mid - serifHalf, y0 + serif],
-    ],
-    [
-      [mid - serifHalf, y1 - serif],
-      [mid + serifHalf, y1 - serif],
-      [mid + serifHalf, y1],
-      [mid - serifHalf, y1],
+      [xR, y0],
     ],
   ]
 }
@@ -86,6 +72,15 @@ const LETTERS = [buildA(), buildI()].map((shapes) => ({
 }))
 
 // ---------- 光栅化 ----------
+
+// macOS 圆角底：Apple 规范几何 —— 1024 画布中央 824×824 圆角矩形，半径 185
+const MAC = { half: 412, radius: 185, cx: 512, cy: 512 }
+
+function insideRounded(x, y) {
+  const dx = Math.max(Math.abs(x - MAC.cx) - (MAC.half - MAC.radius), 0)
+  const dy = Math.max(Math.abs(y - MAC.cy) - (MAC.half - MAC.radius), 0)
+  return dx * dx + dy * dy <= MAC.radius * MAC.radius
+}
 
 function inside(shapes, x, y) {
   let crossings = 0
@@ -104,8 +99,12 @@ function inside(shapes, x, y) {
   return crossings % 2 === 1
 }
 
-/** 以 size×size、ss×ss 超采样渲染，返回带 PNG 行过滤字节的原始数据 */
-export function renderRgba(size, ss = 8) {
+/**
+ * 以 size×size、ss×ss 超采样渲染，返回带 PNG 行过滤字节的原始数据
+ * style: 'square' 全出血不透明（Windows/Linux/iOS/Android）
+ *        'rounded' macOS 圆角底，圆角外为透明像素
+ */
+export function renderRgba(size, ss = 8, style = 'square') {
   const scale = CANVAS / size
   const rowLen = 1 + size * 4
   const raw = Buffer.alloc(size * rowLen)
@@ -113,34 +112,38 @@ export function renderRgba(size, ss = 8) {
     const rowStart = y * rowLen
     raw[rowStart] = 0
     for (let x = 0; x < size; x++) {
+      let bgHits = 0
       let hits = 0
-      for (const letter of LETTERS) {
-        const gx0 = x * scale
-        const gx1 = (x + 1) * scale
-        if (gx1 < letter.minX || gx0 > letter.maxX) {
-          continue
-        }
-        const gy0 = y * scale
-        const gy1 = (y + 1) * scale
-        if (gy1 < letter.minY || gy0 > letter.maxY) {
-          continue
-        }
-        for (let sy = 0; sy < ss; sy++) {
-          for (let sx = 0; sx < ss; sx++) {
-            const px = gx0 + ((sx + 0.5) / ss) * scale
-            const py = gy0 + ((sy + 0.5) / ss) * scale
+      const total = ss * ss
+      const gx0 = x * scale
+      const gy0 = y * scale
+      for (let sy = 0; sy < ss; sy++) {
+        for (let sx = 0; sx < ss; sx++) {
+          const px = gx0 + ((sx + 0.5) / ss) * scale
+          const py = gy0 + ((sy + 0.5) / ss) * scale
+          const bg = style === 'rounded' ? insideRounded(px, py) : true
+          if (!bg) {
+            continue
+          }
+          bgHits++
+          for (const letter of LETTERS) {
+            if (px < letter.minX || px > letter.maxX || py < letter.minY || py > letter.maxY) {
+              continue
+            }
             if (inside(letter.shapes, px, py)) {
               hits++
+              break
             }
           }
         }
       }
-      const frac = hits / (ss * ss)
+      const letterCov = hits / total
+      const bgCov = style === 'rounded' ? bgHits / total : 1
       const i = rowStart + 1 + x * 4
       for (let c = 0; c < 3; c++) {
-        raw[i + c] = Math.round(BRAND[c] + (WHITE[c] - BRAND[c]) * frac)
+        raw[i + c] = Math.round(BRAND[c] + (WHITE[c] - BRAND[c]) * letterCov)
       }
-      raw[i + 3] = 0xff
+      raw[i + 3] = Math.round(bgCov * 255)
     }
   }
   return raw
