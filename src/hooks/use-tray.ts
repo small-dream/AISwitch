@@ -7,15 +7,18 @@ import { switchService } from '@/app/composition'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { TARGET_TOOLS, TOOL_META } from '@/constants/tools'
 import { TRAY_SWITCH_EVENT, type TraySwitchPayload } from '@/constants/tray'
-import type { Preset, TargetTool } from '@/domain/entities/preset'
+import { isActivePreset } from '@/domain/rules/active-preset'
+import type { Preset, TargetTool, ToolStatus } from '@/domain/entities/preset'
 import { notifyDesktop } from '@/adapters/notify/desktop-notify'
 import { usePresets } from '@/hooks/use-presets'
+import { useToolStatus } from '@/hooks/use-tool-status'
 import { toastError, toastSuccess } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
 
 export interface TrayPresetItem {
   id: string
   name: string
+  active: boolean
 }
 
 export interface TraySection {
@@ -28,16 +31,23 @@ export interface TraySectionsPayload {
   sections: TraySection[]
 }
 
-/** 预设列表 → 托盘菜单分区（与 Rust TraySectionsPayload 契约一致） */
-export function toTraySections(presets: readonly Preset[]): TraySectionsPayload {
+/** 预设列表 → 托盘菜单分区（与 Rust TraySectionsPayload 契约一致），active 标记当前生效预设 */
+export function toTraySections(presets: readonly Preset[], statuses: readonly ToolStatus[]): TraySectionsPayload {
   return {
-    sections: TARGET_TOOLS.map((tool) => ({
-      tool,
-      label: TOOL_META[tool].label,
-      presets: presets
-        .filter((preset) => preset.tool === tool)
-        .map((preset) => ({ id: preset.id, name: preset.name })),
-    })),
+    sections: TARGET_TOOLS.map((tool) => {
+      const status = statuses.find((item) => item.tool === tool)
+      return {
+        tool,
+        label: TOOL_META[tool].label,
+        presets: presets
+          .filter((preset) => preset.tool === tool)
+          .map((preset) => ({
+            id: preset.id,
+            name: preset.name,
+            active: isActivePreset(preset, status),
+          })),
+      }
+    }),
   }
 }
 
@@ -67,16 +77,17 @@ async function performTraySwitch(
 /** 托盘集成（US-08）：预设变化同步菜单 + 监听托盘切换事件 */
 export function useTrayIntegration(): void {
   const { data: presets } = usePresets()
+  const { data: statuses } = useToolStatus()
   const queryClient = useQueryClient()
 
   useEffect(() => {
     if (!presets) {
       return
     }
-    void invoke('tray_update', { payload: toTraySections(presets) }).catch(() => {
+    void invoke('tray_update', { payload: toTraySections(presets, statuses ?? []) }).catch(() => {
       // 浏览器开发模式下没有托盘，静默忽略
     })
-  }, [presets])
+  }, [presets, statuses])
 
   useEffect(() => {
     let unlisten: (() => void) | undefined

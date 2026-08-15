@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use tauri::menu::{Menu, MenuBuilder, MenuItem, Submenu};
+use tauri::menu::{CheckMenuItem, Menu, MenuBuilder, MenuItem, Submenu};
 use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Emitter, Manager};
 
@@ -11,6 +11,9 @@ const SWITCH_PREFIX: &str = "switch:";
 pub struct TrayPresetItem {
     pub id: String,
     pub name: String,
+    /// 是否为该工具当前生效的预设（勾选态）
+    #[serde(default)]
+    pub active: bool,
 }
 
 #[derive(Deserialize)]
@@ -98,7 +101,14 @@ fn build_section(app: &AppHandle, section: &TraySection) -> tauri::Result<Submen
     }
     for preset in &section.presets {
         let id = format!("{SWITCH_PREFIX}{}:{}", section.tool, preset.id);
-        submenu.append(&MenuItem::with_id(app, id, &preset.name, true, None::<&str>)?)?;
+        submenu.append(&CheckMenuItem::with_id(
+            app,
+            id,
+            &preset.name,
+            true,
+            preset.active,
+            None::<&str>,
+        )?)?;
     }
     Ok(submenu)
 }
