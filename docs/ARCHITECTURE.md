@@ -53,7 +53,7 @@ graph TB
     end
 
     subgraph L5["🦀 Tauri 薄壳"]
-        FS["fs / dialog / shell 插件 + commands/"]
+        FS["fs 插件 + commands/"]
     end
 
     OS["OS 配置文件<br/>~/.claude/settings.json<br/>~/.codex/config.toml + auth.json (+ models.json)<br/>~/.aiswitch/*"]
@@ -102,7 +102,7 @@ export interface ConfigTarget {
 
 **D4 · 写入三段式**：`apply = backup → 原子写（临时文件+替换）→ verify`，任一步失败自动 rollback。
 
-**D5 · Rust 薄壳原则**：优先使用官方 fs/dialog/shell 插件；确需自定义命令时按组放入 `src-tauri/src/commands/`，每命令组一个小文件，逻辑保持 ≤ 20 行。
+**D5 · Rust 薄壳原则**：优先使用官方插件（当前仅 fs / http / notification / single-instance，未用的插件一律不注册）；确需自定义命令时按组放入 `src-tauri/src/commands/`，每命令组一个小文件，逻辑保持 ≤ 20 行。
 
 **D6 · 托盘数据流（US-08）**：业务数据仅存 TS 侧——前端经 `tray_update` 命令推送预设快照、Rust（`src-tauri/src/tray.rs`）只做菜单装配；托盘点击经 `tray://switch` 事件回到前端，复用 `SwitchService` 单一切换链路。Rust 不持有业务状态，切换语义与主窗口完全一致。
 
@@ -195,9 +195,11 @@ sequenceDiagram
 
 ## 7. 安全模型
 
-1. **最小权限**：fs 读写仅限 `~/.claude`、`~/.codex`、`~/.aiswitch` 三目录；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；连通性测试经 tauri-plugin-http，因供应商地址由用户预设决定，scope 放开 `https://**` / `http://**`；
-2. **API Key**：仅本地存储（v0.1 JSON + 收紧文件权限；v0.2 评估 OS Keychain，见 PRD §7.3）；
-3. **CSP**：当前开发期为 null，发布前必须配置严格 CSP（记入发布检查单）。
+1. **最小权限**：fs 读写仅限 `~/.claude`、`~/.codex`、`~/.aiswitch` 三目录；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；未使用的插件（shell / dialog 等）一律不注册；
+2. **HTTP 出口**：连通性测试经 tauri-plugin-http，scope 为 `https://**` + 本机回环 `http`（`localhost` / `127.0.0.1` / `[::1]`，含端口通配）；明文 http 出口被 capability 与 domain 规则（`domain/rules/base-url.ts`，表单与探测器共用）双重拦截，防止 API Key 明文外发；
+3. **文件权限**：所有含密钥文件（presets.json、备份、settings.json、auth.json、config.toml）落盘时经 `restrict_to_owner` 命令收紧到 0600，`~/.aiswitch` 目录 0700（见 `adapters/fs/atomic-write.ts` 与 `commands/permissions.rs`）；写路径收紧失败视为硬失败（回滚链路兜底），读路径 best-effort 收紧历史文件；
+4. **API Key**：仅本地存储（v0.1 JSON + 0600 文件权限；v0.2 评估 OS Keychain，见 PRD §7.3）；
+5. **CSP**：已配置严格 CSP（`script-src 'self'`，IPC 白名单），探测请求在 Rust 侧发起、不占 webview connect-src。
 
 ## 8. 环境要求与开发命令
 
