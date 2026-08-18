@@ -18,14 +18,13 @@ describe('isAllowedBaseUrl', () => {
     expect(isAllowedBaseUrl('http://localhost:11434')).toBe(true)
     expect(isAllowedBaseUrl('http://127.0.0.1')).toBe(true)
     expect(isAllowedBaseUrl('http://127.0.0.1:3000')).toBe(true)
-    expect(isAllowedBaseUrl('http://[::1]')).toBe(true)
-    expect(isAllowedBaseUrl('http://[::1]:8080')).toBe(true)
   })
 
   it('http 非回环一律拒绝', () => {
     expect(isAllowedBaseUrl('http://example.com')).toBe(false)
     expect(isAllowedBaseUrl('http://192.168.1.5:8080')).toBe(false)
-    expect(isAllowedBaseUrl('http://[::2]')).toBe(false)
+    expect(isAllowedBaseUrl('http://[::1]')).toBe(false)
+    expect(isAllowedBaseUrl('http://[::1]:8080')).toBe(false)
   })
 
   it('回环前缀伪装必须拒绝', () => {
