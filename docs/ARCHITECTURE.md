@@ -204,7 +204,7 @@ sequenceDiagram
 ## 7. 安全模型
 
 1. **最小权限**：fs 读写仅限 `~/.claude`、`~/.codex`、`~/.aiswitch` 三目录；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；未使用的插件（shell / dialog 等）一律不注册；
-2. **HTTP 出口**：连通性测试经 tauri-plugin-http，scope 为 `https://**` + 本机回环 `http`（`localhost` / `127.0.0.1` / `[::1]`，含端口通配）；明文 http 出口被 capability 与 domain 规则（`domain/rules/base-url.ts`，表单与探测器共用）双重拦截，防止 API Key 明文外发；
+2. **HTTP 出口**：连通性测试经 tauri-plugin-http，scope 为 `https://**` + 本机回环 `http`（`localhost` / `127.0.0.1`，含端口通配；Tauri URL pattern 不支持 IPv6 字面量，故不含 `[::1]`）；明文 http 出口被 capability 与 domain 规则（`domain/rules/base-url.ts`，表单与探测器共用）双重拦截，防止 API Key 明文外发；
 3. **文件权限**：所有含密钥文件（presets.json、备份、基线副本、settings.json、auth.json、config.toml）落盘时经 `restrict_to_owner` 命令收紧到 0600，`~/.aiswitch` 目录 0700（见 `adapters/fs/atomic-write.ts` 与 `commands/permissions.rs`）；写路径收紧失败视为硬失败（回滚链路兜底），读路径 best-effort 收紧历史文件；
 4. **API Key**：仅本地存储（v0.1 JSON + 0600 文件权限；v0.2 评估 OS Keychain，见 PRD §7.3）；
 5. **CSP**：已配置严格 CSP（`script-src 'self'`，IPC 白名单），探测请求在 Rust 侧发起、不占 webview connect-src。
