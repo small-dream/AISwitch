@@ -21,18 +21,19 @@ function connectivityText(result: ConnectivityResult, t: TFn): string {
   if (result.status === 'ok') {
     return t('connectivity.ok', { latency: String(result.latencyMs ?? '-') })
   }
-  if (result.status === 'invalid-key') {
-    return t('connectivity.invalidKey')
-  }
-  if (result.status === 'unreachable') {
-    return t('connectivity.unreachable')
-  }
-  return t('connectivity.unsupported')
+  return result.message
 }
 
 /** 信息列：名称/供应商/生效标记 + 模型与密钥摘要 + 连通性结果 */
-function PresetRowInfo({ preset, isActive }: { preset: Preset; isActive: boolean }) {
-  const test = useConnectivityTest()
+function PresetRowInfo({
+  preset,
+  isActive,
+  result,
+}: {
+  preset: Preset
+  isActive: boolean
+  result: ConnectivityResult | undefined
+}) {
   const t = useT()
   return (
     <div className="min-w-0">
@@ -48,9 +49,9 @@ function PresetRowInfo({ preset, isActive }: { preset: Preset; isActive: boolean
       </div>
       <p className="mt-1 truncate font-mono text-xs text-app-muted">{preset.model}</p>
       <p className="mt-0.5 font-mono text-[11px] text-app-faint">{maskApiKey(preset.apiKey)}</p>
-      {test.data ? (
-        <p className={clsx('mt-1 text-[11px]', STATUS_CLASS[test.data.status])}>
-          {connectivityText(test.data, t)}
+      {result ? (
+        <p className={clsx('mt-1 text-[11px]', STATUS_CLASS[result.status])}>
+          {connectivityText(result, t)}
         </p>
       ) : null}
     </div>
@@ -77,7 +78,7 @@ export function PresetRow({
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <PresetRowInfo preset={preset} isActive={isActive} />
+        <PresetRowInfo preset={preset} isActive={isActive} result={test.data} />
         <PresetRowActions
           preset={preset}
           testPending={test.isPending}
