@@ -26,11 +26,12 @@ export class ConnectivityProber {
         headers: this.buildHeaders(preset),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })
-      return this.fromStatus(response.status, Date.now() - startedAt)
+      return this.fromStatus(response.status, Date.now() - startedAt, url)
     } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error)
       return {
         status: 'unreachable',
-        message: error instanceof Error ? `无法连通：${error.message}` : '无法连通',
+        message: `无法连通：${detail}（探测 URL: ${url}）`,
       }
     }
   }
@@ -45,7 +46,7 @@ export class ConnectivityProber {
     return headers
   }
 
-  private fromStatus(status: number, latencyMs: number): ConnectivityResult {
+  private fromStatus(status: number, latencyMs: number, url: string): ConnectivityResult {
     if (status >= 200 && status < 300) {
       return { status: 'ok', latencyMs, message: `连通正常（${String(latencyMs)}ms）` }
     }
@@ -55,6 +56,6 @@ export class ConnectivityProber {
     if (status === 404 || status === 405) {
       return { status: 'unsupported', message: '该供应商不支持探测接口，请直接切换验证' }
     }
-    return { status: 'unreachable', message: `服务异常（HTTP ${String(status)}）` }
+    return { status: 'unreachable', message: `服务异常（HTTP ${String(status)}，探测 URL: ${url}）` }
   }
 }
