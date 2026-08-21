@@ -43,6 +43,7 @@ export const zhCN = {
   'presetRow.applying': '切换中…',
   'presetRow.confirmDelete': '确认删除?',
   'presetRow.deleted': '预设已删除',
+  'presetRow.duplicate': '复制',
   'presetRow.switchedTo': '已切换到 {name}',
   'connectivity.ok': '连通正常（{latency}ms）',
   'connectivity.invalidKey': 'API Key 无效或无权限',
@@ -92,6 +93,7 @@ export const zhCN = {
   // 预设表单
   'presetForm.title.edit': '编辑预设',
   'presetForm.title.import': '导入配置为预设',
+  'presetForm.title.duplicate': '复制预设',
   'presetForm.title.create': '新建预设',
   'presetForm.targetTool': '目标工具',
   'presetForm.name': '预设名称',
@@ -109,6 +111,8 @@ export const zhCN = {
   'presetForm.metadataLabel': '模型元数据 JSON',
   'presetForm.draftKeyNotice':
     '已从本机配置读取 API Key，保存后将写入 ~/.aiswitch/presets.json（仅当前用户可读）。',
+  'presetForm.duplicateKeyNotice':
+    '已复制原预设的 API Key，保存后将写入 ~/.aiswitch/presets.json（仅当前用户可读）。',
   'presetForm.updated': '预设已更新',
   'presetForm.created': '预设已创建',
 

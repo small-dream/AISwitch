@@ -1,5 +1,7 @@
+import { Copy } from 'lucide-react'
+
 import type { Preset } from '@/domain/entities/preset'
-import { useT } from '@/i18n/index'
+import { useT, type TFn } from '@/i18n/index'
 import { useConfirmAction } from '@/hooks/use-confirm-action'
 import { useRemovePreset } from '@/hooks/use-presets'
 import { useSwitchPreset } from '@/hooks/use-switch'
@@ -42,17 +44,42 @@ function useApplyAction(preset: Preset) {
   return { switchMutation, apply }
 }
 
-/** 预设操作区：测试 / 应用 / 编辑 / 删除（删除为两段式确认）；测试结果展示在信息列 */
+/** 编辑 / 复制 两个次级操作按钮 */
+function EditDuplicateActions({
+  onEdit,
+  onDuplicate,
+  t,
+}: {
+  onEdit: () => void
+  onDuplicate: () => void
+  t: TFn
+}) {
+  return (
+    <>
+      <Button size="sm" variant="secondary" onClick={onEdit}>
+        {t('common.edit')}
+      </Button>
+      <Button size="sm" variant="secondary" onClick={onDuplicate}>
+        <Copy className="h-3.5 w-3.5" aria-hidden />
+        {t('presetRow.duplicate')}
+      </Button>
+    </>
+  )
+}
+
+/** 预设操作区：测试 / 应用 / 编辑 / 复制 / 删除（删除为两段式确认）；测试结果展示在信息列 */
 export function PresetRowActions({
   preset,
   testPending,
   onTest,
   onEdit,
+  onDuplicate,
 }: {
   preset: Preset
   testPending: boolean
   onTest: () => void
   onEdit: (preset: Preset) => void
+  onDuplicate: (preset: Preset) => void
 }) {
   const { switchMutation, apply } = useApplyAction(preset)
   const { removeMutation, remove } = useRemoveAction(preset)
@@ -66,15 +93,15 @@ export function PresetRowActions({
       <Button size="sm" disabled={switchMutation.isPending} onClick={apply}>
         {switchMutation.isPending ? t('presetRow.applying') : t('presetRow.apply')}
       </Button>
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={() => {
+      <EditDuplicateActions
+        onEdit={() => {
           onEdit(preset)
         }}
-      >
-        {t('common.edit')}
-      </Button>
+        onDuplicate={() => {
+          onDuplicate(preset)
+        }}
+        t={t}
+      />
       <Button
         size="sm"
         variant="danger"

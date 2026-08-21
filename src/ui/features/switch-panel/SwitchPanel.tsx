@@ -1,11 +1,11 @@
 import clsx from 'clsx'
 import { Layers } from 'lucide-react'
-import { useState } from 'react'
 
 import { TARGET_TOOLS, TOOL_META } from '@/constants/tools'
-import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
+import type { PresetInput, TargetTool } from '@/domain/entities/preset'
 import { useT } from '@/i18n/index'
 import { useImportPreset } from '@/hooks/use-import-preset'
+import { usePresetDialog } from '@/hooks/use-preset-dialog'
 import { useUIStore } from '@/stores/ui-store'
 import { toastError } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
@@ -87,21 +87,7 @@ export function SwitchPanel() {
   const t = useT()
   const activeTool = useUIStore((state) => state.activeTool)
   const setActiveTool = useUIStore((state) => state.setActiveTool)
-  const [editing, setEditing] = useState<Preset | null>(null)
-  const [draft, setDraft] = useState<PresetInput | null>(null)
-  const [formOpen, setFormOpen] = useState(false)
-
-  const openCreate = () => {
-    setEditing(null)
-    setDraft(null)
-    setFormOpen(true)
-  }
-
-  const openImported = (input: PresetInput) => {
-    setEditing(null)
-    setDraft(input)
-    setFormOpen(true)
-  }
+  const dialog = usePresetDialog()
 
   return (
     <Card className="p-4">
@@ -110,28 +96,24 @@ export function SwitchPanel() {
           <Layers className="h-4 w-4 text-app-accent" aria-hidden />
           {t('switchPanel.title')}
         </h2>
-        <PanelActions tool={activeTool} onCreate={openCreate} onImported={openImported} />
+        <PanelActions
+          tool={activeTool}
+          onCreate={dialog.openCreate}
+          onImported={dialog.openImported}
+        />
       </div>
 
       <ToolTabs activeTool={activeTool} onChange={setActiveTool} />
 
-      <PresetList
-        tool={activeTool}
-        onEdit={(preset) => {
-          setEditing(preset)
-          setDraft(null)
-          setFormOpen(true)
-        }}
-      />
+      <PresetList tool={activeTool} onEdit={dialog.openEdit} onDuplicate={dialog.openDuplicate} />
 
       <PresetDialog
-        open={formOpen}
-        preset={editing}
-        draft={draft}
+        open={dialog.open}
+        preset={dialog.editing}
+        draft={dialog.draft}
+        duplicating={dialog.duplicating}
         defaultTool={activeTool}
-        onClose={() => {
-          setFormOpen(false)
-        }}
+        onClose={dialog.close}
       />
     </Card>
   )

@@ -42,17 +42,34 @@ function useSubmitPreset(preset: Preset | null, onClose: () => void) {
   return { submitting: create.isPending || update.isPending, submit }
 }
 
-/** 预设创建/编辑/导入弹窗（PRD US-02 / US-07） */
+/** 弹窗标题：编辑 > 复制 > 导入 > 新建（按场景优先级） */
+function dialogTitleKey(
+  preset: Preset | null,
+  duplicating: boolean,
+  draft: PresetInput | null
+): TranslationKey {
+  if (preset) {
+    return 'presetForm.title.edit'
+  }
+  if (duplicating) {
+    return 'presetForm.title.duplicate'
+  }
+  return draft ? 'presetForm.title.import' : 'presetForm.title.create'
+}
+
+/** 预设创建/编辑/导入/复制弹窗（PRD US-02 / US-07） */
 export function PresetDialog({
   open,
   preset,
   draft,
+  duplicating,
   defaultTool,
   onClose,
 }: {
   open: boolean
   preset: Preset | null
   draft: PresetInput | null
+  duplicating: boolean
   defaultTool: TargetTool
   onClose: () => void
 }) {
@@ -63,12 +80,7 @@ export function PresetDialog({
     return null
   }
 
-  const titleKey: TranslationKey = preset
-    ? 'presetForm.title.edit'
-    : draft
-      ? 'presetForm.title.import'
-      : 'presetForm.title.create'
-  const title = t(titleKey)
+  const title = t(dialogTitleKey(preset, duplicating, draft))
 
   return (
     <div
@@ -84,6 +96,7 @@ export function PresetDialog({
         <PresetForm
           preset={preset}
           draft={draft}
+          isDuplicate={duplicating}
           defaultTool={defaultTool}
           submitting={submitting}
           onSubmit={submit}

@@ -131,7 +131,7 @@ AISwitch/
 │   ├── services/                # 应用服务：switch / detect / preset / backup / restore
 │   ├── domain/
 │   │   ├── entities/            # Preset、ToolStatus 类型与不变式
-│   │   ├── rules/               # 纯函数：merge-config / diff-config / validate / active-preset
+│   │   ├── rules/               # 纯函数：merge-config / diff-config / validate / active-preset / import-preset / duplicate-preset
 │   │   └── schemas/             # Zod：claude-config / codex-config / preset
 │   ├── adapters/
 │   │   ├── claude/              # reader.ts / writer.ts / transformer.ts

@@ -37,6 +37,16 @@ vi.mock('@/stores/toast-store', () => ({
 }))
 
 describe('PresetRow 连通性测试', () => {
+  it('点击复制按钮触发复制回调', () => {
+    const onDuplicate = vi.fn()
+    const preset = makePreset({ name: 'GLM-4.6' })
+    render(<PresetRow preset={preset} onEdit={vi.fn()} onDuplicate={onDuplicate} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '复制' }))
+
+    expect(onDuplicate).toHaveBeenCalledWith(preset)
+  })
+
   beforeEach(() => {
     testState.data = undefined
     testState.isPending = false
@@ -45,7 +55,7 @@ describe('PresetRow 连通性测试', () => {
 
   it('点击测试按钮触发探测', () => {
     const preset = makePreset({ name: 'GLM-4.6' })
-    render(<PresetRow preset={preset} onEdit={vi.fn()} />)
+    render(<PresetRow preset={preset} onEdit={vi.fn()} onDuplicate={vi.fn()} />)
 
     fireEvent.click(screen.getByRole('button', { name: '测试' }))
 
@@ -55,7 +65,7 @@ describe('PresetRow 连通性测试', () => {
   it('测试结果内联展示在信息列', () => {
     testState.data = { status: 'ok', latencyMs: 123, message: '连通正常（123ms）' }
     const preset = makePreset({ name: 'GLM-4.6' })
-    render(<PresetRow preset={preset} onEdit={vi.fn()} />)
+    render(<PresetRow preset={preset} onEdit={vi.fn()} onDuplicate={vi.fn()} />)
 
     expect(screen.getByText('连通正常（123ms）')).toBeInTheDocument()
   })
@@ -63,7 +73,7 @@ describe('PresetRow 连通性测试', () => {
   it('探测中禁用测试按钮', () => {
     testState.isPending = true
     const preset = makePreset({ name: 'GLM-4.6' })
-    render(<PresetRow preset={preset} onEdit={vi.fn()} />)
+    render(<PresetRow preset={preset} onEdit={vi.fn()} onDuplicate={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: '测试中…' })).toBeDisabled()
   })
@@ -74,7 +84,7 @@ describe('PresetRow 连通性测试', () => {
       message: '已阻止探测：明文 http 地址仅允许本机回环，请改用 https',
     }
     const preset = makePreset({ name: 'GLM-4.6' })
-    render(<PresetRow preset={preset} onEdit={vi.fn()} />)
+    render(<PresetRow preset={preset} onEdit={vi.fn()} onDuplicate={vi.fn()} />)
 
     expect(
       screen.getByText('已阻止探测：明文 http 地址仅允许本机回环，请改用 https')

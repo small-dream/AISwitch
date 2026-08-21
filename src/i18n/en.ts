@@ -47,6 +47,7 @@ export const en: Record<TranslationKey, string> = {
   'presetRow.applying': 'Switching…',
   'presetRow.confirmDelete': 'Delete?',
   'presetRow.deleted': 'Preset deleted',
+  'presetRow.duplicate': 'Duplicate',
   'presetRow.switchedTo': 'Switched to {name}',
   'connectivity.ok': 'OK ({latency}ms)',
   'connectivity.invalidKey': 'API key invalid or unauthorized',
@@ -98,6 +99,7 @@ export const en: Record<TranslationKey, string> = {
   // Preset form
   'presetForm.title.edit': 'Edit preset',
   'presetForm.title.import': 'Import config as preset',
+  'presetForm.title.duplicate': 'Duplicate preset',
   'presetForm.title.create': 'New preset',
   'presetForm.targetTool': 'Target tool',
   'presetForm.name': 'Preset name',
@@ -116,6 +118,8 @@ export const en: Record<TranslationKey, string> = {
   'presetForm.metadataLabel': 'Model metadata JSON',
   'presetForm.draftKeyNotice':
     'The API key was read from your local config. On save it will be written to ~/.aiswitch/presets.json (readable only by the current user).',
+  'presetForm.duplicateKeyNotice':
+    'The API key was copied from the original preset. On save it will be written to ~/.aiswitch/presets.json (readable only by the current user).',
   'presetForm.updated': 'Preset updated',
   'presetForm.created': 'Preset created',
 

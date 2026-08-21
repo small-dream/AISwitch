@@ -61,9 +61,11 @@ function PresetRowInfo({
 export function PresetRow({
   preset,
   onEdit,
+  onDuplicate,
 }: {
   preset: Preset
   onEdit: (preset: Preset) => void
+  onDuplicate: (preset: Preset) => void
 }) {
   const test = useConnectivityTest()
   const isActive = useIsPresetActive(preset)
@@ -86,6 +88,7 @@ export function PresetRow({
             test.mutate(preset)
           }}
           onEdit={onEdit}
+          onDuplicate={onDuplicate}
         />
       </div>
     </li>

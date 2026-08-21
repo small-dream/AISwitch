@@ -9,9 +9,11 @@ import { PresetRow } from './PresetRow'
 export function PresetList({
   tool,
   onEdit,
+  onDuplicate,
 }: {
   tool: TargetTool
   onEdit: (preset: Preset) => void
+  onDuplicate: (preset: Preset) => void
 }) {
   const { data: presets, isLoading } = usePresets()
   const t = useT()
@@ -39,7 +41,7 @@ export function PresetList({
   return (
     <ul className="space-y-2">
       {items.map((preset) => (
-        <PresetRow key={preset.id} preset={preset} onEdit={onEdit} />
+        <PresetRow key={preset.id} preset={preset} onEdit={onEdit} onDuplicate={onDuplicate} />
       ))}
     </ul>
   )
