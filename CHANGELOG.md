@@ -2,6 +2,18 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.12] - 2026-08-22
+
+### Added
+
+- Added project-level configuration for Claude Code and Codex CLI with directory selection, priority display, and persistent project records.
+- Added direct removal from the configured-project list without selecting the directory again.
+
+### Changed
+
+- Stabilized project configuration writes by isolating configuration directories from Vite development file watching.
+- Shortened the removal action label to “Remove config” and aligned the action button height with the project write button.
+
 ## [0.1.11] - 2026-08-22
 
 ### Fixed

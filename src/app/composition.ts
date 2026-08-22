@@ -7,6 +7,7 @@ import { BaselineManager } from '@/adapters/baseline/baseline-manager'
 import { BundleRepository } from '@/adapters/bundles/bundle-repository'
 import { tauriFs } from '@/adapters/fs/tauri-fs-port'
 import { PresetRepository } from '@/adapters/presets/preset-repository'
+import { ProjectConfigRepository } from '@/adapters/projects/project-config-repository'
 import { registerTarget } from '@/adapters/target-registry'
 import { detectVscodeExtensions } from '@/adapters/vscode/vscode-detector'
 import { createTauriUpdater, isTauriRuntime } from '@/adapters/updater/tauri-updater'
@@ -20,6 +21,8 @@ import { PresetService } from '@/services/preset-service'
 import { RestoreService } from '@/services/restore-service'
 import { SwitchService } from '@/services/switch-service'
 import { UpdateService } from '@/services/update-service'
+import { ProjectConfigService } from '@/services/project-config-service'
+import { ProjectDirectoryService } from '@/services/project-directory-service'
 
 /**
  * 应用组合根：全项目唯一允许同时接触「具体实现」的位置。
@@ -60,3 +63,6 @@ export const vscodePresenceService = {
   detect: () => detectVscodeExtensions(tauriFs),
 }
 export const updateService = new UpdateService(createTauriUpdater(), isTauriRuntime)
+export const projectConfigRepository = new ProjectConfigRepository(tauriFs)
+export const projectConfigService = new ProjectConfigService(tauriFs, presetRepository, projectConfigRepository)
+export const projectDirectoryService = new ProjectDirectoryService()

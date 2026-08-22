@@ -48,7 +48,7 @@ graph TB
         REG["targetRegistry 工具注册表"]
         CA["adapters/claude<br/>ClaudeConfigTarget"]
         CO["adapters/codex<br/>CodexConfigTarget"]
-        PR["adapters/presets · adapters/bundles<br/>PresetRepository · BundleRepository"]
+        PR["adapters/presets · adapters/bundles · project-config<br/>PresetRepository · BundleRepository · ProjectConfigService"]
         BK["adapters/backup<br/>BackupManager"]
     end
 
@@ -191,6 +191,9 @@ sequenceDiagram
 「一键还原」数据流（US-16，入口在顶栏 RestoreButton）：
 
 - **捕获**：`SwitchService.switch()` 在 `apply()` 之前调用 `BaselineManager.captureIfAbsent(tool)`，把受管文件的安装前状态（内容副本 / absent 标记 / degraded 标记）写入 `~/.aiswitch/baseline/`（独立于 backups 目录，不受滚动清理影响）；捕获失败仅降级告警，不阻断切换。**副本经 `writeTextAtomic` 落盘**——基线是「精确还原」的锚点，半截副本一旦被还原将把坏配置写回磁盘，代价高于一次写失败。
+- **项目级配置（US-21）**：`ProjectConfigService` 接收 HOME 相对目录与预设，复用 Claude/Codex transformer 写入 `<project>/.claude/settings.json` 或 `<project>/.codex/config.toml + auth.json (+ models.json)`；不调用全局 target、不修改全局文件。项目配置存在时由 UI 标注「项目 > 全局」优先级，路径规则拒绝绝对路径与 `..` 逃逸。
+- **项目配置记录与移除**：`ProjectConfigRepository` 将已写入的 HOME 相对目录与工具索引到 `~/.aiswitch/project-configs.json`，不保存配置内容或密钥；`ProjectConfigService.remove()` 复用 `stripManagedClaudeKeys` / `stripManagedCodexConfig` / `stripManagedCodexAuth`，只删除 AISwitch 托管键并同步删除索引记录；剥离后为空才删除文件，Codex `models.json` 不自动删除。UI 列表直接使用记录目录执行移除，无需重新选择目录。
+- **开发监听隔离**：Vite watch 忽略 `.claude`、`.codex`、`.aiswitch` 配置目录，项目配置写入不会触发开发界面整页刷新。
 - **计划**：`RestoreService.plan()` 只读不写——逐文件判定动作（精确还原 / 近似还原最早备份 / 剥离托管键 / 删除 / 跳过），UI 预览如实展示近似性。
 - **执行**：`RestoreService.execute()` 逐文件 try/catch（单文件失败不中断、结果如实上报）；仅删除 absent 标记的文件，目录仅在「应用创建 + 已空」时移除；还原重建目录时仅对新创建目录收紧权限（0700），**用户已有目录权限不被改动**；计划与执行间的竞态（文件已不存在）按已达成目标跳过；`~/.aiswitch` 完全不动。
 - **交互**：三步弹窗（预览 → 输入「还原」确认 → 结果），经 `hooks/use-restore.ts` 的 Query/Mutation，与既有 hooks 模式一致。

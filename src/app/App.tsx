@@ -7,6 +7,7 @@ import { useApplyLocale } from '@/i18n/index'
 import { useApplyTheme } from '@/hooks/use-theme'
 import { useTrayIntegration } from '@/hooks/use-tray'
 import { useGlobalShortcuts } from '@/hooks/use-global-shortcuts'
+import { ProjectConfigPanel } from '@/ui/features/project-config/ProjectConfigPanel'
 
 export function App() {
   useApplyTheme()
@@ -20,6 +21,7 @@ export function App() {
         <StatusCards />
         <SwitchPanel />
         <BundlePanel />
+        <ProjectConfigPanel />
       </div>
       <Toaster />
     </MainLayout>
