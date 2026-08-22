@@ -116,6 +116,25 @@ export const zhCN = {
   'presetForm.updated': '预设已更新',
   'presetForm.created': '预设已创建',
 
+  // 组合切换
+  'bundle.title': '组合切换',
+  'bundle.title.create': '新建组合',
+  'bundle.title.edit': '编辑组合',
+  'bundle.create': '新建组合',
+  'bundle.empty': '暂无组合预设。创建组合后可一键切换 Claude Code 与 Codex CLI',
+  'bundle.name': '组合名称',
+  'bundle.namePlaceholder': '如：全家 GLM 省钱方案',
+  'bundle.noSwitch': '不切换',
+  'bundle.apply': '应用',
+  'bundle.switching': '切换中…',
+  'bundle.atLeastOne': '请至少选择一个工具的预设',
+  'bundle.confirmDelete': '确认删除该组合?',
+  'bundle.deleted': '组合已删除',
+  'bundle.created': '组合已创建',
+  'bundle.updated': '组合已更新',
+  'bundle.switchedAll': '已切换 {name}（{count} 个工具）',
+  'bundle.switchFailed': '{tool} 切换失败，请查看详情',
+
   // 表单校验（Zod）
   'validation.urlInvalid': '请输入合法 URL 或留空',
   'validation.urlScheme': '仅支持 https 地址；http 仅允许本机回环（localhost / 127.0.0.1 / [::1]）',
