@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.9] - 2026-08-22
+
+### Fixed
+
+- Embedded the updater public key in the Tauri configuration so release builds can decode it reliably.
+
 ## [0.1.8] - 2026-08-22
 
 ### Added
