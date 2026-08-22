@@ -111,7 +111,7 @@ jobs:
           includeUpdaterJson: true
 
   publish-release:
-    needs: publish-tauri
+    needs: [create-release, publish-tauri]
     permissions:
       contents: write
     runs-on: ubuntu-22.04
@@ -119,8 +119,7 @@ jobs:
       - name: Publish complete release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          TAG: ${{ github.ref_name }}
+          RELEASE_ID: ${{ needs.create-release.outputs.release_id }}
         run: |
-          release_id=$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.id')
-          gh api --method PATCH "repos/$REPO/releases/$release_id" -F draft=false >/dev/null
+          [[ "$RELEASE_ID" =~ ^[0-9]+$ ]]
+          gh api --method PATCH "repos/${{ github.repository }}/releases/$RELEASE_ID" -F draft=false >/dev/null

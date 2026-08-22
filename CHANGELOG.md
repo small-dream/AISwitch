@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.11] - 2026-08-22
+
+### Fixed
+
+- Reused the draft release ID when publishing the completed GitHub Release.
+
 ## [0.1.10] - 2026-08-22
 
 ### Fixed
