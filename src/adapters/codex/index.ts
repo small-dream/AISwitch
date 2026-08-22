@@ -58,7 +58,9 @@ async function verifyCodex(fs: FileSystemPort, preset: Preset): Promise<boolean>
       return false
     }
     const auth = await readCodexAuth(fs)
-    const authOk = isRecord(auth) && auth[CODEX_AUTH_KEYS.apiKey] === preset.apiKey
+    const authOk = preset.apiKey
+      ? isRecord(auth) && auth[CODEX_AUTH_KEYS.apiKey] === preset.apiKey
+      : !isRecord(auth) || !(CODEX_AUTH_KEYS.apiKey in auth)
     return authOk && (await verifyCodexCatalog(fs, preset, config))
   } catch {
     return false

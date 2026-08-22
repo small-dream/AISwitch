@@ -37,11 +37,16 @@ export class ConnectivityProber {
   }
 
   private buildHeaders(preset: Preset): Record<string, string> {
-    const headers: Record<string, string> = { Authorization: `Bearer ${preset.apiKey}` }
+    const headers: Record<string, string> = {}
+    if (preset.apiKey) {
+      headers.Authorization = `Bearer ${preset.apiKey}`
+    }
     if (preset.tool === 'claude-code') {
       // 官方 API 需要 version 头；中转站两者兼容，同时携带 x-api-key 最大化兼容
       headers['anthropic-version'] = '2023-06-01'
-      headers['x-api-key'] = preset.apiKey
+      if (preset.apiKey) {
+        headers['x-api-key'] = preset.apiKey
+      }
     }
     return headers
   }
@@ -56,6 +61,9 @@ export class ConnectivityProber {
     if (status === 404 || status === 405) {
       return { status: 'unsupported', message: '该供应商不支持探测接口，请直接切换验证' }
     }
-    return { status: 'unreachable', message: `服务异常（HTTP ${String(status)}，探测 URL: ${url}）` }
+    return {
+      status: 'unreachable',
+      message: `服务异常（HTTP ${String(status)}，探测 URL: ${url}）`,
+    }
   }
 }

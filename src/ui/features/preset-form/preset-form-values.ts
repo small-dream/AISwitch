@@ -38,10 +38,16 @@ export function toFormValues(
 export function toPresetInput(values: PresetFormValues): PresetInput {
   const smallFastModel =
     values.tool === 'claude-code' && values.smallFastModel ? values.smallFastModel : undefined
-  const { modelMetadataJson, ...rest } = values
+  const { modelMetadataJson, apiKey, ...rest } = values
   const modelMetadata =
     values.tool === 'codex'
       ? parseModelMetadataField(modelMetadataJson ?? '', values.model).entry
       : undefined
-  return { ...rest, baseUrl: values.baseUrl || undefined, smallFastModel, modelMetadata }
+  return {
+    ...rest,
+    apiKey: apiKey === '' ? undefined : apiKey,
+    baseUrl: values.baseUrl === '' ? undefined : values.baseUrl,
+    smallFastModel,
+    modelMetadata,
+  }
 }

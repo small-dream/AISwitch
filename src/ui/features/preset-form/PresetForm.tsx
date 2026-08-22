@@ -1,4 +1,4 @@
-import type { FieldErrors, UseFormRegister } from 'react-hook-form'
+import type { FieldErrors, UseFormRegister, UseFormReturn } from 'react-hook-form'
 
 import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
 import { useT } from '@/i18n/index'
@@ -8,6 +8,7 @@ import { Input } from '@/ui/components/Input'
 import { PasswordInput } from '@/ui/components/PasswordInput'
 import { Select } from '@/ui/components/Select'
 import { CodexMetadataSection } from './CodexMetadataSection'
+import { ProviderTemplatePicker } from './ProviderTemplatePicker'
 import type { PresetFormValues } from './preset-form-schema'
 import { usePresetForm } from './use-preset-form'
 
@@ -24,7 +25,7 @@ function PresetFormFields({
   return (
     <>
       <FormField label={t('presetForm.targetTool')} error={errors.tool?.message}>
-        <Select {...register('tool')}>
+        <Select {...register('tool')} aria-label={t('presetForm.targetTool')}>
           <option value="claude-code">Claude Code</option>
           <option value="codex">Codex CLI</option>
         </Select>
@@ -87,6 +88,43 @@ function PresetFormActions({
   )
 }
 
+/** 字段区：模板填充 + 密钥告知 + 表单字段（超高时弹窗内滚动） */
+function PresetFormBody({
+  form,
+  register,
+  errors,
+  tool,
+  draft,
+  isDuplicate,
+}: {
+  form: UseFormReturn<PresetFormValues>
+  register: UseFormRegister<PresetFormValues>
+  errors: FieldErrors<PresetFormValues>
+  tool: TargetTool
+  draft: PresetInput | null
+  isDuplicate: boolean
+}) {
+  const t = useT()
+  return (
+    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+      {draft?.apiKey ? (
+        <KeyNotice
+          message={t(isDuplicate ? 'presetForm.duplicateKeyNotice' : 'presetForm.draftKeyNotice')}
+        />
+      ) : null}
+      <ProviderTemplatePicker
+        onApply={(fill) => {
+          form.setValue('providerName', fill.providerName, { shouldDirty: true })
+          form.setValue('baseUrl', fill.baseUrl ?? '', { shouldDirty: true })
+          form.setValue('model', fill.model, { shouldDirty: true })
+          form.setValue('apiKey', '')
+        }}
+      />
+      <PresetFormFields register={register} errors={errors} tool={tool} />
+    </div>
+  )
+}
+
 export function PresetForm({
   preset,
   draft,
@@ -119,15 +157,14 @@ export function PresetForm({
         void submit(event)
       }}
     >
-      {/* 字段区：超高时在弹窗内滚动，操作按钮不随之移出视口 */}
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
-        {draft?.apiKey ? (
-          <KeyNotice
-            message={t(isDuplicate ? 'presetForm.duplicateKeyNotice' : 'presetForm.draftKeyNotice')}
-          />
-        ) : null}
-        <PresetFormFields register={register} errors={errors} tool={watch('tool')} />
-      </div>
+      <PresetFormBody
+        form={form}
+        register={register}
+        errors={errors}
+        tool={watch('tool')}
+        draft={draft}
+        isDuplicate={isDuplicate}
+      />
       <PresetFormActions submitting={submitting} onCancel={onCancel} />
     </form>
   )

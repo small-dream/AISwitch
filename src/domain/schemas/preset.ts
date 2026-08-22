@@ -11,7 +11,8 @@ export const presetSchema = z.object({
   providerName: z.string().min(1).max(50),
   /** 留空 = 官方 API */
   baseUrl: z.url().optional(),
-  apiKey: z.string().min(1),
+  /** 供应商 API Key；本地模型（Ollama / LM Studio 等）可留空 */
+  apiKey: z.string().min(1).optional(),
   model: z.string().min(1).max(100),
   /** 仅 claude-code 使用 */
   smallFastModel: z.string().min(1).max(100).optional(),

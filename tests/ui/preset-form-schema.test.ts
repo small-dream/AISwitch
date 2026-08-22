@@ -28,3 +28,13 @@ describe('presetFormSchema baseUrl 策略', () => {
     ).toBe(true)
   })
 })
+
+describe('presetFormSchema apiKey 可选', () => {
+  it('空串（本地模型无 Key）通过校验', () => {
+    expect(presetFormSchema.safeParse(formValues({ apiKey: '' })).success).toBe(true)
+  })
+
+  it('缺省 apiKey 通过校验', () => {
+    expect(presetFormSchema.safeParse(formValues({ apiKey: undefined })).success).toBe(true)
+  })
+})

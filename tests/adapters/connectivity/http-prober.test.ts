@@ -39,3 +39,25 @@ describe('ConnectivityProber baseUrl 守卫', () => {
     expect(calls).toHaveLength(2)
   })
 })
+
+describe('ConnectivityProber 本地模型（无 Key）', () => {
+  it('apiKey 为空时不携带 Authorization / x-api-key 头', async () => {
+    const calls: { headers: unknown }[] = []
+    const http: HttpPort = {
+      fetch(_url, init) {
+        calls.push({ headers: init.headers })
+        return Promise.resolve(new Response('null', { status: 200 }))
+      },
+    }
+    const prober = new ConnectivityProber(http)
+    const preset = makePreset({ apiKey: undefined, baseUrl: 'http://127.0.0.1:11434' })
+
+    const result = await prober.probe(preset)
+
+    expect(result.status).toBe('ok')
+    const headers = calls[0]?.headers as Record<string, string>
+    expect(headers.Authorization).toBeUndefined()
+    expect(headers['x-api-key']).toBeUndefined()
+    expect(headers['anthropic-version']).toBe('2023-06-01')
+  })
+})

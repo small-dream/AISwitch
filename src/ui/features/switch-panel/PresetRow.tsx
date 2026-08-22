@@ -48,7 +48,11 @@ function PresetRowInfo({
         ) : null}
       </div>
       <p className="mt-1 truncate font-mono text-xs text-app-muted">{preset.model}</p>
-      <p className="mt-0.5 font-mono text-[11px] text-app-faint">{maskApiKey(preset.apiKey)}</p>
+      {preset.apiKey ? (
+        <p className="mt-0.5 font-mono text-[11px] text-app-faint">{maskApiKey(preset.apiKey)}</p>
+      ) : (
+        <p className="mt-0.5 text-[11px] text-app-faint">{t('presetRow.localModel')}</p>
+      )}
       {result ? (
         <p className={clsx('mt-1 text-[11px]', STATUS_CLASS[result.status])}>
           {connectivityText(result, t)}

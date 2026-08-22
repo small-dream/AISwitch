@@ -24,7 +24,7 @@ function setOrDelete(env: EnvMap, key: string, value: string | undefined): void 
 
 function applyPreset(env: EnvMap, preset: Preset, slotMode: boolean): EnvMap {
   const next = { ...env }
-  next[CLAUDE_ENV_KEYS.authToken] = preset.apiKey
+  setOrDelete(next, CLAUDE_ENV_KEYS.authToken, preset.apiKey)
   next[CLAUDE_ENV_KEYS.model] = preset.model
   setOrDelete(next, CLAUDE_ENV_KEYS.baseUrl, preset.baseUrl)
   setOrDelete(next, CLAUDE_ENV_KEYS.smallFastModel, preset.smallFastModel)

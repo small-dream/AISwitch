@@ -56,6 +56,14 @@ describe('mergeClaudeSettings', () => {
 
     expect(CLAUDE_ENV_KEYS.smallFastModel in (merged.env ?? {})).toBe(false)
   })
+
+  it('apiKey 为空（本地模型）时删除 ANTHROPIC_AUTH_TOKEN 键', () => {
+    const preset = makePreset({ apiKey: undefined })
+    const merged = mergeClaudeSettings(CURRENT, preset)
+
+    expect(CLAUDE_ENV_KEYS.authToken in (merged.env ?? {})).toBe(false)
+    expect(merged.env?.[CLAUDE_ENV_KEYS.model]).toBe(preset.model)
+  })
 })
 
 describe('槽位映射模式', () => {

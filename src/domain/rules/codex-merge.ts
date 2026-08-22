@@ -20,7 +20,7 @@ export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexCon
       name: preset.providerName,
       base_url: preset.baseUrl,
       wire_api: 'responses',
-      experimental_bearer_token: preset.apiKey,
+      experimental_bearer_token: preset.apiKey ?? '',
     }
     modelProvider = injected
   } else {
@@ -38,6 +38,11 @@ export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexCon
 /** 合并预设到 auth.json：覆盖 OPENAI_API_KEY，其余字段保留 */
 export function mergeCodexAuth(current: unknown, preset: Preset): CodexAuthFile {
   const base: CodexAuthFile = isRecord(current) ? current : {}
+  if (!preset.apiKey) {
+    const next = { ...base }
+    Reflect.deleteProperty(next, CODEX_AUTH_KEYS.apiKey)
+    return next
+  }
   return { ...base, [CODEX_AUTH_KEYS.apiKey]: preset.apiKey }
 }
 

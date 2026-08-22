@@ -19,7 +19,8 @@ export function buildPresetFormSchema(t: TFn) {
   const presetFormBase = presetInputSchema.extend({
     name: z.string().trim().min(1, t('validation.nameRequired')).max(50),
     providerName: z.string().trim().min(1, t('validation.providerRequired')).max(50),
-    apiKey: z.string().trim().min(1, t('validation.apiKeyRequired')),
+    /** 本地模型（Ollama / LM Studio 等）无需 Key，允许留空 */
+    apiKey: z.string().trim().optional(),
     model: z.string().trim().min(1, t('validation.modelRequired')).max(100),
     baseUrl: urlField(t),
     smallFastModel: z.string().trim().max(100, t('validation.maxLength')).optional(),

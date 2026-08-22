@@ -61,6 +61,29 @@ describe('mergeCodexAuth', () => {
     const preset = makePreset({ tool: 'codex' })
     expect(mergeCodexAuth(null, preset)).toEqual({ OPENAI_API_KEY: preset.apiKey })
   })
+
+  it('apiKey 为空（本地模型）时删除 OPENAI_API_KEY，保留其余字段', () => {
+    const preset = makePreset({ tool: 'codex', apiKey: undefined })
+    const merged = mergeCodexAuth({ OPENAI_API_KEY: 'sk-old', Tokens: [] }, preset)
+
+    expect('OPENAI_API_KEY' in merged).toBe(false)
+    expect(merged.Tokens).toEqual([])
+  })
+})
+
+describe('mergeCodexConfig · 本地模型（无 Key）', () => {
+  it('baseUrl 存在而 Key 为空：注入块 token 写空串', () => {
+    const injected = CODEX_CONFIG_KEYS.injectedProvider
+    const preset = makePreset({
+      tool: 'codex',
+      baseUrl: 'http://127.0.0.1:11434',
+      apiKey: undefined,
+    })
+    const merged = mergeCodexConfig(CURRENT, preset)
+
+    expect(merged.model_providers?.[injected]?.experimental_bearer_token).toBe('')
+    expect(merged.model_provider).toBe(injected)
+  })
 })
 
 describe('stripManagedCodexConfig', () => {
@@ -68,7 +91,10 @@ describe('stripManagedCodexConfig', () => {
   const managedCatalogPath = 'C:/Users/tester/.codex/models.json'
 
   it('删除托管键与注入块，保留用户自有 provider 与顶层字段', () => {
-    const merged = mergeCodexConfig(CURRENT, makePreset({ tool: 'codex', baseUrl: 'https://relay.example.com/v1' }))
+    const merged = mergeCodexConfig(
+      CURRENT,
+      makePreset({ tool: 'codex', baseUrl: 'https://relay.example.com/v1' })
+    )
     const stripped = stripManagedCodexConfig(merged, managedCatalogPath)
 
     expect(stripped.model).toBeUndefined()

@@ -27,4 +27,8 @@ describe('maskApiKey', () => {
   it('空字符串返回空字符串', () => {
     expect(maskApiKey('')).toBe('')
   })
+
+  it('undefined（本地模型无 Key）返回空字符串', () => {
+    expect(maskApiKey(undefined)).toBe('')
+  })
 })
