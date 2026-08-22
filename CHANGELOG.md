@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.10] - 2026-08-22
+
+### Fixed
+
+- Encoded the updater public key in the format expected by the Tauri updater.
+
 ## [0.1.9] - 2026-08-22
 
 ### Fixed
