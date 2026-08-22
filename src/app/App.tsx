@@ -6,11 +6,13 @@ import { MainLayout } from '@/ui/layouts/MainLayout'
 import { useApplyLocale } from '@/i18n/index'
 import { useApplyTheme } from '@/hooks/use-theme'
 import { useTrayIntegration } from '@/hooks/use-tray'
+import { useGlobalShortcuts } from '@/hooks/use-global-shortcuts'
 
 export function App() {
   useApplyTheme()
   useApplyLocale()
   useTrayIntegration()
+  useGlobalShortcuts()
 
   return (
     <MainLayout>

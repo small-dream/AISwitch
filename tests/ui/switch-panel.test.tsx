@@ -56,7 +56,7 @@ describe('SwitchPanel 复制预设 · 表单预填', () => {
     expect(screen.getByText('复制预设')).toBeInTheDocument()
     expect(screen.getByDisplayValue('GLM-4.6 副本')).toBeInTheDocument()
     expect(screen.getByDisplayValue('glm-4.6')).toBeInTheDocument()
-    expect(screen.getByRole('combobox')).toHaveValue('claude-code')
+    expect(screen.getByRole('combobox', { name: '目标工具' })).toHaveValue('claude-code')
   })
 
   it('复制草稿完整保留供应商 / Base URL / API Key', () => {
@@ -114,7 +114,7 @@ describe('SwitchPanel 复制预设 · 保存链路', () => {
     fireEvent.click(screen.getByRole('button', { name: '复制' }))
     fireEvent.click(screen.getByText('高级：模型目录条目（可选，仅 Codex 第三方模型需要）'))
 
-    expect(screen.getByRole('combobox')).toHaveValue('codex')
+    expect(screen.getByRole('combobox', { name: '目标工具' })).toHaveValue('codex')
     expect(
       screen.getByDisplayValue((value) => value.includes('context_window'))
     ).toBeInTheDocument()
