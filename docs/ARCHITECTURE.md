@@ -29,17 +29,17 @@
 ```mermaid
 graph TB
     subgraph L1["🖥️ 表现层 Presentation (React)"]
-        UI["ui/components 原子组件<br/>ui/features 功能视图"]
+        UI["ui/components 原子组件<br/>ui/features 功能视图（SwitchPanel · BundlePanel）"]
         HK["hooks/ 交互逻辑"]
         ST["stores/ Zustand (仅UI状态)"]
     end
 
     subgraph L2["⚙️ 应用层 Application"]
-        SVC["services/<br/>SwitchService · DetectService<br/>PresetService · BackupService"]
+        SVC["services/<br/>SwitchService · BundleService<br/>DetectService · PresetService · BackupService"]
     end
 
     subgraph L3["🧠 领域层 Domain (纯TS·零IO)"]
-        ENT["entities: Preset / ToolStatus"]
+        ENT["entities: Preset / Bundle / ToolStatus"]
         RULE["rules: 配置合并/校验/差异计算"]
         SCH["schemas: Zod 单一事实来源"]
     end
@@ -48,7 +48,7 @@ graph TB
         REG["targetRegistry 工具注册表"]
         CA["adapters/claude<br/>ClaudeConfigTarget"]
         CO["adapters/codex<br/>CodexConfigTarget"]
-        PR["adapters/presets<br/>PresetRepository"]
+        PR["adapters/presets · adapters/bundles<br/>PresetRepository · BundleRepository"]
         BK["adapters/backup<br/>BackupManager"]
     end
 
@@ -102,11 +102,17 @@ export interface ConfigTarget {
 
 **D4 · 写入三段式**：`apply = backup → 原子写（临时文件+替换）→ verify`，任一步失败自动 rollback。
 
-**D5 · Rust 薄壳原则**：优先使用官方插件（当前仅 fs / http / notification / single-instance，未用的插件一律不注册）；确需自定义命令时按组放入 `src-tauri/src/commands/`，每命令组一个小文件，逻辑保持 ≤ 20 行。
+**D5 · Rust 薄壳原则**：优先使用官方插件（当前 fs / http / notification / single-instance / global-shortcut，未用的插件一律不注册）；确需自定义命令时按组放入 `src-tauri/src/commands/`，每命令组一个小文件，逻辑保持 ≤ 20 行。
 
 **D6 · 托盘数据流（US-08）**：业务数据仅存 TS 侧——前端经 `tray_update` 命令推送预设快照、Rust（`src-tauri/src/tray.rs`）只做菜单装配；托盘点击经 `tray://switch` 事件回到前端，复用 `SwitchService` 单一切换链路。Rust 不持有业务状态，切换语义与主窗口完全一致。
 
 **D7 · 主题令牌体系（US-15）**：UI 一律使用语义工具类（`bg-app-*` / `text-app-*` / `border-app-*`，定义于 `src/styles/global.css` 的 `@theme`），**禁止硬编码 zinc-_/emerald-_/indigo-\_ 等色值**（StatusDot 等双主题通用色除外）；品牌色统一走 `--color-app-accent` 系列令牌（accent / accent-hover / accent-soft / accent-text），亮色用 indigo-600 系、暗色提亮至 indigo-300 系保证对比度。暗色主题通过 `.dark` 作用域整体覆盖同名变量实现，主题选择持久化于 localStorage 并在首帧前应用（防闪烁）。统一动效（`animate-dialog-in` / `animate-toast-in` / `animate-fade-in` / `animate-pulse-dot`）亦定义于 global.css，全部包裹在 `prefers-reduced-motion: no-preference` 媒体查询内；图标统一使用 `lucide-react`，禁止 emoji 充当图标。
+
+**D8 · 组合预设数据流（US-17）**：`bundles.json` 独立于 `presets.json` 存储；`BundleService.switch` 聚合顺序调用 `SwitchService.switch`，逐工具独立备份/回滚/校验，返回 per-tool 结果；引用完整性（存在 + `tool` 匹配）在 service 层强制，Zod 保证「至少一个工具」。
+
+**D9 · 供应商模板库（US-19）**：静态常量 `constants/provider-templates.ts` + 纯函数 `domain/rules/apply-provider-template.ts`（零 IO、可单测）；表单顶部 picker 经 `form.setValue` 预填，模板永不内嵌 Key。本地模型以 `apiKey` 可选表达——写入链与探测链在空 Key 时删除鉴权头/键（PRD §5.10）。
+
+**D10 · 全局快捷键（US-20）**：Rust 仅注册 `tauri-plugin-global-shortcut`，业务全在前端 `hooks/use-global-shortcuts.ts`；快捷键字符串集中于 `constants/shortcut.ts`；循环切换逻辑为纯函数 `domain/rules/next-preset.ts`。
 
 ## 3. 目录结构
 

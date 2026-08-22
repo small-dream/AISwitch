@@ -58,7 +58,7 @@
 
 ### 3.2 P1（体验增强）
 
-> 实施状态（2026-08-15）：**US-06 / US-07 / US-08 / US-10 / US-14 / US-15 / US-16 已交付**；US-09（CLI）排期下一迭代。
+> 实施状态（2026-08-22）：**US-06 / US-07 / US-08 / US-10 / US-14 / US-15 / US-16 已交付**；**US-17 / US-19 / US-20 已交付（2026-08-22）**；US-09（CLI）、US-18（钥匙串）排期下一迭代。
 
 | ID    | 用户故事                                     | 说明                                                                                                                                                |
 | ----- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -69,6 +69,9 @@
 | US-14 | **VS Code 插件安装迹象检测**增强提示         | 检测 `~/.vscode/extensions` 下对应插件目录，未配置状态下展示「检测到 VS Code 插件」提示                                                             |
 | US-15 | **亮 / 暗双主题**一键切换（设计规范承诺项）  | 语义色彩令牌体系；选择持久化于 localStorage，启动首帧前应用防闪烁；2026-08 精致化：品牌色 accent 令牌、骨架屏加载态、统一入场动效与 lucide 图标体系 |
 | US-16 | **一键还原**到安装 AISwitch 之前的状态       | 入口在顶栏（主题切换旁）；首次切换前自动捕获安装前基线；三步弹窗（预览 → 输入「还原」确认 → 结果）；策略见 §5.8                                     |
+| US-17 | **组合预设（全家桶切换）**                   | 一次操作顺序切换 Claude Code 与 Codex CLI 的多个预设；逐工具独立备份/回滚/校验；策略见 §5.9                                                         |
+| US-19 | **供应商模板库 + 本地模型**                  | 内置模板一键填充；支持无 Key 的 Ollama / LM Studio（`apiKey` 可选）；策略见 §5.10                                                                   |
+| US-20 | **全局快捷键**                               | `CmdOrCtrl+Shift+A` 呼出主窗口；`CmdOrCtrl+Shift+S` 循环切换当前工具下一预设；策略见 §5.11                                                          |
 
 ### 3.3 P2（远期规划）
 
@@ -106,12 +109,12 @@ flowchart TD
 
 **表 A · Claude Code**（写入 `~/.claude/settings.json` 的 `env` 字段）：
 
-| 配置键                       | 来源                    | 规则                       |
-| ---------------------------- | ----------------------- | -------------------------- |
-| `ANTHROPIC_BASE_URL`         | `preset.baseUrl`        | 为空（官方）时**删除该键** |
-| `ANTHROPIC_AUTH_TOKEN`       | `preset.apiKey`         | —                          |
-| `ANTHROPIC_MODEL`            | `preset.model`          | —                          |
-| `ANTHROPIC_SMALL_FAST_MODEL` | `preset.smallFastModel` | 为空时删除该键             |
+| 配置键                       | 来源                    | 规则                                  |
+| ---------------------------- | ----------------------- | ------------------------------------- |
+| `ANTHROPIC_BASE_URL`         | `preset.baseUrl`        | 为空（官方）时**删除该键**            |
+| `ANTHROPIC_AUTH_TOKEN`       | `preset.apiKey`         | apiKey 为空（本地模型）时**删除该键** |
+| `ANTHROPIC_MODEL`            | `preset.model`          | —                                     |
+| `ANTHROPIC_SMALL_FAST_MODEL` | `preset.smallFastModel` | 为空时删除该键                        |
 
 规则：仅覆盖上表所列键，**保留文件中其余未知字段**（防止抹掉用户其他配置）。
 
@@ -126,10 +129,10 @@ flowchart TD
 | `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl`       | 第三方时写入；切回官方时移除该块                                                                                                               |
 | `config.toml` | `[model_providers.jake_current].name`                      | `preset.providerName`  | 第三方时必写；Codex 要求块内 `name` 非空，缺失将导致整个 config.toml 加载失败、CLI/插件退回安装引导                                            |
 | `config.toml` | `[model_providers.jake_current].wire_api`                  | 固定 `"responses"`     | 第三方时必写；缺省会回落 chat 协议，与官方及主流中转行为不一致                                                                                 |
-| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时同步写入（DeepSeek 官方脚本模式）                                                                                                      |
+| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时写入（DeepSeek 官方脚本模式）；apiKey 为空写空串                                                                                       |
 | `config.toml` | 顶层 `model_catalog_json`                                  | —                      | 预设携带元数据 → 指向 `~/.codex/models.json`；目录无当前模型条目 → 移除该键回落内置目录；其余保持现状                                          |
 | `models.json` | `models[]` 条目                                            | `preset.modelMetadata` | 切换时重写为**当前预设的条目集**——整份厂商文件粘贴时保留全部同族模型（选单只显示当前供应商），单条粘贴仅该条；切回其他预设时由其自带元数据重建 |
-| `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`        | 始终写入（官方模式），与块内 token 双通道兼容                                                                                                  |
+| `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`        | 有 Key 时写入，无 Key 时**删除该键**（与块内 token 双通道兼容）                                                                                |
 
 **Codex 读取语义（导入/探测）**：供应商 = `model_provider` 指向的 `[model_providers.<id>]` 块（不猜测其他块）；供应商展示名优先块内 `name`；**Key 读取链 = 块内 `experimental_bearer_token` → `auth.json` 的 `OPENAI_API_KEY`**（DeepSeek 官方安装脚本将 Key 内嵌于 provider 块）。
 
@@ -144,7 +147,7 @@ flowchart TD
 | `tool`                    | enum     | 是       | `claude-code` \| `codex`                                                                                       |
 | `providerName`            | string   | 是       | 1–50 字符（如 GLM / 中转站名）                                                                                 |
 | `baseUrl`                 | string   | 否       | 合法 URL；**留空 = 官方 API**                                                                                  |
-| `apiKey`                  | string   | 是       | 非空                                                                                                           |
+| `apiKey`                  | string   | 否       | 本地模型（Ollama / LM Studio 等）可留空                                                                        |
 | `model`                   | string   | 是       | 1–100 字符                                                                                                     |
 | `smallFastModel`          | string   | 否       | 仅 claude-code 使用                                                                                            |
 | `modelMetadata`           | object   | 否       | 仅 codex 使用：models.json 目录条目，opaque 透传（结构与 Codex 版本耦合，不做字段校验）；`slug` 须等于 `model` |
@@ -208,6 +211,26 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 - **交互**：顶栏入口 → 三步弹窗（预览逐文件动作 → 输入「还原」二次确认 → 逐文件成功/失败结果）；不可逆操作，确认强度高于两段式点击。预览如实标注「精确还原」与「近似还原」，并明示是否检测到安装前基线；**全部跳过（无可还原配置）时预览显示空态并禁用确认**，防空操作；结果列表中跳过项以中性状态展示原因，成功/失败以对勾/叉号区分。
 - **数据边界**：`~/.aiswitch`（预设、密钥、备份、基线）**完全不动**，弹窗中明示保留。
 - **安全**：基线副本与备份同级风险（含明文 Key），0600/0700 强制收紧；逐文件容错，单文件失败不中断且如实上报；还原重建目录时**仅对新创建目录收紧权限（0700），用户已有目录权限不被改动**；计划与执行之间的竞态（文件已被用户删除）按已达成目标跳过，不报错、不误删。
+
+### 5.9 组合预设（US-17）
+
+- **定义**：组合（Bundle）聚合各目标工具预设，一次操作顺序切换全家桶；
+- **字段**：`id / name（组合名唯一）/ claudePresetId? / codexPresetId? / createdAt / updatedAt`；**至少选择一个工具的预设**；引用须指向存在且 `tool` 匹配的预设，悬空引用拒绝保存；
+- **存储**：`~/.aiswitch/bundles.json`（`{"version": 1, "bundles": [...]}`），Zod 校验 + 0600/0700 权限收紧，与 `presets.json` 同目录独立文件；
+- **切换语义**：逐工具独立调用 SwitchService（各自备份/回滚/校验），某工具失败不阻断另一工具，per-tool 结果如实反馈（全成功汇总提示，失败逐条提示）；
+- **UI**：主窗口「组合切换」卡片，新建/编辑弹窗含各工具预设下拉（含「不切换」选项）。
+
+### 5.10 供应商模板库与本地模型（US-19）
+
+- **模板**：内置 Claude 官方 / OpenAI GPT / GLM / DeepSeek / Kimi / 通义 / 豆包 / Ollama / LM Studio，仅预填品牌名 / Base URL / 建议模型名，**永不内嵌 API Key**；表单顶部「从模板填充」一键预填；模型名于 2026-08 依据 OpenRouter models API 与各厂商公开文档刷新，具体以供应商最新文档为准；
+- **本地模型**：Ollama / LM Studio 无 API Key——`preset.apiKey` 改为可选；空 Key 时写入链路删除鉴权键（Claude `ANTHROPIC_AUTH_TOKEN`、Codex `auth.json OPENAI_API_KEY`），Codex provider 块 token 写空串；连通性探测无 Key 时不携带鉴权头；预设列表行显示「本地模型 · 无需 Key」标记；
+- **兼容**：预设库结构向后兼容（`apiKey` 可缺失），旧数据不受影响。
+
+### 5.11 全局快捷键（US-20）
+
+- **默认绑定**：`CmdOrCtrl+Shift+A` 呼出并聚焦主窗口（隐藏至托盘后仍可唤起）；`CmdOrCtrl+Shift+S` 循环切换当前工具的下一个预设（需 ≥2 个预设，否则提示不动作）；
+- **实现**：Tauri `global-shortcut` 插件，业务逻辑全在前端（快捷键字符串集中于常量，便于后续加自定义绑定设置页）；
+- **权限**：capability 增加 `global-shortcut:default`、`core:window:allow-show`、`core:window:allow-set-focus`。
 
 ## 6. 非功能需求
 

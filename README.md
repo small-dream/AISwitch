@@ -44,6 +44,9 @@ AISwitch turns that into a single click — with validation, backups, and instan
 - ♻️ **One-click restore to pre-install state** — a baseline of your configs is captured before the first switch; a three-step dialog (preview → confirm → per-file report) puts every file back exactly as it was, or cleanly removes what AISwitch created. User-owned files and presets are never touched.
 - 🧪 **Connectivity test** — probe a preset's endpoint before switching (HTTPS enforced; plain HTTP only for `localhost`/`127.0.0.1`/`[::1]`, so your key can never leak in plaintext).
 - 🧩 **Codex `models.json` hosting** — paste a single entry or a whole `models.json`; the file is stored verbatim and family models all appear in the picker. `display_name` is auto-filled when missing.
+- 🧩 **Bundle switch** — a bundle combines presets for Claude Code and Codex CLI; one action switches them all in order, each tool with its own backup / rollback / verification.
+- 🧰 **Provider templates + local models** — built-in templates for Claude official / OpenAI GPT / GLM / DeepSeek / Kimi / Qwen / Doubao / Ollama / LM Studio; Ollama and LM Studio need no API key.
+- ⌨️ **Global shortcuts** — `Cmd/Ctrl+Shift+A` brings the main window to front; `Cmd/Ctrl+Shift+S` cycles to the next preset of the current tool.
 - 🖥 **Tray menu** — switch presets straight from the system tray; the active preset is check-marked.
 - 🌐 **Bilingual UI** — Chinese & English, following your system language by default with a one-click toggle.
 - 🌗 **Light / dark theme** — semantic token theming with a one-click toggle.
@@ -52,13 +55,13 @@ AISwitch turns that into a single click — with validation, backups, and instan
 
 AISwitch handles your API keys, so it holds itself to a higher bar:
 
-| Layer | Guarantee |
-| ----- | --------- |
-| Data | Everything lives on your machine (`~/.aiswitch/`). No account, no sync, no telemetry — nothing to phish or breach. |
-| Filesystem | Key-bearing files (`presets.json`, backups, baselines) are restricted to owner-only (0600/0700); the temp file used by atomic writes is restricted *before* rename, so crash leftovers never leak secrets. Legacy loose permissions are tightened on load. |
-| Network | The only outbound requests are connectivity probes you trigger, and only to `https://` URLs (or plain HTTP on loopback) — validated by a shared rule at both save time and probe time. No proxy, no request interception. |
-| App | Strict CSP (`script-src 'self'` + nonces, `object-src 'none'`, IPC-only `connect-src`); unused plugins (shell, dialog) removed to shrink the attack surface. |
-| UI | Keys are always masked — even short ones are fully hidden, not partially shown. |
+| Layer      | Guarantee                                                                                                                                                                                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Data       | Everything lives on your machine (`~/.aiswitch/`). No account, no sync, no telemetry — nothing to phish or breach.                                                                                                                                         |
+| Filesystem | Key-bearing files (`presets.json`, backups, baselines) are restricted to owner-only (0600/0700); the temp file used by atomic writes is restricted _before_ rename, so crash leftovers never leak secrets. Legacy loose permissions are tightened on load. |
+| Network    | The only outbound requests are connectivity probes you trigger, and only to `https://` URLs (or plain HTTP on loopback) — validated by a shared rule at both save time and probe time. No proxy, no request interception.                                  |
+| App        | Strict CSP (`script-src 'self'` + nonces, `object-src 'none'`, IPC-only `connect-src`); unused plugins (shell, dialog) removed to shrink the attack surface.                                                                                               |
+| UI         | Keys are always masked — even short ones are fully hidden, not partially shown.                                                                                                                                                                            |
 
 ## Tech Stack
 
@@ -103,7 +106,7 @@ Installers are currently unsigned. If you downloaded one from [Releases](https:/
   xattr -cr /Applications/AISwitch.app
   ```
 
-- **Windows** — if SmartScreen blocks the installer, click *More info* → *Run anyway*, or clear the mark of the web first:
+- **Windows** — if SmartScreen blocks the installer, click _More info_ → _Run anyway_, or clear the mark of the web first:
 
   ```powershell
   Unblock-File .\AISwitch_<version>_x64-setup.exe
