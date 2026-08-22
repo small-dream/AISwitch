@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { updateService } from '@/app/composition'
 import { UPDATE_CHECK_STALE_TIME_MS, UPDATE_QUERY_KEY } from '@/constants/update'
 import { useT } from '@/i18n/index'
-import { toastError } from '@/stores/toast-store'
+import { toastError, toastSuccess } from '@/stores/toast-store'
 
 /** 启动后检查并预下载更新；只把已完成下载的版本交给顶栏。 */
 export function useAppUpdate() {
@@ -21,10 +21,23 @@ export function useAppUpdate() {
       toastError(t('update.installFailed'))
     },
   })
+  const check = () => {
+    void query.refetch().then((result) => {
+      if (result.error) {
+        toastError(t('update.checkFailed'))
+        return
+      }
+      if (!result.data) {
+        toastSuccess(t('update.latest'))
+      }
+    })
+  }
   return {
     update: query.data ?? null,
-    isChecking: query.isPending,
+    canCheck: updateService.canCheck(),
+    isChecking: query.isFetching,
     isInstalling: install.isPending,
+    check,
     install: install.mutate,
   }
 }

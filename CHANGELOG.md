@@ -2,6 +2,20 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.14] - 2026-08-22
+
+### Added
+
+- Added a manual in-app update check that downloads an available signed update before installation.
+
+### Changed
+
+- The header action now progresses from “Check for updates” to a versioned update action when the download completes.
+
+### Fixed
+
+- Report update check and download failures instead of silently hiding the update action.
+
 ## [0.1.13] - 2026-08-22
 
 ### Added
