@@ -8,6 +8,8 @@
     "core:window:allow-show",
     "core:window:allow-set-focus",
     "global-shortcut:default",
+    "process:allow-restart",
+    "updater:default",
     {
       "identifier": "fs:allow-exists",
       "allow": [

@@ -29,4 +29,4 @@ UI → hooks → services → domain(纯函数) / adapters(接口实现)
 1. `pnpm lint`、`pnpm typecheck`、`pnpm test` 全部通过；
 2. 核心逻辑（domain/rules、services、adapters）改动必须同步测试；
 3. 功能/结构变化必须回写三文档；
-4. 提交遵循 Conventional Commits（如 `feat(adapters): 新增 claude 配置读取器`）。
+4. 提交遵循英文 Conventional Commits（如 `feat(adapters): add Claude config reader`）。

@@ -114,6 +114,8 @@ export interface ConfigTarget {
 
 **D10 · 全局快捷键（US-20）**：Rust 仅注册 `tauri-plugin-global-shortcut`，业务全在前端 `hooks/use-global-shortcuts.ts`；快捷键字符串集中于 `constants/shortcut.ts`；循环切换逻辑为纯函数 `domain/rules/next-preset.ts`。
 
+**D11 · 应用更新（US-24）**：`adapters/updater/tauri-updater.ts` 封装 Tauri updater 与 process 插件；`UpdateService.prepare()` 负责「检查 → 预下载」，`hooks/use-app-update.ts` 负责查询状态与用户触发安装；UI 只渲染 `UpdateButton`。更新元数据和下载包均由 Tauri 签名校验，Rust 侧只注册官方插件，不承载业务状态。
+
 ## 3. 目录结构
 
 ```text
@@ -140,6 +142,7 @@ AISwitch/
 │   │   ├── rules/               # 纯函数：merge-config / diff-config / validate / active-preset / import-preset / duplicate-preset
 │   │   └── schemas/             # Zod：claude-config / codex-config / preset
 │   ├── adapters/
+│   │   ├── updater/              # Tauri 更新适配器
 │   │   ├── claude/              # reader.ts / writer.ts / transformer.ts
 │   │   ├── codex/               # 同上结构，TOML 专属逻辑隔离于此
 │   │   ├── presets/             # PresetRepository（JSON 存储）

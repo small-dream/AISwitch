@@ -21,6 +21,16 @@ export const en: Record<TranslationKey, string> = {
   // Header
   'header.toggleTheme': 'Toggle theme',
   'header.toggleLang': 'Switch language',
+  'shortcut.noPresetToSwitch': 'No other preset is available to switch to',
+  'shortcut.switchedTo': 'Switched to {name}',
+  'template.pickerLabel': 'Fill from provider template',
+  'template.placeholder': 'Choose a template…',
+  'template.local': 'Local model',
+  'presetRow.localModel': 'Local model · No key required',
+  'update.available': 'Update to v{version}',
+  'update.ready': 'Update downloaded; click to install',
+  'update.installing': 'Updating…',
+  'update.installFailed': 'Update failed; try again later',
 
   // Error boundary
   'errorBoundary.title': 'Something went wrong',

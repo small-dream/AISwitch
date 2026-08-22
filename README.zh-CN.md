@@ -92,9 +92,12 @@ pnpm icon           # 重新生成应用图标（scripts/app-icon.png → src-ta
 
 ### 发布（GitHub Actions）
 
-1. 同步更新 `package.json` 与 `src-tauri/tauri.conf.json` 的 `version`
-2. 提交后打标签并推送：`git tag vX.Y.Z && git push origin vX.Y.Z`
-3. [Release workflow](.github/workflows/release.yml) 自动构建全平台安装包（macOS 双架构 · Windows msi/nsis · Linux deb/appimage）并上传到**草稿** GitHub Release——核对无误后手动发布
+1. 先在 `CHANGELOG.md` 增加该版本的英文变更说明，列出 `Added`、`Changed`、`Fixed` 或 `Security` 项。
+2. 同步更新 `package.json` 与 `src-tauri/tauri.conf.json` 的 `version`。
+3. 使用英文 Conventional Commit，打标签并推送：`git tag vX.Y.Z && git push origin vX.Y.Z`。
+4. [Release workflow](.github/workflows/release.yml) 会校验变更说明、构建全平台签名更新产物、发布 Release Notes，并生成应用内更新所需的 `latest.json`。
+
+应用内更新需要配置 GitHub Secrets：`TAURI_UPDATER_PUBLIC_KEY`、`TAURI_SIGNING_PRIVATE_KEY`、`TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。公钥必须与发布签名私钥匹配；使用 `pnpm tauri signer generate` 生成密钥对，私钥不得提交到 Git。
 
 每次 push / PR 还会跑 [CI workflow](.github/workflows/ci.yml)：lint / 类型检查 / 测试，外加 macOS、Windows、Linux 三平台的 `cargo check` 矩阵（平台条件代码无法在单一开发机上完全验证）。
 

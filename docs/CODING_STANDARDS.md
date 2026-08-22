@@ -113,8 +113,8 @@ new AppError('E_CONFIG_WRITE', '写入 Claude 配置失败', { tool: 'claude-cod
 
 ## 8. Git 与提交规范
 
-- Conventional Commits：`feat | fix | docs | refactor | test | chore`，描述用简短中文；
-  - 例：`feat(adapters): 新增 claude 配置读取器`、`fix(services): 切换失败时正确回滚`
+- Conventional Commits：`feat | fix | docs | refactor | test | chore`，subject、body 和 breaking-change footer 一律使用英文；
+  - Examples: `feat(adapters): add Claude config reader`, `fix(services): roll back failed switches correctly`
 - 小步提交：一个提交只做一件事；禁止「顺手」混入无关改动。
 
 ## 9. AI 协作工作流（Definition of Done）

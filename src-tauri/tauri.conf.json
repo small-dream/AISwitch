@@ -27,6 +27,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "category": "DeveloperTool",
     "icon": [
@@ -37,5 +38,13 @@
       "icons/icon.icns",
       "icons/icon.png"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/small-dream/AISwitch/releases/latest/download/latest.json"
+      ],
+      "pubkey": "${TAURI_UPDATER_PUBLIC_KEY}"
+    }
   }
 }

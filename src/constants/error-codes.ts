@@ -23,6 +23,10 @@ export const ERROR_CODES = [
   'E_TARGET_NOT_SUPPORTED',
   // 连通性测试域
   'E_NETWORK_TEST_FAILED',
+  // 应用更新域
+  'E_UPDATE_CHECK',
+  'E_UPDATE_DOWNLOAD',
+  'E_UPDATE_INSTALL',
   // 校验与兜底
   'E_VALIDATION_FAILED',
   'E_UNKNOWN',

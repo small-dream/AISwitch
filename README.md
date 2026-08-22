@@ -92,9 +92,12 @@ pnpm icon           # regenerate app icons (scripts/app-icon.png → src-tauri/i
 
 ### Release (GitHub Actions)
 
-1. Bump `version` in both `package.json` and `src-tauri/tauri.conf.json`
-2. Commit, then tag & push: `git tag vX.Y.Z && git push origin vX.Y.Z`
-3. The [Release workflow](.github/workflows/release.yml) builds all platforms (macOS universal · Windows msi/nsis · Linux deb/appimage) and uploads them to a **draft** GitHub Release — review, then publish
+1. Add an English `CHANGELOG.md` section for the version, including `Added`, `Changed`, `Fixed`, or `Security` items.
+2. Bump `version` in both `package.json` and `src-tauri/tauri.conf.json`.
+3. Use an English Conventional Commit, then tag and push: `git tag vX.Y.Z && git push origin vX.Y.Z`.
+4. The [Release workflow](.github/workflows/release.yml) validates the changelog, builds signed updater artifacts for all platforms, publishes the release notes, and generates `latest.json` for in-app updates.
+
+The updater requires the `TAURI_UPDATER_PUBLIC_KEY`, `TAURI_SIGNING_PRIVATE_KEY`, and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` GitHub secrets. The public key must match the private key used to sign release artifacts. Generate a pair with `pnpm tauri signer generate` and keep the private key out of Git.
 
 Every push/PR also runs the [CI workflow](.github/workflows/ci.yml): lint / typecheck / tests plus a `cargo check` matrix across macOS, Windows & Linux (platform-conditional code can't be fully verified on a single dev machine).
 

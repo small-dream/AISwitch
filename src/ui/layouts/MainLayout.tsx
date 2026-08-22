@@ -6,6 +6,7 @@ import { useLocaleStore, useT } from '@/i18n/index'
 import { useThemeStore } from '@/stores/theme-store'
 import { Badge } from '@/ui/components/Badge'
 import { RestoreButton } from '@/ui/features/restore/RestoreButton'
+import { UpdateButton } from '@/ui/features/update/UpdateButton'
 
 function VersionBadge() {
   const [version, setVersion] = useState('')
@@ -48,6 +49,7 @@ export function MainLayout({ children }: { children: ReactNode }) {
         <h1 className="text-lg font-semibold tracking-tight">AISwitch</h1>
         <VersionBadge />
         <div className="flex-1" />
+        <UpdateButton />
         <RestoreButton />
         <button
           type="button"

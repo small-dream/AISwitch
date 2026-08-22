@@ -1,16 +1,14 @@
 name: Release
 
-# 推送 v* 标签触发：先升 package.json 与 tauri.conf.json 的 version，再
-# git tag vX.Y.Z && git push origin vX.Y.Z。产物自动上传并直接发布，
-# 无需人工介入。
+# Push a vX.Y.Z tag after updating both version files and CHANGELOG.md.
+# The workflow validates the release notes, uploads signed updater artifacts,
+# then publishes one complete release.
 on:
   push:
     tags: ['v*']
 
 jobs:
-  # 先单独创建唯一的 release，再由 matrix 上传，避免各 job 竞态
-  # 各自建 release 导致产物分散（v0.1.0 曾因此丢失 aarch64 包）。
-  # 直接发布（非 draft），全流程无需人工介入。
+  # 先单独创建唯一的 draft release，再由 matrix 上传，避免各 job 竞态。
   create-release:
     permissions:
       contents: write
@@ -18,6 +16,11 @@ jobs:
     outputs:
       release_id: ${{ steps.create.outputs.release_id }}
     steps:
+      - uses: actions/checkout@v4
+      - name: Validate version and release notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: node scripts/release-notes.mjs "$TAG"
       - name: Create release
         id: create
         env:
@@ -25,7 +28,9 @@ jobs:
           REPO: ${{ github.repository }}
           TAG: ${{ github.ref_name }}
         run: |
-          body=$(cat <<'EOF'
+          body=$(node scripts/release-notes.mjs "$TAG")
+          body="$body
+          $(cat <<'EOF'
           > [!WARNING]
           > **Installers are unsigned.** To install:
           > - **macOS**: drag into `Applications`, then run `xattr -cr /Applications/AISwitch.app`
@@ -41,7 +46,7 @@ jobs:
           >   或先在 PowerShell 执行 `Unblock-File .\AISwitch_*_x64-setup.exe`；
           > - **Linux**：`.deb` / `.AppImage` 可直接安装，无拦截提示。
           EOF
-          )
+          )"
           # 优先复用已存在的 release（按 tag 查询）；不存在则用 API 创建，
           # 响应自带 id。id 必须校验为纯数字——gh api 的错误 JSON 走标准
           # 输出，捕获后会是 {"message":"Not Found",...} 这样的垃圾值。
@@ -49,8 +54,11 @@ jobs:
             | grep -E '^[0-9]+$' || true)
           if [ -z "$release_id" ]; then
             release_id=$(gh api --method POST "repos/$REPO/releases" \
-              -f tag_name="$TAG" -f name="AISwitch $TAG" -f body="$body" \
+              -f tag_name="$TAG" -f name="AISwitch $TAG" -f body="$body" -F draft=true \
               --jq '.id')
+          else
+            gh api --method PATCH "repos/$REPO/releases/$release_id" \
+              -f body="$body" -F draft=true >/dev/null
           fi
           echo "release_id=$release_id" >> "$GITHUB_OUTPUT"
 
@@ -93,7 +101,26 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_UPDATER_PUBLIC_KEY: ${{ secrets.TAURI_UPDATER_PUBLIC_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           # 统一上传到 create-release 建好的 draft，避免竞态重复建 release
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
+          includeUpdaterJson: true
+
+  publish-release:
+    needs: publish-tauri
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Publish complete release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          release_id=$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.id')
+          gh api --method PATCH "repos/$REPO/releases/$release_id" -F draft=false >/dev/null

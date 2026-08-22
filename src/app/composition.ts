@@ -9,6 +9,7 @@ import { tauriFs } from '@/adapters/fs/tauri-fs-port'
 import { PresetRepository } from '@/adapters/presets/preset-repository'
 import { registerTarget } from '@/adapters/target-registry'
 import { detectVscodeExtensions } from '@/adapters/vscode/vscode-detector'
+import { createTauriUpdater, isTauriRuntime } from '@/adapters/updater/tauri-updater'
 import { readClaudeSettings } from '@/adapters/claude/reader'
 import { readCodexAuth, readCodexConfig, readCodexModels } from '@/adapters/codex/reader'
 import { BackupService } from '@/services/backup-service'
@@ -18,6 +19,7 @@ import { ImportService } from '@/services/import-service'
 import { PresetService } from '@/services/preset-service'
 import { RestoreService } from '@/services/restore-service'
 import { SwitchService } from '@/services/switch-service'
+import { UpdateService } from '@/services/update-service'
 
 /**
  * 应用组合根：全项目唯一允许同时接触「具体实现」的位置。
@@ -57,3 +59,4 @@ export const restoreService = new RestoreService({
 export const vscodePresenceService = {
   detect: () => detectVscodeExtensions(tauriFs),
 }
+export const updateService = new UpdateService(createTauriUpdater(), isTauriRuntime)

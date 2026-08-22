@@ -18,6 +18,16 @@ export const zhCN = {
   // 标题栏
   'header.toggleTheme': '切换主题',
   'header.toggleLang': '切换语言',
+  'shortcut.noPresetToSwitch': '没有可切换的其他预设',
+  'shortcut.switchedTo': '已切换到 {name}',
+  'template.pickerLabel': '从供应商模板填充',
+  'template.placeholder': '选择模板…',
+  'template.local': '本地模型',
+  'presetRow.localModel': '本地模型 · 无需 Key',
+  'update.available': '更新到 v{version}',
+  'update.ready': '新版本已下载，点击立即更新',
+  'update.installing': '更新中…',
+  'update.installFailed': '更新失败，请稍后重试',
 
   // 错误边界
   'errorBoundary.title': '界面出现异常',
