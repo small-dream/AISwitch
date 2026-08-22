@@ -2,6 +2,17 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.13] - 2026-08-22
+
+### Added
+
+- Added top-level Global and Project workspace tabs.
+- Added independent Claude Code and Codex CLI project configuration sections that no longer depend on the global tool selection.
+
+### Changed
+
+- Project configuration now selects one directory and configures either tool independently, with records carrying their own tool scope.
+
 ## [0.1.12] - 2026-08-22
 
 ### Added
