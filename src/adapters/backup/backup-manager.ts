@@ -10,7 +10,7 @@ import {
 } from '@/domain/rules/backup-naming'
 import type { FileSystemPort } from '@/types/fs-port'
 
-/** 每个工具每个源文件保留的备份份数（PRD §5.4） */
+/** 每个工具保留的备份总份数（PRD §5.4） */
 const KEEP_COUNT = 20
 
 function basenameOf(path: string): string {
@@ -44,8 +44,8 @@ export class BackupManager {
     await this.restrict(dir)
     const name = backupFileName(basenameOf(sourcePath), new Date())
     const backupPath = `${dir}/${name}`
-    await this.fs.writeTextFile(backupPath, content)
-    await this.restrict(backupPath)
+    // 原子写：tmp → 0600 → rename → 0600，避免崩溃留下半截备份、明文落 0644 窗口
+    await writeTextAtomic(this.fs, backupPath, content)
     await this.tightenExisting(tool, name)
     await this.prune(tool)
     return name

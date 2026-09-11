@@ -21,6 +21,7 @@ describe('BackupManager 权限收紧', () => {
       PATHS.appDir,
       PATHS.backupsDir,
       `${PATHS.backupsDir}/claude-code`,
+      `${PATHS.backupsDir}/claude-code/${name}.jake-tmp`,
       `${PATHS.backupsDir}/claude-code/${name}`,
     ])
   })
@@ -55,5 +56,44 @@ describe('BackupManager 权限收紧', () => {
     await new BackupManager(fs).backup('claude-code', PATHS.claudeSettings)
 
     expect(fs.restricted()).toContain(legacy)
+  })
+})
+
+describe('BackupManager 原子写与滚动清理', () => {
+  it('backup：原子写落盘不留 tmp，返回备份名且内容完整可读回', async () => {
+    const fs = createMemoryFs({
+      [PATHS.claudeSettings]: '{"env":{"ANTHROPIC_AUTH_TOKEN":"sk-secret"}}',
+    })
+    const backups = new BackupManager(fs)
+
+    const name = await backups.backup('claude-code', PATHS.claudeSettings)
+
+    expect(name).toBeTruthy()
+    if (!name) {
+      throw new Error('backup 应返回备份名')
+    }
+    const dir = `${PATHS.backupsDir}/claude-code`
+    expect(fs.files().get(`${dir}/${name}`)).toBe('{"env":{"ANTHROPIC_AUTH_TOKEN":"sk-secret"}}')
+    expect(fs.files().has(`${dir}/${name}.jake-tmp`)).toBe(false)
+  })
+
+  it('prune：外来文件不参与保留计数且不被删除', async () => {
+    const dir = `${PATHS.backupsDir}/claude-code`
+    const seeded: Record<string, string> = { [PATHS.claudeSettings]: '{"env":{}}' }
+    for (let i = 0; i < 20; i += 1) {
+      seeded[`${dir}/20260101-0000${String(i).padStart(2, '0')}--settings.json`] = `v${String(i)}`
+    }
+    const foreign = `${dir}/foreign-notes.txt`
+    seeded[foreign] = 'do-not-touch'
+    const fs = createMemoryFs(seeded)
+    const backups = new BackupManager(fs)
+
+    await backups.backup('claude-code', PATHS.claudeSettings)
+
+    // 21 份合法备份超量 → 仅清理最旧 1 份；外来文件原样保留
+    expect(fs.files().get(foreign)).toBe('do-not-touch')
+    const remaining = [...fs.files().keys()].filter((key) => key.startsWith(`${dir}/`))
+    expect(remaining).toHaveLength(21)
+    expect(fs.files().has(`${dir}/20260101-000000--settings.json`)).toBe(false)
   })
 })

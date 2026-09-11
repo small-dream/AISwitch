@@ -84,4 +84,18 @@ describe('namesToPrune', () => {
   it('未超量时不清理', () => {
     expect(namesToPrune(['a', 'b'])).toEqual([])
   })
+
+  it('不符合命名规则的外来文件不参与保留计数、绝不清理', () => {
+    const names = [
+      ...Array.from({ length: 21 }, (_, i) => `20260801-0000${String(i).padStart(2, '0')}--x`),
+      'random.txt',
+      '.DS_Store',
+    ]
+
+    const pruned = namesToPrune(names, 20)
+
+    expect(pruned).toEqual(['20260801-000000--x'])
+    expect(pruned).not.toContain('random.txt')
+    expect(pruned).not.toContain('.DS_Store')
+  })
 })

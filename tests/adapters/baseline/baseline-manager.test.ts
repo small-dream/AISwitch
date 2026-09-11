@@ -15,6 +15,20 @@ function setup(initial: Record<string, string> = {}) {
 }
 
 describe('BaselineManager 捕获', () => {
+  it('基线目录完全不存在时首次捕获自动建目并成功（writeTextFile 不创建父目录）', async () => {
+    const { fs, baselines } = setup({ [PATHS.claudeSettings]: ORIGINAL })
+    expect(await fs.exists(PATHS.baselineDir)).toBe(false)
+
+    const captured = await baselines.captureIfAbsent('claude-code', [PATHS.claudeSettings])
+
+    expect(captured).toBe(true)
+    const manifest = await baselines.manifest()
+    expect(manifest.tools['claude-code']?.files[PATHS.claudeSettings]?.status).toBe('captured')
+    await expect(baselines.readCaptured('claude-code', PATHS.claudeSettings)).resolves.toBe(
+      ORIGINAL
+    )
+  })
+
   it('文件存在且无历史备份 → captured 并保存内容副本', async () => {
     const { baselines } = setup({ [PATHS.claudeSettings]: ORIGINAL })
 

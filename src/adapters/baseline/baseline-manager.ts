@@ -85,6 +85,7 @@ export class BaselineManager {
     }
     const backupNames = await this.backups.list(tool)
     const dirExisted = await this.fs.exists(dirnameOf(files[0] ?? ''))
+    await this.prepareBaselineDirs(tool)
     const entries: Record<string, BaselineEntry> = {}
     const capturedAt = new Date().toISOString()
     for (const file of files) {
@@ -96,6 +97,18 @@ export class BaselineManager {
     }
     await this.persist(tool, next)
     return true
+  }
+
+  /**
+   * 捕获前建好基线目录并逐层收紧：writeTextAtomic 不创建父目录，
+   * 不先建目则首次捕获（最重要的 captured 场景）会以 ENOENT 静默失败
+   */
+  private async prepareBaselineDirs(tool: TargetTool): Promise<void> {
+    await this.fs.mkdir(PATHS.baselineDir)
+    await this.fs.mkdir(`${PATHS.baselineDir}/${tool}`)
+    await this.restrict(PATHS.appDir)
+    await this.restrict(PATHS.baselineDir)
+    await this.restrict(`${PATHS.baselineDir}/${tool}`)
   }
 
   private async captureEntry(

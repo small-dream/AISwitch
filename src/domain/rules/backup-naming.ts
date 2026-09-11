@@ -46,7 +46,11 @@ export function earliestBackupName(names: readonly string[], basename: string): 
   return matched[0] ?? null
 }
 
-/** 超出保留数量时应清理的旧备份名（按新到旧排列） */
+/** 超出保留数量时应清理的旧备份名（按新到旧排列）；不符合命名规则的外来文件不参与计数、绝不清理 */
 export function namesToPrune(names: readonly string[], keep = 20): string[] {
-  return [...names].sort().reverse().slice(keep)
+  return names
+    .filter((name) => parseBackupName(name) !== null)
+    .sort()
+    .reverse()
+    .slice(keep)
 }
