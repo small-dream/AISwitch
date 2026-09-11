@@ -2,6 +2,23 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.15] - 2026-09-11
+
+### Fixed
+
+- Capture the pre-install baseline correctly on the first switch, so one-click restore can perform exact restores instead of silently degrading.
+- Write backups atomically and skip foreign files during backup pruning.
+- Roll back exactly what a failed switch changed: restore the backup made by that switch, remove newly created config files, leave untouched Codex files alone, and report rollback failures honestly.
+- Restore project configuration snapshots when a later file write fails, so projects never keep half-written configs.
+- Drop the empty bearer token from the Codex config for local-model presets without an API key.
+- Refresh the backup list after every switch and serialize switches per tool across the panel, tray, and global shortcut entry points.
+- Reset the bundle dialog form on every open, surface backup deletion failures, localize the project picker error, and load the app version through the adapter layer.
+
+### Changed
+
+- Tightened filesystem permissions to the three managed directories; project directories are granted per session only after an explicit directory pick or a recorded project at startup.
+- Services now depend on injected port interfaces instead of concrete adapter implementations.
+
 ## [0.1.14] - 2026-08-22
 
 ### Added
