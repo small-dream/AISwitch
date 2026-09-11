@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.16] - 2026-09-11
+
+### Fixed
+
+- Rotate the updater public key to match the release signing key, so in-app updates pass signature verification from this version on. Installs of 0.1.14 and 0.1.15 must download this release manually; their embedded public key can never verify new signatures.
+
 ## [0.1.15] - 2026-09-11
 
 ### Fixed

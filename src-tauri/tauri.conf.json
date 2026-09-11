@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AISwitch",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "identifier": "com.small-dream.aiswitch",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -47,7 +47,7 @@
       "endpoints": [
         "https://github.com/small-dream/AISwitch/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEY1RjczRjk1Njc4MUJCMkMKUldRc3U0Rm5sVC8zOVg2UUsxRG5QSVJ1eVlVbzRQQzFmbjZ0SXdybURxbHkxL1dPVm1pLzJKTVEK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IERCRDhENDBCREIwOEQzMzgKUldRNDB3amJDOVRZMjFLeHk1RVdJTmxpakg3VUlicGtKcEIwbVBVWklIQmRrSFgvWTBPTWx4U0MK"
     }
   }
 }
