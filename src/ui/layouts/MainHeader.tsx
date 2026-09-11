@@ -1,8 +1,7 @@
-import { getVersion } from '@tauri-apps/api/app'
 import { Moon, Sparkles, Sun } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 import type { AppScope } from '@/types/app-scope'
+import { useAppVersion } from '@/hooks/use-app-version'
 import { useLocaleStore, useT } from '@/i18n/index'
 import { useThemeStore } from '@/stores/theme-store'
 import { Badge } from '@/ui/components/Badge'
@@ -11,10 +10,7 @@ import { RestoreButton } from '@/ui/features/restore/RestoreButton'
 import { UpdateButton } from '@/ui/features/update/UpdateButton'
 
 function VersionBadge() {
-  const [version, setVersion] = useState('')
-  useEffect(() => {
-    getVersion().then(setVersion).catch(() => { setVersion('') })
-  }, [])
+  const version = useAppVersion()
   if (version === '') {
     return null
   }

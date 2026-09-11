@@ -2,6 +2,7 @@ import { Check, FolderOpen, RefreshCw, X } from 'lucide-react'
 
 import { useProjectDirectory } from '@/hooks/use-project-directory'
 import { useT } from '@/i18n/index'
+import { errorMessage } from '@/utils/error-message'
 import { Button } from '@/ui/components/Button'
 
 export function ProjectDirectoryPicker({
@@ -44,7 +45,7 @@ export function ProjectDirectoryPicker({
       {picker.error ? (
         <p className="mt-1 flex items-start gap-1 text-xs text-app-danger" role="alert">
           <X className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-          {picker.error.message}
+          {errorMessage(picker.error)}
         </p>
       ) : null}
     </div>

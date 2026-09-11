@@ -82,6 +82,7 @@ async function performTraySwitch(
     toastSuccess(t('tray.switchedTo', { name }))
     await notifyDesktop('AISwitch', t('tray.switchedTo', { name }))
     await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
+    await queryClient.invalidateQueries({ queryKey: QUERY_KEYS.backups })
   } catch (error) {
     const message = errorMessage(error)
     toastError(message)

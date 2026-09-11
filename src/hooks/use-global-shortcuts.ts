@@ -34,6 +34,7 @@ async function handleNextPreset(queryClient: QueryClient): Promise<void> {
     await switchService.switch(tool, nextId)
     toastSuccess(t('shortcut.switchedTo', { name: preset?.name ?? '' }))
     void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
+    void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.backups })
   } catch (error) {
     toastError(errorMessage(error))
   }

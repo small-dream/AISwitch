@@ -11,6 +11,7 @@ export function useSwitchPreset() {
       switchService.switch(args.tool, args.presetId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.backups })
     },
   })
 }

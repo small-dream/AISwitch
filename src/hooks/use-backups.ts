@@ -6,7 +6,7 @@ import type { TargetTool } from '@/domain/entities/preset'
 import type { BackupEntry } from '@/services/backup-service'
 
 function backupsKey(tool: TargetTool) {
-  return ['backups', tool] as const
+  return [...QUERY_KEYS.backups, tool] as const
 }
 
 export function useBackups(tool: TargetTool) {

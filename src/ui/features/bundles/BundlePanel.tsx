@@ -138,13 +138,9 @@ export function BundlePanel() {
         </ul>
       )}
 
-      <BundleDialog
-        key={dialog.editing?.id ?? 'new'}
-        open={dialog.open}
-        editing={dialog.editing}
-        presets={presets ?? []}
-        onClose={close}
-      />
+      {dialog.open ? (
+        <BundleDialog editing={dialog.editing} presets={presets ?? []} onClose={close} />
+      ) : null}
     </Card>
   )
 }

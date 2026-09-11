@@ -3,6 +3,7 @@ export const QUERY_KEYS = {
   presets: ['presets'] as const,
   bundles: ['bundles'] as const,
   toolStatus: ['tool-status'] as const,
-  baseline: ['baseline'] as const,
+  backups: ['backups'] as const,
   restorePlan: ['restore-plan'] as const,
+  appVersion: ['app-version'] as const,
 }

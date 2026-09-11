@@ -47,7 +47,11 @@ function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
           variant="danger"
           disabled={remove.isPending}
           onClick={() => {
-            remove.mutate(entry.name)
+            remove.mutate(entry.name, {
+              onError: (error) => {
+                toastError(errorMessage(error))
+              },
+            })
           }}
         >
           {t('common.delete')}

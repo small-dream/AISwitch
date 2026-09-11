@@ -24,7 +24,27 @@ const EN_MESSAGES: Record<string, string> = {
   预设不存在: 'Preset not found',
   同一工具下已存在同名预设: 'A preset with this name already exists for this tool',
   预设与目标工具不匹配: 'Preset does not match the target tool',
-  '切换后回读校验失败，已自动回滚': 'Post-switch verification failed; rolled back automatically',
+  '切换后回读校验失败；已自动回滚':
+    'Post-switch verification failed; rolled back automatically',
+  '切换后回读校验失败；已清理本次新建的配置文件':
+    'Post-switch verification failed; the newly created config file was removed',
+  '切换后回读校验失败；自动回滚也失败，请从备份目录手动恢复':
+    'Post-switch verification failed and automatic rollback also failed; restore manually from the backups directory',
+  '写入文件失败；已自动回滚': 'Failed to write the file; rolled back automatically',
+  '写入文件失败；已清理本次新建的配置文件':
+    'Failed to write the file; the newly created config file was removed',
+  '写入文件失败；自动回滚也失败，请从备份目录手动恢复':
+    'Failed to write the file and automatic rollback also failed; restore manually from the backups directory',
+  '文件权限收紧失败；已自动回滚': 'Failed to restrict file permissions; rolled back automatically',
+  '文件权限收紧失败；已清理本次新建的配置文件':
+    'Failed to restrict file permissions; the newly created config file was removed',
+  '文件权限收紧失败；自动回滚也失败，请从备份目录手动恢复':
+    'Failed to restrict file permissions and automatic rollback also failed; restore manually from the backups directory',
+  '应用配置失败；已自动回滚': 'Failed to apply the config; rolled back automatically',
+  '应用配置失败；已清理本次新建的配置文件':
+    'Failed to apply the config; the newly created config file was removed',
+  '应用配置失败；自动回滚也失败，请从备份目录手动恢复':
+    'Failed to apply the config and automatic rollback also failed; restore manually from the backups directory',
   '元数据条目 slug 与预设模型不一致': 'Metadata entry slug does not match the preset model',
   '模型元数据必须是 JSON 对象': 'Model metadata must be a JSON object',
   '模型元数据是整份目录文件，但其中没有与模型名匹配的条目':
@@ -38,6 +58,9 @@ const EN_MESSAGES: Record<string, string> = {
   '备份已不可用，已跳过': 'Backup no longer available; skipped',
   '文件已不存在，已跳过': 'File no longer exists; skipped',
   '文件已不存在，无需剥离': 'File no longer exists; nothing to strip',
+  // 项目目录选择
+  选择项目目录失败: 'Failed to choose a project directory',
+  读取应用版本失败: 'Failed to read the app version',
   // 兜底
   发生未知错误: 'An unknown error occurred',
 }

@@ -45,6 +45,7 @@ export function useSwitchBundle() {
     mutationFn: (bundleId: string) => bundleService.switch(bundleId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.backups })
     },
   })
 }

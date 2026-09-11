@@ -118,24 +118,18 @@ function BundleDialogActions({
   )
 }
 
-/** 组合预设新建/编辑弹窗（US-17）：名称 + 各工具预设下拉，至少选择一个 */
+/** 组合预设新建/编辑弹窗（US-17）：名称 + 各工具预设下拉，至少选择一个；仅在打开时挂载，关闭即卸载以重置表单状态 */
 export function BundleDialog({
-  open,
   editing,
   presets,
   onClose,
 }: {
-  open: boolean
   editing: Bundle | null
   presets: readonly Preset[]
   onClose: () => void
 }) {
   const t = useT()
   const { form, error, submitting, set, submit } = useBundleForm({ editing, onClose })
-
-  if (!open) {
-    return null
-  }
 
   return (
     <div
