@@ -3,6 +3,8 @@ import { homeDir } from '@tauri-apps/api/path'
 
 import { AppError } from '@/domain/errors'
 
+import { grantProjectDirs } from '@/adapters/system/fs-scope'
+
 export interface PickedProjectDirectory {
   absolutePath: string
   relativePath: string
@@ -34,6 +36,9 @@ export async function pickProjectDirectory(): Promise<PickedProjectDirectory | n
   if (typeof selected !== 'string') {
     return null
   }
+  // 显式授权兜底：dialog 的 scope 注入不持久，授权失败直接视为选择失败，
+  // 否则后续写入才会失败且更难诊断。
+  await grantProjectDirs([selected])
   const home = await homeDir()
   const relativePath = relativeToHome(selected, home)
   const parts = relativePath.split('/').filter(Boolean)

@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "主窗口最小权限：配置三目录读写 + 系统选择的项目目录递归读写 + VS Code 目录只读探测 + 连通性测试 HTTP（ARCHITECTURE §7）",
+  "description": "主窗口最小权限：~/.claude、~/.codex、~/.aiswitch 三目录读写 + VS Code 目录只读探测 + 连通性测试 HTTP；项目目录不经嵌套通配符预授权，由目录选择器/历史记录经 allow_project_dirs 命令在运行时按用户手势授予（ARCHITECTURE §7）",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -16,12 +16,8 @@
       "allow": [
         { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
-        { "path": "$HOME/**/.claude" },
-        { "path": "$HOME/**/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/**/.codex" },
-        { "path": "$HOME/**/.codex/**" },
         { "path": "$HOME/.aiswitch" },
         { "path": "$HOME/.aiswitch/**" },
         { "path": "$HOME/.vscode/**" },
@@ -33,12 +29,8 @@
       "allow": [
         { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
-        { "path": "$HOME/**/.claude" },
-        { "path": "$HOME/**/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/**/.codex" },
-        { "path": "$HOME/**/.codex/**" },
         { "path": "$HOME/.aiswitch" },
         { "path": "$HOME/.aiswitch/**" }
       ]
@@ -48,12 +40,8 @@
       "allow": [
         { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
-        { "path": "$HOME/**/.claude" },
-        { "path": "$HOME/**/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/**/.codex" },
-        { "path": "$HOME/**/.codex/**" },
         { "path": "$HOME/.aiswitch" },
         { "path": "$HOME/.aiswitch/**" }
       ]
@@ -63,12 +51,8 @@
       "allow": [
         { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
-        { "path": "$HOME/**/.claude" },
-        { "path": "$HOME/**/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/**/.codex" },
-        { "path": "$HOME/**/.codex/**" },
         { "path": "$HOME/.aiswitch" },
         { "path": "$HOME/.aiswitch/**" },
         { "path": "$HOME/.vscode/**" },
@@ -80,12 +64,8 @@
       "allow": [
         { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
-        { "path": "$HOME/**/.claude" },
-        { "path": "$HOME/**/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/**/.codex" },
-        { "path": "$HOME/**/.codex/**" },
         { "path": "$HOME/.aiswitch" },
         { "path": "$HOME/.aiswitch/**" }
       ]
@@ -95,12 +75,8 @@
       "allow": [
         { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
-        { "path": "$HOME/**/.claude" },
-        { "path": "$HOME/**/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/**/.codex" },
-        { "path": "$HOME/**/.codex/**" },
         { "path": "$HOME/.aiswitch" },
         { "path": "$HOME/.aiswitch/**" }
       ]
@@ -110,12 +86,8 @@
       "allow": [
         { "path": "$HOME/.claude" },
         { "path": "$HOME/.claude/**" },
-        { "path": "$HOME/**/.claude" },
-        { "path": "$HOME/**/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
-        { "path": "$HOME/**/.codex" },
-        { "path": "$HOME/**/.codex/**" },
         { "path": "$HOME/.aiswitch" },
         { "path": "$HOME/.aiswitch/**" }
       ]
