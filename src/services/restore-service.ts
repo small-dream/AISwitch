@@ -1,9 +1,4 @@
 import type { BaselineManager } from '@/adapters/baseline/baseline-manager'
-import { writeTextAtomic } from '@/adapters/fs/atomic-write'
-import { readClaudeSettings } from '@/adapters/claude/reader'
-import { writeClaudeSettings } from '@/adapters/claude/writer'
-import { readCodexAuth, readCodexConfig } from '@/adapters/codex/reader'
-import { writeCodexAuth, writeCodexConfig } from '@/adapters/codex/writer'
 import type { BackupService, BackupEntry } from '@/services/backup-service'
 import { PATHS } from '@/constants/paths'
 import { AppError, toAppError } from '@/domain/errors'
@@ -13,6 +8,7 @@ import { stripManagedCodexAuth, stripManagedCodexConfig } from '@/domain/rules/c
 import { codexCatalogAbsolutePath } from '@/domain/rules/codex-catalog'
 import { MANAGED_FILES } from '@/services/switch-service'
 import type { FileSystemPort } from '@/types/fs-port'
+import type { RestoreFileOps } from '@/types/restore-file-ops'
 
 /** 还原动作：精确还原基线 / 近似还原最早备份 / 剥离托管键 / 删除应用创建的文件 / 跳过 */
 export type RestoreAction =
@@ -66,6 +62,7 @@ export class RestoreService {
       fs: FileSystemPort
       baselines: BaselineManager
       backups: BackupService
+      ops: RestoreFileOps
     }
   ) {}
 
@@ -159,7 +156,7 @@ export class RestoreService {
           return '基线副本缺失，已跳过'
         }
         await this.ensureDir(dirnameOf(item.file))
-        await writeTextAtomic(this.deps.fs, item.file, content)
+        await this.deps.ops.writeTextAtomic(this.deps.fs, item.file, content)
         return null
       }
       case 'restore-earliest-backup': {
@@ -211,32 +208,32 @@ export class RestoreService {
   }
 
   private async stripManaged(item: RestoreFilePlan): Promise<string | null> {
-    const { fs } = this.deps
+    const { fs, ops } = this.deps
     if (item.file === PATHS.claudeSettings) {
-      const settings = await readClaudeSettings(fs)
+      const settings = await ops.readClaudeSettings(fs)
       if (!settings) {
         return '文件已不存在，无需剥离'
       }
-      await writeClaudeSettings(fs, stripManagedClaudeKeys(settings))
+      await ops.writeClaudeSettings(fs, stripManagedClaudeKeys(settings))
       return null
     }
     if (item.file === PATHS.codexConfig) {
-      const config = await readCodexConfig(fs)
+      const config = await ops.readCodexConfig(fs)
       if (!config) {
         return '文件已不存在，无需剥离'
       }
       const catalogPath = codexCatalogAbsolutePath(await fs.homeDir())
-      await writeCodexConfig(fs, stripManagedCodexConfig(config, catalogPath))
+      await ops.writeCodexConfig(fs, stripManagedCodexConfig(config, catalogPath))
       return null
     }
     if (item.file === PATHS.codexAuth) {
-      const auth = await readCodexAuth(fs)
+      const auth = await ops.readCodexAuth(fs)
       const stripped = stripManagedCodexAuth(auth)
       if (stripped === null) {
         // 剥空 = 该文件只有应用写入的 Key，按「应用创建」语义删除
         await fs.remove(PATHS.codexAuth)
       } else {
-        await writeCodexAuth(fs, stripped)
+        await ops.writeCodexAuth(fs, stripped)
       }
       return null
     }

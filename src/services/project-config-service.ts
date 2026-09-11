@@ -1,24 +1,30 @@
-import { writeTextAtomic } from '@/adapters/fs/atomic-write'
-import { readClaudeSettings } from '@/adapters/claude/reader'
-import { serializeClaudeSettings } from '@/adapters/claude/transformer'
-import { readCodexAuth, readCodexConfig, readCodexModels } from '@/adapters/codex/reader'
-import { serializeCodexAuth, serializeCodexConfig, serializeCodexModels } from '@/adapters/codex/transformer'
 import { replaceModelCatalog } from '@/domain/rules/codex-catalog'
-import { mergeClaudeSettings } from '@/domain/rules/claude-merge'
+import { mergeClaudeSettings, stripManagedClaudeKeys } from '@/domain/rules/claude-merge'
 import { mergeCodexAuth, mergeCodexConfig, stripManagedCodexAuth, stripManagedCodexConfig } from '@/domain/rules/codex-merge'
-import { stripManagedClaudeKeys } from '@/domain/rules/claude-merge'
 import { normalizeProjectPath, projectConfigPath } from '@/domain/rules/project-path'
-import { AppError } from '@/domain/errors'
+import { AppError, toAppError } from '@/domain/errors'
 import type { Preset, TargetTool, ToolStatus } from '@/domain/entities/preset'
 import type { FileSystemPort } from '@/types/fs-port'
 import type { PresetRepository } from '@/adapters/presets/preset-repository'
-import { ProjectConfigRepository } from '@/adapters/projects/project-config-repository'
 import type { ProjectConfigRecord } from '@/domain/entities/project-config-record'
+import type { ProjectConfigOps, ProjectConfigRecordStore } from '@/types/project-config-ops'
 
 export interface ProjectConfigResult {
   projectPath: string
   tool: TargetTool
   configPath: string
+}
+
+/** 待写入的项目文件（相对项目根的正斜杠路径） */
+interface FileWrite {
+  path: string
+  contents: string
+}
+
+/** 写入前的文件状态：content 为 null 表示此前不存在 */
+interface FileSnapshot {
+  path: string
+  content: string | null
 }
 
 function projectFs(fs: FileSystemPort, projectPath: string): FileSystemPort {
@@ -42,7 +48,8 @@ export class ProjectConfigService {
   constructor(
     private readonly fs: FileSystemPort,
     private readonly presets: PresetRepository,
-    private readonly records = new ProjectConfigRepository(fs)
+    private readonly records: ProjectConfigRecordStore,
+    private readonly ops: ProjectConfigOps
   ) {}
 
   async listRecords(tool: TargetTool): Promise<ProjectConfigRecord[]> {
@@ -54,28 +61,107 @@ export class ProjectConfigService {
     const preset = await this.findPreset(tool, presetId)
     const scoped = projectFs(this.fs, projectPath)
     if (tool === 'claude-code') {
-      const current = await readClaudeSettings(scoped)
-      await scoped.mkdir('.claude')
-      await writeTextAtomic(scoped, '.claude/settings.json', serializeClaudeSettings(mergeClaudeSettings(current ?? {}, preset)))
-      await this.saveRecord(projectPath, tool)
-      return { projectPath: normalizeProjectPath(projectPath), tool, configPath: projectConfigPath(projectPath, '.claude/settings.json') }
+      return this.applyClaude(scoped, projectPath, preset)
     }
-    const current = await readCodexConfig(scoped)
-    const auth = await readCodexAuth(scoped)
+    return this.applyCodex(scoped, projectPath, preset)
+  }
+
+  private async applyClaude(
+    scoped: FileSystemPort,
+    projectPath: string,
+    preset: Preset
+  ): Promise<ProjectConfigResult> {
+    const current = await this.ops.readClaudeSettings(scoped)
+    await scoped.mkdir('.claude')
+    await this.ops.writeTextAtomic(
+      scoped,
+      '.claude/settings.json',
+      this.ops.serializeClaudeSettings(mergeClaudeSettings(current ?? {}, preset))
+    )
+    await this.saveRecord(projectPath, 'claude-code')
+    return {
+      projectPath: normalizeProjectPath(projectPath),
+      tool: 'claude-code',
+      configPath: projectConfigPath(projectPath, '.claude/settings.json'),
+    }
+  }
+
+  private async applyCodex(
+    scoped: FileSystemPort,
+    projectPath: string,
+    preset: Preset
+  ): Promise<ProjectConfigResult> {
+    const current = await this.ops.readCodexConfig(scoped)
+    const auth = await this.ops.readCodexAuth(scoped)
     const config = mergeCodexConfig(current ?? {}, preset)
     const projectModelsPath = projectConfigPath(projectPath, '.codex/models.json')
     const configWithCatalog = preset.modelMetadata
       ? { ...config, model_catalog_json: `${await this.fs.homeDir()}/${projectModelsPath}`.replaceAll('\\', '/') }
       : config
-    await scoped.mkdir('.codex')
-    await writeTextAtomic(scoped, '.codex/config.toml', serializeCodexConfig(configWithCatalog))
-    await writeTextAtomic(scoped, '.codex/auth.json', serializeCodexAuth(mergeCodexAuth(auth, preset)))
+    const writes: FileWrite[] = [
+      { path: '.codex/config.toml', contents: this.ops.serializeCodexConfig(configWithCatalog) },
+      { path: '.codex/auth.json', contents: this.ops.serializeCodexAuth(mergeCodexAuth(auth, preset)) },
+    ]
     if (preset.modelMetadata) {
-      const catalog = await readCodexModels(scoped)
-      await writeTextAtomic(scoped, '.codex/models.json', serializeCodexModels(replaceModelCatalog(catalog, preset)))
+      const catalog = await this.ops.readCodexModels(scoped)
+      writes.push({
+        path: '.codex/models.json',
+        contents: this.ops.serializeCodexModels(replaceModelCatalog(catalog, preset)),
+      })
     }
-    await this.saveRecord(projectPath, tool)
-    return { projectPath: normalizeProjectPath(projectPath), tool, configPath: projectConfigPath(projectPath, '.codex/config.toml') }
+    await scoped.mkdir('.codex')
+    await this.writeWithRollback(scoped, writes)
+    await this.saveRecord(projectPath, 'codex')
+    return {
+      projectPath: normalizeProjectPath(projectPath),
+      tool: 'codex',
+      configPath: projectConfigPath(projectPath, '.codex/config.toml'),
+    }
+  }
+
+  /** 多文件写入的失败保护：写前快照各目标文件，任一失败回滚到写前状态后按原错误码重抛 */
+  private async writeWithRollback(fs: FileSystemPort, writes: FileWrite[]): Promise<void> {
+    const snapshots = await this.snapshotAll(fs, writes)
+    try {
+      for (const write of writes) {
+        await this.ops.writeTextAtomic(fs, write.path, write.contents)
+      }
+    } catch (error) {
+      const rolledBack = await this.tryRestore(fs, snapshots)
+      const original = toAppError(error, 'E_CONFIG_WRITE', '项目配置写入失败')
+      throw new AppError(original.code, original.message, { ...original.context, rolledBack })
+    }
+  }
+
+  private async snapshotAll(fs: FileSystemPort, writes: FileWrite[]): Promise<FileSnapshot[]> {
+    const snapshots: FileSnapshot[] = []
+    for (const write of writes) {
+      const content = (await fs.exists(write.path)) ? await fs.readTextFile(write.path) : null
+      snapshots.push({ path: write.path, content })
+    }
+    return snapshots
+  }
+
+  /** 回滚自身也可能失败（如磁盘故障），不得掩盖原始错误，仅以 rolledBack 如实上报 */
+  private async tryRestore(fs: FileSystemPort, snapshots: FileSnapshot[]): Promise<boolean> {
+    try {
+      for (const snapshot of snapshots) {
+        await this.restoreSnapshot(fs, snapshot)
+      }
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  private async restoreSnapshot(fs: FileSystemPort, snapshot: FileSnapshot): Promise<void> {
+    if (snapshot.content === null) {
+      if (await fs.exists(snapshot.path)) {
+        await fs.remove(snapshot.path)
+      }
+      return
+    }
+    await this.ops.writeTextAtomic(fs, snapshot.path, snapshot.content)
   }
 
   /** 移除 AISwitch 托管配置项，保留项目文件中的其他用户内容。 */
@@ -84,10 +170,10 @@ export class ProjectConfigService {
     if (tool === 'claude-code') {
       const path = '.claude/settings.json'
       if (await scoped.exists(path)) {
-        const current = await readClaudeSettings(scoped)
+        const current = await this.ops.readClaudeSettings(scoped)
         if (current) {
           const stripped = stripManagedClaudeKeys(current)
-          await this.writeOrRemove(scoped, path, serializeClaudeSettings(stripped), Object.keys(stripped).length === 0)
+          await this.writeOrRemove(scoped, path, this.ops.serializeClaudeSettings(stripped), Object.keys(stripped).length === 0)
         }
       }
       await this.records.remove(normalizeProjectPath(projectPath), tool)
@@ -95,17 +181,17 @@ export class ProjectConfigService {
     }
     const configPath = '.codex/config.toml'
     const authPath = '.codex/auth.json'
-    const config = await readCodexConfig(scoped)
+    const config = await this.ops.readCodexConfig(scoped)
     const home = await this.fs.homeDir()
     const managedCatalogPath = `${home}/${projectConfigPath(projectPath, '.codex/models.json')}`.replaceAll('\\', '/')
     if (config) {
       const stripped = stripManagedCodexConfig(config, managedCatalogPath)
-      await this.writeOrRemove(scoped, configPath, serializeCodexConfig(stripped), Object.keys(stripped).length === 0)
+      await this.writeOrRemove(scoped, configPath, this.ops.serializeCodexConfig(stripped), Object.keys(stripped).length === 0)
     }
-    const auth = await readCodexAuth(scoped)
+    const auth = await this.ops.readCodexAuth(scoped)
     if (auth !== null) {
       const strippedAuth = stripManagedCodexAuth(auth)
-      await this.writeOrRemove(scoped, authPath, strippedAuth ? serializeCodexAuth(strippedAuth) : '', strippedAuth === null)
+      await this.writeOrRemove(scoped, authPath, strippedAuth ? this.ops.serializeCodexAuth(strippedAuth) : '', strippedAuth === null)
     }
     // models.json 可能由用户或供应商预先维护，移除项目配置时保守保留，避免误删模型目录。
     await this.records.remove(normalizeProjectPath(projectPath), tool)
@@ -116,10 +202,10 @@ export class ProjectConfigService {
     const scoped = projectFs(this.fs, projectPath)
     try {
       if (tool === 'claude-code') {
-        const config = await readClaudeSettings(scoped)
+        const config = await this.ops.readClaudeSettings(scoped)
         return config ? { tool, status: 'installed', activeModel: config.env?.ANTHROPIC_MODEL ?? config.model, activeProviderName: config.env?.ANTHROPIC_BASE_URL ?? '官方 API' } : { tool, status: 'not-configured' }
       }
-      const config = await readCodexConfig(scoped)
+      const config = await this.ops.readCodexConfig(scoped)
       return config?.model
         ? { tool, status: 'installed', activeModel: config.model, activeProviderName: config.model_provider }
         : { tool, status: 'not-configured' }
@@ -154,6 +240,6 @@ export class ProjectConfigService {
       await fs.remove(path)
       return
     }
-    await writeTextAtomic(fs, path, contents)
+    await this.ops.writeTextAtomic(fs, path, contents)
   }
 }

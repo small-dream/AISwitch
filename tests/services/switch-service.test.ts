@@ -95,3 +95,130 @@ describe('SwitchService 安装前基线挂钩', () => {
     expect(applied).toEqual([preset.id])
   })
 })
+
+/** 可控闸门：避免使用非空断言的 deferred 模式 */
+function createGate(): { gate: Promise<void>; release: () => void } {
+  let release: () => void = () => undefined
+  const gate = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  return { gate, release }
+}
+
+function makeResult(tool: 'claude-code' | 'codex'): ApplyResult {
+  return { tool, appliedAt: new Date().toISOString() }
+}
+
+function targetWith(apply: ConfigTarget['apply'], tool: 'claude-code' | 'codex' = 'claude-code'): ConfigTarget {
+  return {
+    tool,
+    detect: () => Promise.resolve({ tool, status: 'installed' }),
+    apply,
+    verify: () => Promise.resolve(true),
+    rollback: () => Promise.resolve(true),
+  }
+}
+
+function makeLockedService() {
+  const fs = createMemoryFs()
+  const repo = new PresetRepository(fs)
+  const baselines = new BaselineManager(fs, new BackupManager(fs))
+  return { repo, service: new SwitchService(repo, baselines) }
+}
+
+describe('SwitchService 并发串行化：同一工具', () => {
+  it('并发 switch 严格串行执行', async () => {
+    const events: string[] = []
+    registerTarget(
+      targetWith(async (preset) => {
+        events.push(`enter:${preset.id}`)
+        await new Promise((resolve) => setTimeout(resolve, 10))
+        events.push(`exit:${preset.id}`)
+        return makeResult('claude-code')
+      })
+    )
+    const { repo, service } = makeLockedService()
+    await repo.save({ version: 1, presets: [makePreset({ id: 'p1' }), makePreset({ id: 'p2' })] })
+
+    await Promise.all([service.switch('claude-code', 'p1'), service.switch('claude-code', 'p2')])
+
+    expect(events).toEqual(['enter:p1', 'exit:p1', 'enter:p2', 'exit:p2'])
+  })
+
+  it('rollback 与进行中的 switch 走同一串行链', async () => {
+    const events: string[] = []
+    const applyGate = createGate()
+    const enteredGate = createGate()
+    const target = targetWith(async () => {
+      events.push('apply:enter')
+      enteredGate.release()
+      await applyGate.gate
+      events.push('apply:exit')
+      return makeResult('claude-code')
+    })
+    target.rollback = () => {
+      events.push('rollback')
+      return Promise.resolve(true)
+    }
+    registerTarget(target)
+    const { repo, service } = makeLockedService()
+    await repo.save({ version: 1, presets: [makePreset({ id: 'p1' })] })
+
+    const switching = service.switch('claude-code', 'p1')
+    await enteredGate.gate
+    const rolling = service.rollback('claude-code')
+    applyGate.release()
+    await Promise.all([switching, rolling])
+
+    expect(events).toEqual(['apply:enter', 'apply:exit', 'rollback'])
+  })
+})
+
+describe('SwitchService 并发串行化：失败恢复', () => {
+  it('失败的 switch 不阻塞同一工具的后续调用', async () => {
+    registerTarget(
+      targetWith((preset) =>
+        preset.id === 'p1'
+          ? Promise.reject(new AppError('E_CONFIG_WRITE', '写入失败', {}))
+          : Promise.resolve(makeResult('claude-code'))
+      )
+    )
+    const { repo, service } = makeLockedService()
+    await repo.save({ version: 1, presets: [makePreset({ id: 'p1' }), makePreset({ id: 'p2' })] })
+
+    await expect(service.switch('claude-code', 'p1')).rejects.toMatchObject({
+      code: 'E_CONFIG_WRITE',
+    })
+    await expect(service.switch('claude-code', 'p2')).resolves.toMatchObject({
+      tool: 'claude-code',
+    })
+  })
+})
+
+describe('SwitchService 并发串行化：不同工具', () => {
+  it('不同工具的 switch 可以并行', async () => {
+    const entered: string[] = []
+    const bothEntered = createGate()
+    const makeSlow = (tool: 'claude-code' | 'codex'): ConfigTarget =>
+      targetWith(async () => {
+        entered.push(tool)
+        if (entered.length === 2) {
+          // 两个工具的 apply 都已进入才放行：全局串行实现会在此死锁并超时
+          bothEntered.release()
+        }
+        await bothEntered.gate
+        return makeResult(tool)
+      }, tool)
+    registerTarget(makeSlow('claude-code'))
+    registerTarget(makeSlow('codex'))
+    const { repo, service } = makeLockedService()
+    await repo.save({
+      version: 1,
+      presets: [makePreset({ id: 'p1' }), makePreset({ id: 'p2', tool: 'codex' })],
+    })
+
+    await Promise.all([service.switch('claude-code', 'p1'), service.switch('codex', 'p2')])
+
+    expect(entered).toHaveLength(2)
+  })
+})

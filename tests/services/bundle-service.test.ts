@@ -144,6 +144,7 @@ describe('BundleService.switch', () => {
     const codex = results.find((result) => result.tool === 'codex')
     expect(claude?.ok).toBe(false)
     expect(claude?.error).toBe('写入失败')
+    expect(claude?.code).toBe('E_CONFIG_WRITE')
     expect(codex?.ok).toBe(true)
   })
 

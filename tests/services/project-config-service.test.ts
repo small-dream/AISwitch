@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest'
 
 import { PresetRepository } from '@/adapters/presets/preset-repository'
+import { createProjectConfigRecordStore, projectConfigOps } from '@/adapters/projects/project-config-ops'
+import { AppError } from '@/domain/errors'
 import { ProjectConfigService } from '@/services/project-config-service'
 import { makePreset } from '../helpers/make-preset'
-import { createMemoryFs } from '../helpers/memory-fs'
+import { createMemoryFs, type MemoryFs } from '../helpers/memory-fs'
 
 function serviceWithPreset(initial: Record<string, string>, overrides: Parameters<typeof makePreset>[0] = {}) {
   const fs = createMemoryFs(initial)
   const repo = new PresetRepository(fs)
   const preset = makePreset({ id: 'p1', ...overrides })
-  return { fs, preset, service: new ProjectConfigService(fs, repo), repo }
+  const service = new ProjectConfigService(fs, repo, createProjectConfigRecordStore(fs), projectConfigOps)
+  return { fs, preset, service, repo }
 }
 
 describe('ProjectConfigService', () => {
@@ -83,5 +86,66 @@ describe('ProjectConfigService records', () => {
 
     expect(await service.listRecords('claude-code')).toEqual([])
     expect(fs.files().has('.aiswitch/project-configs.json')).toBe(true)
+  })
+})
+
+
+/** 让指定子串路径的写入失败，其余写入照常（模拟写序列中途磁盘故障） */
+function failingWrite(fs: MemoryFs, failOn: string): MemoryFs {
+  return {
+    ...fs,
+    writeTextFile(path, contents) {
+      if (path.includes(failOn)) {
+        return Promise.reject(new Error('EACCES'))
+      }
+      return fs.writeTextFile(path, contents)
+    },
+  }
+}
+
+describe('ProjectConfigService.apply 失败回滚', () => {
+  it('第二个文件写入失败：config.toml 恢复原内容、auth.json 保持不存在、错误码保留', async () => {
+    const fs = failingWrite(
+      createMemoryFs({ 'repos/demo/.codex/config.toml': 'model = "old"\n' }),
+      'auth.json'
+    )
+    const repo = new PresetRepository(fs)
+    const preset = makePreset({ id: 'p1', tool: 'codex' })
+    await repo.save({ version: 1, presets: [preset] })
+    const service = new ProjectConfigService(fs, repo, createProjectConfigRecordStore(fs), projectConfigOps)
+
+    const error = await service.apply('repos/demo', 'codex', preset.id).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(AppError)
+    expect((error as AppError).code).toBe('E_FS_WRITE')
+    expect((error as AppError).context.rolledBack).toBe(true)
+    expect(fs.files().get('repos/demo/.codex/config.toml')).toBe('model = "old"\n')
+    expect(fs.files().has('repos/demo/.codex/auth.json')).toBe(false)
+  })
+
+  it('models.json 写入失败：已写的 config/auth 回滚，应用创建的 models.json 被移除', async () => {
+    const fs = failingWrite(
+      createMemoryFs({
+        'repos/demo/.codex/config.toml': 'model = "old"\n',
+        'repos/demo/.codex/auth.json': '{"OPENAI_API_KEY":"sk-user"}',
+      }),
+      'models.json'
+    )
+    const repo = new PresetRepository(fs)
+    const preset = makePreset({
+      id: 'p1',
+      tool: 'codex',
+      modelMetadata: { 'glm-4.6': { slug: 'glm-4.6' } },
+    })
+    await repo.save({ version: 1, presets: [preset] })
+    const service = new ProjectConfigService(fs, repo, createProjectConfigRecordStore(fs), projectConfigOps)
+
+    const error = await service.apply('repos/demo', 'codex', preset.id).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(AppError)
+    expect((error as AppError).code).toBe('E_FS_WRITE')
+    expect(fs.files().get('repos/demo/.codex/config.toml')).toBe('model = "old"\n')
+    expect(fs.files().get('repos/demo/.codex/auth.json')).toBe('{"OPENAI_API_KEY":"sk-user"}')
+    expect(fs.files().has('repos/demo/.codex/models.json')).toBe(false)
   })
 })

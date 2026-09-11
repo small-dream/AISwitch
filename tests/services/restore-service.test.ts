@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { BackupManager } from '@/adapters/backup/backup-manager'
 import { BaselineManager } from '@/adapters/baseline/baseline-manager'
+import { restoreFileOps } from '@/adapters/restore/restore-file-ops'
 import { PATHS } from '@/constants/paths'
 import { RestoreService } from '@/services/restore-service'
 import { BackupService } from '@/services/backup-service'
@@ -12,7 +13,7 @@ function setup(initial: Record<string, string> = {}) {
   const backupManager = new BackupManager(fs)
   const baselines = new BaselineManager(fs, backupManager)
   const backups = new BackupService(backupManager)
-  const restore = new RestoreService({ fs, baselines, backups })
+  const restore = new RestoreService({ fs, baselines, backups, ops: restoreFileOps })
   return { fs, backupManager, baselines, backups, restore }
 }
 
@@ -188,6 +189,7 @@ describe('RestoreService.execute 安全与兜底', () => {
       fs: failing,
       baselines: base.baselines,
       backups: base.backups,
+      ops: restoreFileOps,
     })
 
     const result = await restore.execute()

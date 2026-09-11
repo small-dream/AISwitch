@@ -1,6 +1,7 @@
 import type { BundleRepository } from '@/adapters/bundles/bundle-repository'
 import type { PresetRepository } from '@/adapters/presets/preset-repository'
-import { AppError } from '@/domain/errors'
+import type { ErrorCode } from '@/constants/error-codes'
+import { AppError, isAppError } from '@/domain/errors'
 import type { Bundle, BundleInput } from '@/domain/entities/bundle'
 import type { TargetTool } from '@/domain/entities/preset'
 import { bundleInputSchema } from '@/domain/schemas/bundle'
@@ -11,6 +12,8 @@ export interface BundleSwitchResult {
   presetId: string
   ok: boolean
   error?: string
+  /** AppError 错误码（非 AppError 的兜底异常为空），供 UI 区分失败类别 */
+  code?: ErrorCode
 }
 
 /** 组合预设用例：CRUD + 引用完整性 + 聚合切换（US-17） */
@@ -89,6 +92,7 @@ export class BundleService {
           presetId: target.presetId,
           ok: false,
           error: error instanceof Error ? error.message : String(error),
+          code: isAppError(error) ? error.code : undefined,
         })
       }
     }
