@@ -15,13 +15,19 @@ export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexCon
     // 双通道写 Key：块内嵌 token（DeepSeek 脚本模式）+ auth.json（官方模式），两种取 key 路径都生效。
     // name 为 Codex 必填（缺失会导致整个 config.toml 加载失败、CLI/插件退回安装引导）；
     // wire_api 统一 responses，与官方及主流中转对齐，避免回落 chat 协议。
-    providers[injected] = {
+    // 空 Key（本地模型，PRD §5.10）时删除鉴权键而非写空串，与 mergeCodexAuth 的删除语义对齐。
+    const block = {
       ...existing,
       name: preset.providerName,
       base_url: preset.baseUrl,
       wire_api: 'responses',
-      experimental_bearer_token: preset.apiKey ?? '',
     }
+    if (preset.apiKey) {
+      block.experimental_bearer_token = preset.apiKey
+    } else {
+      Reflect.deleteProperty(block, 'experimental_bearer_token')
+    }
+    providers[injected] = block
     modelProvider = injected
   } else {
     Reflect.deleteProperty(providers, injected)

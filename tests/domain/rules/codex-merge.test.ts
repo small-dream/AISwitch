@@ -72,7 +72,7 @@ describe('mergeCodexAuth', () => {
 })
 
 describe('mergeCodexConfig · 本地模型（无 Key）', () => {
-  it('baseUrl 存在而 Key 为空：注入块 token 写空串', () => {
+  it('baseUrl 存在而 Key 为空：注入块不写 experimental_bearer_token 键（PRD §5.10）', () => {
     const injected = CODEX_CONFIG_KEYS.injectedProvider
     const preset = makePreset({
       tool: 'codex',
@@ -80,9 +80,42 @@ describe('mergeCodexConfig · 本地模型（无 Key）', () => {
       apiKey: undefined,
     })
     const merged = mergeCodexConfig(CURRENT, preset)
+    const block = merged.model_providers?.[injected]
 
-    expect(merged.model_providers?.[injected]?.experimental_bearer_token).toBe('')
+    expect(block).toBeDefined()
+    expect(block && 'experimental_bearer_token' in block).toBe(false)
     expect(merged.model_provider).toBe(injected)
+  })
+
+  it('Key 为空时连同既有注入块的旧 token 一并删除', () => {
+    const injected = CODEX_CONFIG_KEYS.injectedProvider
+    const seeded: CodexConfig = {
+      ...CURRENT,
+      model_providers: {
+        ...CURRENT.model_providers,
+        [injected]: {
+          base_url: 'http://127.0.0.1:11434',
+          experimental_bearer_token: 'sk-stale',
+        },
+      },
+    }
+    const preset = makePreset({
+      tool: 'codex',
+      baseUrl: 'http://127.0.0.1:11434',
+      apiKey: undefined,
+    })
+    const merged = mergeCodexConfig(seeded, preset)
+    const block = merged.model_providers?.[injected]
+
+    expect(block && 'experimental_bearer_token' in block).toBe(false)
+  })
+
+  it('Key 非空：注入块写入该 token', () => {
+    const injected = CODEX_CONFIG_KEYS.injectedProvider
+    const preset = makePreset({ tool: 'codex', baseUrl: 'https://relay.example.com/v1' })
+    const merged = mergeCodexConfig(CURRENT, preset)
+
+    expect(merged.model_providers?.[injected]?.experimental_bearer_token).toBe('sk-test-key')
   })
 })
 

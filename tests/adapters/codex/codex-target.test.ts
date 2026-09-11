@@ -117,6 +117,26 @@ describe('CodexConfigTarget · apply / rollback', () => {
   })
 })
 
+describe('CodexConfigTarget · 本地模型（无 Key）', () => {
+  it('apply：不写空 token、删除 auth 键且校验通过', async () => {
+    const fs = seededFs()
+    const target = createCodexTarget(fs)
+    const preset = makePreset({
+      tool: 'codex',
+      baseUrl: 'http://127.0.0.1:11434',
+      apiKey: undefined,
+    })
+
+    await target.apply(preset)
+
+    const block = readProviders(fs)[INJECTED]
+    expect(block).toBeDefined()
+    expect(block && 'experimental_bearer_token' in block).toBe(false)
+    expect('OPENAI_API_KEY' in readAuth(fs)).toBe(false)
+    expect(await target.verify(preset)).toBe(true)
+  })
+})
+
 describe('CodexConfigTarget · rollback', () => {
   it('rollback：恢复两个文件与模型目录的最近备份', async () => {
     const fs = seededFs()
