@@ -192,6 +192,7 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 - **结果归档**：2xx → ok（含耗时）；401/403 → Key 无效；404/405 → 供应商不支持探测；其余状态码/网络异常 → 无法连通；
 - **定位**：最佳努力预检，**不阻断切换**；部分中转站未实现 models 端点（归为 unsupported），提示直接切换验证；**网关类供应商**（如 OpenCode Zen / Go）的 models 端点免鉴权即可返回 2xx，此类结果只代表**可达性**，不能证明 Key 有效；
 - **网络通道**：Tauri http 插件（绕过 WebView CORS 限制）。
+- **复用**：同一 models 端点、同一鉴权头与同一 baseUrl 守卫，同时服务于预设表单的模型名下拉（§5.10）；
 
 ### 5.7 托盘与常驻（US-08）
 
@@ -224,6 +225,8 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 
 ### 5.10 供应商模板库与本地模型（US-19）
 
+- **模型名下拉（2026-09-26）**：预设表单的「模型名」与「小模型」改为可下拉候选的输入框——候选 = 模板推荐模型（离线、按当前 baseUrl 反查同一供应商在该工具下的模板变体，编辑既有预设同样生效）+ 本次「获取模型」拉到的供应商目录；两字段共用同一份候选；自定义地址匹配不到模板时无候选，退回纯手填；
+- **「获取模型」按钮**：按当前 Base URL + Key 请求与 §5.6 相同的 models 端点（同一鉴权头、同一「明文 http 仅回环」守卫）；成功内联提示「已获取 N 个模型」，空结果 / 非 2xx / 网络异常一律内联报错并保留手填；结果不落库、不缓存，只服务当前弹窗；
 - **模板**：内置 Claude 官方 / OpenAI GPT / OpenCode Zen / OpenCode Go / GLM / DeepSeek / Kimi / 通义 / 豆包 / Ollama / LM Studio，仅预填品牌名 / Base URL / 建议模型名 / 小模型，**永不内嵌 API Key**；表单顶部「从模板填充」一键预填；模型名于 2026-09 依据 OpenCode 官方 models 接口与各厂商公开文档刷新，具体以供应商最新文档为准；
 - **模板工具感知（2026-09）**：模板按工具声明预填值，表单只列出当前工具适用的模板，避免把 A 工具的地址填进 B 工具。同一供应商在两个工具下的 Base URL 与可用模型可能不同，典型为 OpenCode 套餐：
   - Claude Code 侧：`https://opencode.ai/zen`（CLI 自动补 `/v1/messages`）、`https://opencode.ai/zen/go`；可用模型为该网关 `/messages` 路由的模型（Zen → Claude 系列；Go → MiniMax / Qwen 系列），并预填 `smallFastModel`；

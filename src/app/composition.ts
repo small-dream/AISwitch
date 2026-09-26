@@ -3,13 +3,17 @@ import { homeDir } from '@tauri-apps/api/path'
 import { createClaudeTarget } from '@/adapters/claude'
 import { createCodexTarget } from '@/adapters/codex'
 import { ConnectivityProber } from '@/adapters/connectivity/http-prober'
+import { ModelCatalogFetcher } from '@/adapters/connectivity/model-catalog-fetcher'
 import { tauriHttp } from '@/adapters/connectivity/tauri-http'
 import { BackupManager } from '@/adapters/backup/backup-manager'
 import { BaselineManager } from '@/adapters/baseline/baseline-manager'
 import { BundleRepository } from '@/adapters/bundles/bundle-repository'
 import { tauriFs } from '@/adapters/fs/tauri-fs-port'
 import { PresetRepository } from '@/adapters/presets/preset-repository'
-import { createProjectConfigRecordStore, projectConfigOps } from '@/adapters/projects/project-config-ops'
+import {
+  createProjectConfigRecordStore,
+  projectConfigOps,
+} from '@/adapters/projects/project-config-ops'
 import { restoreFileOps } from '@/adapters/restore/restore-file-ops'
 import { registerTarget } from '@/adapters/target-registry'
 import { detectVscodeExtensions } from '@/adapters/vscode/vscode-detector'
@@ -21,6 +25,7 @@ import { BackupService } from '@/services/backup-service'
 import { BundleService } from '@/services/bundle-service'
 import { ConnectivityService } from '@/services/connectivity-service'
 import { ImportService } from '@/services/import-service'
+import { ModelCatalogService } from '@/services/model-catalog-service'
 import { PresetService } from '@/services/preset-service'
 import { RestoreService } from '@/services/restore-service'
 import { SwitchService } from '@/services/switch-service'
@@ -70,6 +75,7 @@ export const switchService = new SwitchService(presetRepository, baselineManager
 export const bundleRepository = new BundleRepository(tauriFs)
 export const bundleService = new BundleService(bundleRepository, presetRepository, switchService)
 export const connectivityService = new ConnectivityService(new ConnectivityProber(tauriHttp))
+export const modelCatalogService = new ModelCatalogService(new ModelCatalogFetcher(tauriHttp))
 export const importService = new ImportService({
   readClaude: () => readClaudeSettings(tauriFs),
   readCodexConfig: () => readCodexConfig(tauriFs),

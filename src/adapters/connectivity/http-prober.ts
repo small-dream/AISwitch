@@ -3,6 +3,7 @@ import type { Preset } from '@/domain/entities/preset'
 import { isAllowedBaseUrl } from '@/domain/rules/base-url'
 import { buildProbeUrl } from '@/domain/rules/probe-url'
 import type { HttpPort } from '@/types/http-port'
+import { buildProviderHeaders } from './provider-headers'
 
 const TIMEOUT_MS = 10_000
 
@@ -23,7 +24,7 @@ export class ConnectivityProber {
     try {
       const response = await this.http.fetch(url, {
         method: 'GET',
-        headers: this.buildHeaders(preset),
+        headers: buildProviderHeaders(preset),
         signal: AbortSignal.timeout(TIMEOUT_MS),
       })
       return this.fromStatus(response.status, Date.now() - startedAt, url)
@@ -34,21 +35,6 @@ export class ConnectivityProber {
         message: `无法连通：${detail}（探测 URL: ${url}）`,
       }
     }
-  }
-
-  private buildHeaders(preset: Preset): Record<string, string> {
-    const headers: Record<string, string> = {}
-    if (preset.apiKey) {
-      headers.Authorization = `Bearer ${preset.apiKey}`
-    }
-    if (preset.tool === 'claude-code') {
-      // 官方 API 需要 version 头；中转站两者兼容，同时携带 x-api-key 最大化兼容
-      headers['anthropic-version'] = '2023-06-01'
-      if (preset.apiKey) {
-        headers['x-api-key'] = preset.apiKey
-      }
-    }
-    return headers
   }
 
   private fromStatus(status: number, latencyMs: number, url: string): ConnectivityResult {

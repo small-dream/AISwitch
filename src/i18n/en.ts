@@ -144,6 +144,14 @@ export const en: Record<TranslationKey, string> = {
   'presetForm.baseUrl': 'Base URL (empty = official API)',
   'presetForm.model': 'Model name',
   'presetForm.modelPlaceholder': 'e.g. glm-4.6',
+  'presetForm.modelFetch': 'Fetch models',
+  'presetForm.modelFetching': 'Fetching…',
+  'presetForm.modelFetched': 'Fetched {count} models — click the field to pick one',
+  'presetForm.modelFetchEmpty': 'The provider returned no model names; enter one manually',
+  'presetForm.modelHint':
+    'Click the field to pick a suggested model, or fetch the provider catalog (typing always works)',
+  'presetForm.modelHintCodex':
+    'Click the field to pick a suggested model; the fetched catalog is the full list, and Codex can only run models on the /responses route',
   'presetForm.smallFast': 'Small model ANTHROPIC_SMALL_FAST_MODEL (optional)',
   'presetForm.smallFastPlaceholder': 'e.g. glm-4.6-air',
   'presetForm.metadataSectionTitle':

@@ -8,6 +8,8 @@ All notable changes are documented here. Every release must add a version sectio
 
 - Add OpenCode Zen and OpenCode Go provider templates that prefill the base URL, models and small model per tool, so the same plan works in both Claude Code and Codex CLI.
 
+- The preset form now offers a dropdown of candidate model names for the model and small-model fields: template suggestions matched against the current base URL, plus an on-demand fetch of the provider's own `/models` catalog. Any failure degrades to free-text entry.
+
 ### Changed
 
 - Provider templates are now tool-aware: the preset form lists only templates that apply to the selected tool, so a template can never fill another tool's base URL.

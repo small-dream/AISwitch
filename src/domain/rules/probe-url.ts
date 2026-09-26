@@ -1,5 +1,8 @@
 import type { Preset } from '@/domain/entities/preset'
 
+/** 探测与模型目录拉取只依赖工具与 Base URL，无需完整预设（表单草稿同样适用） */
+export type ProbeTarget = Pick<Preset, 'tool' | 'baseUrl'>
+
 /** 无 baseUrl 时的官方 API 基址 */
 const OFFICIAL_BASES = {
   'claude-code': 'https://api.anthropic.com',
@@ -17,13 +20,13 @@ function openAiModelsUrl(base: string): string {
 }
 
 /**
- * 连通性探测 URL（纯函数）：
+ * 探测 / 模型目录 URL（纯函数）：
  * Claude（Anthropic 风格）：GET {base}/v1/models
  * Codex（OpenAI 风格）：GET {base}/models 或 {base}/v1/models
  */
-export function buildProbeUrl(preset: Preset): string {
-  const base = trimTrailingSlash(preset.baseUrl ?? OFFICIAL_BASES[preset.tool])
-  if (preset.tool === 'claude-code') {
+export function buildProbeUrl(target: ProbeTarget): string {
+  const base = trimTrailingSlash(target.baseUrl ?? OFFICIAL_BASES[target.tool])
+  if (target.tool === 'claude-code') {
     return `${base}/v1/models`
   }
   return openAiModelsUrl(base)

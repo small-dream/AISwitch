@@ -137,6 +137,14 @@ export const zhCN = {
   'presetForm.baseUrl': 'Base URL（留空 = 官方 API）',
   'presetForm.model': '模型名',
   'presetForm.modelPlaceholder': '如：glm-4.6',
+  'presetForm.modelFetch': '获取模型',
+  'presetForm.modelFetching': '获取中…',
+  'presetForm.modelFetched': '已获取 {count} 个模型，点输入框即可选择',
+  'presetForm.modelFetchEmpty': '供应商未返回模型名，请手动填写',
+  'presetForm.modelHint':
+    '点输入框从模板推荐中选择；「获取模型」拉取供应商目录全集（失败不影响手填）',
+  'presetForm.modelHintCodex':
+    '点输入框从模板推荐中选择；「获取模型」拉取目录全集——Codex 只能跑 /responses 路由的模型，优先用模板推荐',
   'presetForm.smallFast': '小模型 ANTHROPIC_SMALL_FAST_MODEL（可选）',
   'presetForm.smallFastPlaceholder': '如：glm-4.6-air',
   'presetForm.metadataSectionTitle': '高级：模型目录条目（可选，仅 Codex 第三方模型需要）',

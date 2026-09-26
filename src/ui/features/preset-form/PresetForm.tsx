@@ -8,15 +8,18 @@ import { Input } from '@/ui/components/Input'
 import { PasswordInput } from '@/ui/components/PasswordInput'
 import { Select } from '@/ui/components/Select'
 import { CodexMetadataSection } from './CodexMetadataSection'
+import { ModelFields } from './ModelFields'
 import { ProviderTemplatePicker } from './ProviderTemplatePicker'
 import type { PresetFormValues } from './preset-form-schema'
 import { usePresetForm } from './use-preset-form'
 
 function PresetFormFields({
+  form,
   register,
   errors,
   tool,
 }: {
+  form: UseFormReturn<PresetFormValues>
   register: UseFormRegister<PresetFormValues>
   errors: FieldErrors<PresetFormValues>
   tool: TargetTool
@@ -42,17 +45,7 @@ function PresetFormFields({
       <FormField label="API Key" error={errors.apiKey?.message}>
         <PasswordInput {...register('apiKey')} placeholder="sk-…" />
       </FormField>
-      <FormField label={t('presetForm.model')} error={errors.model?.message}>
-        <Input {...register('model')} placeholder={t('presetForm.modelPlaceholder')} />
-      </FormField>
-      {tool === 'claude-code' ? (
-        <FormField label={t('presetForm.smallFast')} error={errors.smallFastModel?.message}>
-          <Input
-            {...register('smallFastModel')}
-            placeholder={t('presetForm.smallFastPlaceholder')}
-          />
-        </FormField>
-      ) : null}
+      <ModelFields form={form} errors={errors} tool={tool} />
       {tool === 'codex' ? <CodexMetadataSection register={register} errors={errors} /> : null}
     </>
   )
@@ -122,7 +115,7 @@ function PresetFormBody({
           form.setValue('apiKey', '')
         }}
       />
-      <PresetFormFields register={register} errors={errors} tool={tool} />
+      <PresetFormFields form={form} register={register} errors={errors} tool={tool} />
     </div>
   )
 }

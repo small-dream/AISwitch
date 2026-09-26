@@ -116,6 +116,8 @@ export interface ConfigTarget {
 
 **D11 · 应用更新（US-24）**：`adapters/updater/tauri-updater.ts` 封装 Tauri updater 与 process 插件；`UpdateService.prepare()` 负责「检查 → 预下载」，`hooks/use-app-update.ts` 同时提供启动查询与手动 `refetch`，并将无更新或失败结果统一反馈给 Toast；`UpdateButton` 依据查询状态呈现「检查更新 → 检查中 → 更新」的单一入口。更新元数据和下载包均由 Tauri 签名校验，Rust 侧只注册官方插件，不承载业务状态。
 
+**D12 · 模型名下拉候选（US-19）**：候选由三条来源拼成——离线模板反查 `domain/rules/model-options.ts`（纯函数，baseUrl 归一化后匹配模板变体）、按需拉取的供应商目录 `adapters/connectivity/model-catalog-fetcher.ts` → `services/model-catalog-service.ts` → `hooks/use-model-catalog.ts`、以及用户手填。URL 与鉴权头复用 `domain/rules/probe-url.ts` 与 `adapters/connectivity/provider-headers.ts`，与连通性探测共用「明文 http 仅回环」守卫（PRD §5.6）。该 hook 刻意用组件局部 state 而非 TanStack Query：结果只服务当前弹窗、无需缓存，也避免表单组件依赖 QueryClientProvider。响应解析收敛在纯函数 `domain/rules/model-catalog.ts`（`data[]` / `models[]` / 顶层数组均容错，非预期结构返回空数组）。
+
 ## 3. 目录结构
 
 ```text
