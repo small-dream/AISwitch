@@ -41,6 +41,19 @@ describe('ModelFields · 模型名下拉候选', () => {
     expect(screen.queryByRole('listbox')).toBeNull()
   })
 
+  it('真实点击顺序（mousedown 后 click）也能回填，弹层不会被点击先关掉', () => {
+    const { container } = renderFields('codex', 'https://opencode.ai/zen/go/v1')
+
+    fireEvent.click(screen.getByRole('button', { name: '模型名' }))
+    const option = screen.getByRole('option', { name: 'grok-4.7' })
+
+    fireEvent.mouseDown(option)
+    fireEvent.click(option)
+
+    expect(modelInput(container)?.value).toBe('grok-4.7')
+    expect(screen.queryByRole('listbox')).toBeNull()
+  })
+
   it('候选按当前输入过滤（子串匹配、大小写无关）', () => {
     renderFields('codex', 'https://opencode.ai/zen/go/v1')
 
