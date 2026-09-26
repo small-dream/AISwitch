@@ -26,6 +26,14 @@ function optionTexts(): (string | null)[] {
   return screen.getAllByRole('option').map((item) => item.textContent)
 }
 
+/** 打开下拉并按真实点击顺序（mousedown → click）选中一项 */
+function pickModel(name: string) {
+  fireEvent.click(screen.getByRole('button', { name: '模型名' }))
+  const option = screen.getByRole('option', { name })
+  fireEvent.mouseDown(option)
+  fireEvent.click(option)
+}
+
 describe('ModelFields · 模型名下拉候选', () => {
   it('Codex × OpenCode Go：点下拉按钮列出候选，选中即回填并收起', () => {
     const { container } = renderFields('codex', 'https://opencode.ai/zen/go/v1')
@@ -44,14 +52,20 @@ describe('ModelFields · 模型名下拉候选', () => {
   it('真实点击顺序（mousedown 后 click）也能回填，弹层不会被点击先关掉', () => {
     const { container } = renderFields('codex', 'https://opencode.ai/zen/go/v1')
 
-    fireEvent.click(screen.getByRole('button', { name: '模型名' }))
-    const option = screen.getByRole('option', { name: 'grok-4.7' })
-
-    fireEvent.mouseDown(option)
-    fireEvent.click(option)
+    pickModel('grok-4.7')
 
     expect(modelInput(container)?.value).toBe('grok-4.7')
     expect(screen.queryByRole('listbox')).toBeNull()
+  })
+
+  it('选中一项后再打开：仍列出全部候选，不被已回填的模型名过滤掉', () => {
+    renderFields('codex', 'https://opencode.ai/zen/go/v1')
+
+    pickModel('grok-4.7')
+    fireEvent.click(screen.getByRole('button', { name: '模型名' }))
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(optionTexts()).toHaveLength(5)
   })
 
   it('候选按当前输入过滤（子串匹配、大小写无关）', () => {

@@ -9,7 +9,7 @@ All notable changes are documented here. Every release must add a version sectio
 - Add OpenCode Zen and OpenCode Go provider templates that prefill the base URL, models and small model per tool, so the same plan works in both Claude Code and Codex CLI.
 
 - The preset form now offers a dropdown of candidate model names for the model and small-model fields: template suggestions matched against the current base URL, plus an on-demand fetch of the provider's own `/models` catalog. Any failure degrades to free-text entry.
-- The model fields carry a permanent ▼ button next to the input and open the candidates in a portal popup (click-outside and Esc close it, typing filters it). When a base URL has no candidates, the popup explains how to fill it in instead of silently hiding the dropdown.
+- The model dropdown reopens with the full candidate list after a pick (the fill-in value no longer filters it down to one row), and it flips above the field or caps its height when the viewport is short, so the last row is never clipped.
 
 ### Changed
 

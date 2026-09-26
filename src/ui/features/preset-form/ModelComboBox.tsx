@@ -8,10 +8,18 @@ import type { PresetFormValues } from './preset-form-schema'
 
 type ModelFieldName = 'model' | 'smallFastModel'
 
-interface Anchor {
-  top: number
+/** 弹层高度上限（对应 max-h-56）、与字段的间距、与窗口边缘的安全边距 */
+const POPUP_MAX_HEIGHT = 224
+const POPUP_GAP = 4
+const VIEWPORT_MARGIN = 8
+
+/** 弹层内联定位：left / width 对齐字段，垂直方向 top 与 bottom 二选一 */
+interface PopupStyle {
   left: number
   width: number
+  maxHeight: number
+  top?: number
+  bottom?: number
 }
 
 /** 「点在外面」判定用的元素引用（输入框容器与 portal 弹层都要算内部） */
@@ -28,21 +36,36 @@ interface ModelComboBoxProps {
   emptyText: string
 }
 
-/** 候选过滤：空输入列出全部，否则按子串匹配（大小写无关） */
+/**
+ * 候选过滤：空输入列出全部；输入与某个候选完全一致（= 刚从列表里选中）同样列出全部，
+ * 否则按子串匹配。缺了「完全一致」这条，选中后再打开就只剩命中项，像是「列表出不来了」。
+ */
 function filterOptions(options: readonly string[], keyword: string): string[] {
   const needle = keyword.trim().toLowerCase()
-  if (needle === '') {
+  if (needle === '' || options.some((option) => option.toLowerCase() === needle)) {
     return [...options]
   }
   return options.filter((option) => option.toLowerCase().includes(needle))
 }
 
-function anchorOf(element: HTMLElement | null): Anchor | null {
+/**
+ * 弹层定位：默认向下展开；下方空间不够就翻到上方，并按住得下的一侧限制高度。
+ * 若固定向下且不限高，靠近窗口底部的字段会把弹层尾段推出可视区（「最后一个显示不全」），
+ * 更靠下时整块都看不见。
+ */
+function popupStyle(element: HTMLElement | null): PopupStyle | null {
   if (!element) {
     return null
   }
   const rect = element.getBoundingClientRect()
-  return { top: rect.bottom + 4, left: rect.left, width: rect.width }
+  const below = window.innerHeight - rect.bottom - POPUP_GAP - VIEWPORT_MARGIN
+  const above = rect.top - POPUP_GAP - VIEWPORT_MARGIN
+  const maxHeight = Math.max(Math.min(POPUP_MAX_HEIGHT, Math.max(below, above)), 0)
+  const horizontal = { left: rect.left, width: rect.width, maxHeight }
+  if (below >= above) {
+    return { ...horizontal, top: rect.bottom + POPUP_GAP }
+  }
+  return { ...horizontal, bottom: window.innerHeight - rect.top + POPUP_GAP }
 }
 
 /**
@@ -75,8 +98,23 @@ function useDismiss(open: boolean, refs: readonly ElementRef<HTMLElement>[], clo
   }, [open, refs, close])
 }
 
+/** 弹层打开期间跟随字段：窗口缩放或页面滚动时重算位置，避免弹层和字段错位 */
+function useAnchorFollow(open: boolean, reposition: () => void) {
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    document.addEventListener('scroll', reposition, true)
+    window.addEventListener('resize', reposition)
+    return () => {
+      document.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('resize', reposition)
+    }
+  }, [open, reposition])
+}
+
 const POPUP_CLASS =
-  'fixed z-50 max-h-56 overflow-y-auto rounded-lg border border-app-border bg-app-card shadow-xl'
+  'fixed z-50 overflow-y-auto rounded-lg border border-app-border bg-app-card shadow-xl'
 
 /** 单条候选：点击即回填并收起 */
 function OptionRow({ option, onPick }: { option: string; onPick: (model: string) => void }) {
@@ -121,19 +159,18 @@ function DropdownTrigger({
 
 /** 弹层：portal + fixed 定位，既不被弹窗滚动区裁切，也不随内容滚动错位。 */
 function OptionPopup({
-  anchor,
+  style,
   options,
   emptyText,
   onPick,
   popupRef,
 }: {
-  anchor: Anchor
+  style: PopupStyle
   options: readonly string[]
   emptyText: string
   onPick: (model: string) => void
   popupRef: ElementRef<HTMLDivElement>
 }) {
-  const style = { top: anchor.top, left: anchor.left, width: anchor.width }
   return createPortal(
     <div ref={popupRef} style={style} className={POPUP_CLASS}>
       {options.length > 0 ? (
@@ -168,19 +205,23 @@ export function ModelComboBox({
 }: ModelComboBoxProps) {
   const container = useRef<HTMLDivElement>(null)
   const popup = useRef<HTMLDivElement>(null)
-  const [anchor, setAnchor] = useState<Anchor | null>(null)
+  const [style, setStyle] = useState<PopupStyle | null>(null)
   const inside = useMemo<ElementRef<HTMLElement>[]>(() => [container, popup], [])
   const value = form.watch(name) ?? ''
   const matches = useMemo(() => filterOptions(options, value), [options, value])
   const close = useCallback(() => {
-    setAnchor(null)
+    setStyle(null)
   }, [])
-  const open = anchor !== null
+  const reposition = useCallback(() => {
+    setStyle(popupStyle(container.current))
+  }, [])
+  const open = style !== null
 
   useDismiss(open, inside, close)
+  useAnchorFollow(open, reposition)
 
   const toggle = () => {
-    setAnchor(open ? null : anchorOf(container.current))
+    setStyle(open ? null : popupStyle(container.current))
   }
   const pick = (model: string) => {
     form.setValue(name, model, { shouldDirty: true })
@@ -191,9 +232,9 @@ export function ModelComboBox({
     <div ref={container} className="flex min-w-0 flex-1 items-center gap-2">
       <Input {...form.register(name)} placeholder={placeholder} aria-label={label} />
       <DropdownTrigger label={label} open={open} onToggle={toggle} />
-      {anchor ? (
+      {style ? (
         <OptionPopup
-          anchor={anchor}
+          style={style}
           options={matches}
           emptyText={emptyText}
           onPick={pick}
