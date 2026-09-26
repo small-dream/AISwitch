@@ -150,10 +150,12 @@ export const en: Record<TranslationKey, string> = {
   'presetForm.modelFetchEmpty': 'The provider returned no model names; enter one manually',
   'presetForm.modelNoCandidates':
     'No candidates yet — fetch the provider catalog with the button on the right, or type the model name',
+  'presetForm.modelGroupTemplate': 'Template suggestions (subset)',
+  'presetForm.modelGroupCatalog': 'Provider catalog · {count}',
   'presetForm.modelHint':
-    'Click ▼ to pick a suggested model, or fetch the provider catalog (typing always works)',
+    'Click ▼ to pick a model: the list starts with template suggestions and fetches the provider catalog on first open (typing always works)',
   'presetForm.modelHintCodex':
-    'Click ▼ to pick a suggested model; the fetched catalog is the full list, and Codex can only run models on the /responses route',
+    'Click ▼ to pick a model: template suggestions plus the fetched catalog — Codex can only run models on the /responses route, so prefer the suggestions',
   'presetForm.smallFast': 'Small model ANTHROPIC_SMALL_FAST_MODEL (optional)',
   'presetForm.smallFastPlaceholder': 'e.g. glm-4.6-air',
   'presetForm.metadataSectionTitle':

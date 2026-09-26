@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { mergeModelOptions, templateModelOptions } from '@/domain/rules/model-options'
+import { groupModelOptions, templateModelOptions } from '@/domain/rules/model-options'
 
 describe('templateModelOptions · 按 Base URL 反查模板', () => {
   it('OpenCode Go：Codex 侧给 DeepSeek/Grok，Claude 侧给 MiniMax/Qwen', () => {
@@ -26,12 +26,22 @@ describe('templateModelOptions · 按 Base URL 反查模板', () => {
   })
 })
 
-describe('mergeModelOptions', () => {
-  it('按传入顺序去重并保留首个位置', () => {
-    expect(mergeModelOptions(['a', 'b'], ['b', 'c'], [' a '])).toEqual(['a', 'b', 'c'])
+describe('groupModelOptions · 按来源拆分候选', () => {
+  it('目录里与推荐重复的条目只留在推荐组，两组各自保持原顺序', () => {
+    expect(groupModelOptions(['a', 'b'], ['b', 'c', 'a', 'd'])).toEqual({
+      recommended: ['a', 'b'],
+      catalog: ['c', 'd'],
+    })
   })
 
-  it('过滤空白项', () => {
-    expect(mergeModelOptions(['', '   ', 'x'])).toEqual(['x'])
+  it('过滤空白项并在组内去重', () => {
+    expect(groupModelOptions([' a ', '', 'a'], ['a', '   ', 'b'])).toEqual({
+      recommended: ['a'],
+      catalog: ['b'],
+    })
+  })
+
+  it('自定义地址（无推荐）时目录原样保留', () => {
+    expect(groupModelOptions([], ['x', 'y'])).toEqual({ recommended: [], catalog: ['x', 'y'] })
   })
 })

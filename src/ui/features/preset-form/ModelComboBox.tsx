@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { UseFormReturn } from 'react-hook-form'
 
+import type { ModelOptionGroup } from '@/domain/rules/model-options'
 import { Input } from '@/ui/components/Input'
 import type { PresetFormValues } from './preset-form-schema'
 
@@ -30,22 +31,39 @@ interface ElementRef<T extends HTMLElement> {
 interface ModelComboBoxProps {
   form: UseFormReturn<PresetFormValues>
   name: ModelFieldName
-  options: readonly string[]
+  /** 按来源分组（模板推荐 / 供应商目录），弹层里分组展示并标注出处 */
+  groups: readonly ModelOptionGroup[]
   placeholder: string
   label: string
   emptyText: string
+  /** 弹层打开时通知外部（用于首次打开自动补全供应商目录） */
+  onOpen: () => void
 }
 
-/**
- * 候选过滤：空输入列出全部；输入与某个候选完全一致（= 刚从列表里选中）同样列出全部，
- * 否则按子串匹配。缺了「完全一致」这条，选中后再打开就只剩命中项，像是「列表出不来了」。
- */
-function filterOptions(options: readonly string[], keyword: string): string[] {
+/** 候选过滤：空输入或已选中（见 visibleGroups）时列出全部，否则按子串匹配（大小写无关） */
+function filterOptions(options: readonly string[], keyword: string, picked: boolean): string[] {
   const needle = keyword.trim().toLowerCase()
-  if (needle === '' || options.some((option) => option.toLowerCase() === needle)) {
+  if (needle === '' || picked) {
     return [...options]
   }
   return options.filter((option) => option.toLowerCase().includes(needle))
+}
+
+/**
+ * 可见分组：按输入过滤后丢掉空组。输入与某个候选完全一致（= 刚从列表里选中）时不过滤——
+ * 否则选中后再打开就只剩命中项，看起来像「列表出不来了」。
+ */
+function visibleGroups(groups: readonly ModelOptionGroup[], keyword: string): ModelOptionGroup[] {
+  const needle = keyword.trim().toLowerCase()
+  const picked =
+    needle !== '' &&
+    groups.some((group) => group.options.some((option) => option.toLowerCase() === needle))
+  return groups
+    .map((group) => ({
+      label: group.label,
+      options: filterOptions(group.options, keyword, picked),
+    }))
+    .filter((group) => group.options.length > 0)
 }
 
 /**
@@ -66,6 +84,25 @@ function popupStyle(element: HTMLElement | null): PopupStyle | null {
     return { ...horizontal, top: rect.bottom + POPUP_GAP }
   }
   return { ...horizontal, bottom: window.innerHeight - rect.top + POPUP_GAP }
+}
+
+/** 弹层开合与定位：定位值本身就是「是否打开」的状态 */
+function usePopupPlacement(container: ElementRef<HTMLElement>, onOpen: () => void) {
+  const [style, setStyle] = useState<PopupStyle | null>(null)
+  const close = useCallback(() => {
+    setStyle(null)
+  }, [])
+  const reposition = useCallback(() => {
+    setStyle(popupStyle(container.current))
+  }, [container])
+  const open = style !== null
+  const toggle = () => {
+    setStyle(open ? null : popupStyle(container.current))
+    if (!open) {
+      onOpen()
+    }
+  }
+  return { style, open, toggle, close, reposition }
 }
 
 /**
@@ -157,28 +194,48 @@ function DropdownTrigger({
   )
 }
 
+/** 一个来源分组的标题 + 选项 */
+function OptionGroupSection({
+  group,
+  onPick,
+}: {
+  group: ModelOptionGroup
+  onPick: (model: string) => void
+}) {
+  return (
+    <li role="group" aria-label={group.label}>
+      <p className="px-3 pt-2 pb-1 text-xs text-app-muted">{group.label}</p>
+      <ul>
+        {group.options.map((option) => (
+          <li key={option}>
+            <OptionRow option={option} onPick={onPick} />
+          </li>
+        ))}
+      </ul>
+    </li>
+  )
+}
+
 /** 弹层：portal + fixed 定位，既不被弹窗滚动区裁切，也不随内容滚动错位。 */
 function OptionPopup({
   style,
-  options,
+  groups,
   emptyText,
   onPick,
   popupRef,
 }: {
   style: PopupStyle
-  options: readonly string[]
+  groups: readonly ModelOptionGroup[]
   emptyText: string
   onPick: (model: string) => void
   popupRef: ElementRef<HTMLDivElement>
 }) {
   return createPortal(
     <div ref={popupRef} style={style} className={POPUP_CLASS}>
-      {options.length > 0 ? (
+      {groups.length > 0 ? (
         <ul role="listbox" className="py-1">
-          {options.map((option) => (
-            <li key={option}>
-              <OptionRow option={option} onPick={onPick} />
-            </li>
+          {groups.map((group) => (
+            <OptionGroupSection key={group.label} group={group} onPick={onPick} />
           ))}
         </ul>
       ) : (
@@ -198,44 +255,35 @@ function OptionPopup({
 export function ModelComboBox({
   form,
   name,
-  options,
+  groups,
   placeholder,
   label,
   emptyText,
+  onOpen,
 }: ModelComboBoxProps) {
   const container = useRef<HTMLDivElement>(null)
   const popup = useRef<HTMLDivElement>(null)
-  const [style, setStyle] = useState<PopupStyle | null>(null)
   const inside = useMemo<ElementRef<HTMLElement>[]>(() => [container, popup], [])
   const value = form.watch(name) ?? ''
-  const matches = useMemo(() => filterOptions(options, value), [options, value])
-  const close = useCallback(() => {
-    setStyle(null)
-  }, [])
-  const reposition = useCallback(() => {
-    setStyle(popupStyle(container.current))
-  }, [])
-  const open = style !== null
+  const visible = useMemo(() => visibleGroups(groups, value), [groups, value])
+  const placement = usePopupPlacement(container, onOpen)
 
-  useDismiss(open, inside, close)
-  useAnchorFollow(open, reposition)
+  useDismiss(placement.open, inside, placement.close)
+  useAnchorFollow(placement.open, placement.reposition)
 
-  const toggle = () => {
-    setStyle(open ? null : popupStyle(container.current))
-  }
   const pick = (model: string) => {
     form.setValue(name, model, { shouldDirty: true })
-    close()
+    placement.close()
   }
 
   return (
     <div ref={container} className="flex min-w-0 flex-1 items-center gap-2">
       <Input {...form.register(name)} placeholder={placeholder} aria-label={label} />
-      <DropdownTrigger label={label} open={open} onToggle={toggle} />
-      {style ? (
+      <DropdownTrigger label={label} open={placement.open} onToggle={placement.toggle} />
+      {placement.style ? (
         <OptionPopup
-          style={style}
-          options={matches}
+          style={placement.style}
+          groups={visible}
           emptyText={emptyText}
           onPick={pick}
           popupRef={popup}

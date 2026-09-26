@@ -142,10 +142,12 @@ export const zhCN = {
   'presetForm.modelFetched': '已获取 {count} 个模型，点右侧 ▼ 即可选择',
   'presetForm.modelFetchEmpty': '供应商未返回模型名，请手动填写',
   'presetForm.modelNoCandidates': '暂无候选：先点「获取模型」拉取供应商目录，或直接手填模型名',
+  'presetForm.modelGroupTemplate': '模板推荐（子集）',
+  'presetForm.modelGroupCatalog': '供应商目录 · {count} 个',
   'presetForm.modelHint':
-    '点右侧 ▼ 从模板推荐中选；「获取模型」拉取供应商目录全集（失败不影响手填）',
+    '点右侧 ▼ 选模型：先列模板推荐，首次打开会自动拉一次供应商目录补全（失败不影响手填）',
   'presetForm.modelHintCodex':
-    '点右侧 ▼ 从模板推荐中选；「获取模型」拉取目录全集——Codex 只能跑 /responses 路由的模型，优先用模板推荐',
+    '点右侧 ▼ 选模型：模板推荐 + 自动拉取的目录——Codex 只能跑 /responses 路由的模型，优先用推荐',
   'presetForm.smallFast': '小模型 ANTHROPIC_SMALL_FAST_MODEL（可选）',
   'presetForm.smallFastPlaceholder': '如：glm-4.6-air',
   'presetForm.metadataSectionTitle': '高级：模型目录条目（可选，仅 Codex 第三方模型需要）',
