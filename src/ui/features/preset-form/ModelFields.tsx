@@ -8,12 +8,9 @@ import { useModelCatalog } from '@/hooks/use-model-catalog'
 import { useT, type TFn } from '@/i18n/index'
 import { Button } from '@/ui/components/Button'
 import { FormField } from '@/ui/components/FormField'
-import { Input } from '@/ui/components/Input'
 import { errorMessage } from '@/utils/error-message'
+import { ModelComboBox } from './ModelComboBox'
 import type { PresetFormValues } from './preset-form-schema'
-
-/** 下拉候选的 datalist id（模型名与小模型共用同一份候选） */
-const DATALIST_ID = 'aiswitch-model-candidates'
 
 interface ModelFeedback {
   kind: 'ok' | 'error'
@@ -92,7 +89,7 @@ function ModelHint({ feedback, fallback }: { feedback: ModelFeedback | null; fal
 }
 
 /**
- * 模型名字段（US-19）：原生 datalist 下拉候选，既能选也能手填；
+ * 模型名字段（US-19）：带候选下拉按钮的输入框，既能点选也能手填；
  * 「获取模型」按当前 Base URL + Key 拉取供应商目录，失败仅提示，不阻断表单。
  */
 export function ModelFields({
@@ -106,17 +103,19 @@ export function ModelFields({
 }) {
   const t = useT()
   const { options, feedback, load, pending } = useModelCandidates(tool, form, t)
-  const listId = options.length > 0 ? DATALIST_ID : undefined
   const hint = t(tool === 'codex' ? 'presetForm.modelHintCodex' : 'presetForm.modelHint')
 
   return (
     <>
       <FormField label={t('presetForm.model')} error={errors.model?.message}>
         <div className="flex items-center gap-2">
-          <Input
-            list={listId}
-            {...form.register('model')}
+          <ModelComboBox
+            form={form}
+            name="model"
+            options={options}
             placeholder={t('presetForm.modelPlaceholder')}
+            label={t('presetForm.model')}
+            emptyText={t('presetForm.modelNoCandidates')}
           />
           <FetchModelsButton
             pending={pending}
@@ -125,19 +124,17 @@ export function ModelFields({
             }}
           />
         </div>
-        <datalist id={DATALIST_ID}>
-          {options.map((model) => (
-            <option key={model} value={model} />
-          ))}
-        </datalist>
         <ModelHint feedback={feedback} fallback={hint} />
       </FormField>
       {tool === 'claude-code' ? (
         <FormField label={t('presetForm.smallFast')} error={errors.smallFastModel?.message}>
-          <Input
-            list={listId}
-            {...form.register('smallFastModel')}
+          <ModelComboBox
+            form={form}
+            name="smallFastModel"
+            options={options}
             placeholder={t('presetForm.smallFastPlaceholder')}
+            label={t('presetForm.smallFast')}
+            emptyText={t('presetForm.modelNoCandidates')}
           />
         </FormField>
       ) : null}
