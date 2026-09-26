@@ -2,20 +2,22 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
-## [Unreleased]
+## [0.1.17] - 2026-09-26
 
 ### Added
 
 - Add OpenCode Zen and OpenCode Go provider templates that prefill the base URL, models and small model per tool, so the same plan works in both Claude Code and Codex CLI.
-
-- The preset form now offers a dropdown of candidate model names for the model and small-model fields: template suggestions matched against the current base URL, plus an on-demand fetch of the provider's own `/models` catalog. Any failure degrades to free-text entry.
-- The model dropdown labels where each candidate comes from: template suggestions (a curated subset) and the provider catalog are grouped separately, and the catalog is fetched silently on first open, so the list is complete without pressing a button first.
-- The model dropdown reopens with the full candidate list after a pick (the fill-in value no longer filters it down to one row), and it flips above the field or caps its height when the viewport is short, so the last row is never clipped.
+- The model and small-model fields now offer a dropdown of candidate model names: template suggestions matched against the current base URL, plus the provider's own `/models` catalog. Grouped by origin and labelled, with the catalog fetched silently the first time the dropdown opens, so the list is complete without pressing a button first. Any failure degrades to free-text entry.
 
 ### Changed
 
 - Provider templates are now tool-aware: the preset form lists only templates that apply to the selected tool, so a template can never fill another tool's base URL.
 - Codex-side template suggestions are limited to models the gateway actually serves on its `/responses` route. Verified per model against OpenCode Zen and Go (2026-09): DeepSeek and Grok work, while GLM / Kimi / MiniMax / Qwen / MiMo / LongCat / Hy return `ModelProtocolUnsupported` and are only usable from Claude Code.
+
+### Fixed
+
+- Picking a candidate in the model dropdown now fills the field. The popup is portaled outside the input container, so the click-outside check unmounted it on `mousedown` and the following `click` never landed.
+- Reopening the model dropdown after a pick lists every candidate again instead of collapsing to a single row, and the popup flips above the field or caps its height when the window is short, so the last row is no longer clipped.
 
 ## [0.1.16] - 2026-09-11
 
