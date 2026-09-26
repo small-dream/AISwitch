@@ -113,10 +113,12 @@ function PresetFormBody({
         />
       ) : null}
       <ProviderTemplatePicker
+        tool={tool}
         onApply={(fill) => {
           form.setValue('providerName', fill.providerName, { shouldDirty: true })
           form.setValue('baseUrl', fill.baseUrl ?? '', { shouldDirty: true })
           form.setValue('model', fill.model, { shouldDirty: true })
+          form.setValue('smallFastModel', fill.smallFastModel ?? '', { shouldDirty: true })
           form.setValue('apiKey', '')
         }}
       />

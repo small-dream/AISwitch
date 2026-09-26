@@ -1,7 +1,8 @@
 import { Wand2 } from 'lucide-react'
 import { useState } from 'react'
 
-import { PROVIDER_TEMPLATES } from '@/constants/provider-templates'
+import { templatesForTool } from '@/constants/provider-templates'
+import type { TargetTool } from '@/domain/entities/preset'
 import { applyProviderTemplate } from '@/domain/rules/apply-provider-template'
 import type { TemplateFill } from '@/domain/rules/apply-provider-template'
 import { useT } from '@/i18n/index'
@@ -10,10 +11,20 @@ import { Select } from '@/ui/components/Select'
 
 const PLACEHOLDER = ''
 
-/** 表单顶部「从供应商模板填充」：选择后预填品牌 / Base URL / 模型（US-19） */
-export function ProviderTemplatePicker({ onApply }: { onApply: (fill: TemplateFill) => void }) {
+/**
+ * 表单顶部「从供应商模板填充」：选择后预填品牌 / Base URL / 模型（US-19）。
+ * 只列出当前工具适用的模板——同一供应商在 Claude Code 与 Codex 下的地址不同。
+ */
+export function ProviderTemplatePicker({
+  tool,
+  onApply,
+}: {
+  tool: TargetTool
+  onApply: (fill: TemplateFill) => void
+}) {
   const t = useT()
   const [value, setValue] = useState(PLACEHOLDER)
+  const templates = templatesForTool(tool)
 
   return (
     <FormField label={t('template.pickerLabel')}>
@@ -28,14 +39,15 @@ export function ProviderTemplatePicker({ onApply }: { onApply: (fill: TemplateFi
             if (templateId === PLACEHOLDER) {
               return
             }
-            const template = PROVIDER_TEMPLATES.find((item) => item.id === templateId)
-            if (template) {
-              onApply(applyProviderTemplate(template))
+            const template = templates.find((item) => item.id === templateId)
+            const fill = template ? applyProviderTemplate(template, tool) : null
+            if (fill) {
+              onApply(fill)
             }
           }}
         >
           <option value={PLACEHOLDER}>{t('template.placeholder')}</option>
-          {PROVIDER_TEMPLATES.map((template) => (
+          {templates.map((template) => (
             <option key={template.id} value={template.id}>
               {template.local ? `${template.label} · ${t('template.local')}` : template.label}
             </option>

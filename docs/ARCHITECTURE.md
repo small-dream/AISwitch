@@ -110,7 +110,7 @@ export interface ConfigTarget {
 
 **D8 · 组合预设数据流（US-17）**：`bundles.json` 独立于 `presets.json` 存储；`BundleService.switch` 聚合顺序调用 `SwitchService.switch`，逐工具独立备份/回滚/校验，返回 per-tool 结果；引用完整性（存在 + `tool` 匹配）在 service 层强制，Zod 保证「至少一个工具」。
 
-**D9 · 供应商模板库（US-19）**：静态常量 `constants/provider-templates.ts` + 纯函数 `domain/rules/apply-provider-template.ts`（零 IO、可单测）；表单顶部 picker 经 `form.setValue` 预填，模板永不内嵌 Key。本地模型以 `apiKey` 可选表达——写入链与探测链在空 Key 时删除鉴权头/键（PRD §5.10）。
+**D9 · 供应商模板库（US-19）**：静态常量 `constants/provider-templates.ts` + 纯函数 `domain/rules/apply-provider-template.ts`（零 IO、可单测）；表单顶部 picker 经 `form.setValue` 预填，模板永不内嵌 Key。本地模型以 `apiKey` 可选表达——写入链与探测链在空 Key 时删除鉴权头/键（PRD §5.10）。**模板按工具声明预填值**（`variants: Partial<Record<TargetTool, ProviderTemplateVariant>>`）：`templatesForTool(tool)` 过滤出适用模板，`applyProviderTemplate(template, tool)` 取该工具的 Base URL / 建议模型 / `smallFastModel`（Claude）；未声明某工具的模板不进该工具表单，从机制上杜绝「把 A 工具的地址填进 B 工具」。**Codex 侧模板只允许 responses 路由模型**：Codex 已移除 `chat/completions` 协议（PRD §5.1 表 B），网关对不支持的模型返回 `400 ModelProtocolUnsupported`，故 Codex 侧只预填网关在 `/responses` 上确认可用的模型；单测守卫禁止 GLM / Kimi / MiniMax / Qwen / MiMo / LongCat / Hy 族出现在 Codex 侧预填值中（DeepSeek / Grok 实测可用，不在禁止之列，PRD §5.10）。
 
 **D10 · 全局快捷键（US-20）**：Rust 仅注册 `tauri-plugin-global-shortcut`，业务全在前端 `hooks/use-global-shortcuts.ts`；快捷键字符串集中于 `constants/shortcut.ts`；循环切换逻辑为纯函数 `domain/rules/next-preset.ts`。
 

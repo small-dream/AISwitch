@@ -2,6 +2,17 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Added
+
+- Add OpenCode Zen and OpenCode Go provider templates that prefill the base URL, models and small model per tool, so the same plan works in both Claude Code and Codex CLI.
+
+### Changed
+
+- Provider templates are now tool-aware: the preset form lists only templates that apply to the selected tool, so a template can never fill another tool's base URL.
+- Codex-side template suggestions are limited to models the gateway actually serves on its `/responses` route. Verified per model against OpenCode Zen and Go (2026-09): DeepSeek and Grok work, while GLM / Kimi / MiniMax / Qwen / MiMo / LongCat / Hy return `ModelProtocolUnsupported` and are only usable from Claude Code.
+
 ## [0.1.16] - 2026-09-11
 
 ### Fixed

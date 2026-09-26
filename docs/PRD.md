@@ -72,14 +72,14 @@
 | US-17 | **组合预设（全家桶切换）**                   | 一次操作顺序切换 Claude Code 与 Codex CLI 的多个预设；逐工具独立备份/回滚/校验；策略见 §5.9                                                         |
 | US-19 | **供应商模板库 + 本地模型**                  | 内置模板一键填充；支持无 Key 的 Ollama / LM Studio（`apiKey` 可选）；策略见 §5.10                                                                   |
 | US-20 | **全局快捷键**                               | `CmdOrCtrl+Shift+A` 呼出主窗口；`CmdOrCtrl+Shift+S` 循环切换当前工具下一预设；策略见 §5.11                                                          |
-| US-24 | **应用内自动更新**                            | 顶栏可手动检查并预下载签名更新；下载完成后按钮切换为一键更新；策略见 §5.12                                                                          |
+| US-24 | **应用内自动更新**                           | 顶栏可手动检查并预下载签名更新；下载完成后按钮切换为一键更新；策略见 §5.12                                                                          |
 
 ### 3.3 P2（远期规划）
 
 | ID    | 说明                                                                            |
 | ----- | ------------------------------------------------------------------------------- |
 | US-11 | 支持更多目标工具（Gemini CLI、Cursor 等）——依赖「适配器注册表」架构，零侵入扩展 |
-| US-21 | 项目级配置：按目录使用不同供应商，项目配置优先于全局配置（已交付）                |
+| US-21 | 项目级配置：按目录使用不同供应商，项目配置优先于全局配置（已交付）              |
 | US-12 | 预设导入 / 导出（JSON 文件，团队共享）                                          |
 | US-13 | 英文界面（i18n）                                                                |
 
@@ -124,17 +124,17 @@ flowchart TD
 
 **表 B · Codex CLI**（写入 `~/.codex/config.toml` 与 `~/.codex/auth.json`）：
 
-| 文件          | 配置键                                                     | 来源                   | 规则                                                                                                                                           |
-| ------------- | ---------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `config.toml` | 顶层 `model`                                               | `preset.model`         | —                                                                                                                                              |
-| `config.toml` | 顶层 `model_provider`                                      | —                      | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块                                                                                         |
-| `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl`       | 第三方时写入；切回官方时移除该块                                                                                                               |
-| `config.toml` | `[model_providers.jake_current].name`                      | `preset.providerName`  | 第三方时必写；Codex 要求块内 `name` 非空，缺失将导致整个 config.toml 加载失败、CLI/插件退回安装引导                                            |
-| `config.toml` | `[model_providers.jake_current].wire_api`                  | 固定 `"responses"`     | 第三方时必写；缺省会回落 chat 协议，与官方及主流中转行为不一致                                                                                 |
-| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时写入（DeepSeek 官方脚本模式）；apiKey 为空写空串                                                                                       |
-| `config.toml` | 顶层 `model_catalog_json`                                  | —                      | 预设携带元数据 → 指向 `~/.codex/models.json`；目录无当前模型条目 → 移除该键回落内置目录；其余保持现状                                          |
-| `models.json` | `models[]` 条目                                            | `preset.modelMetadata` | 切换时重写为**当前预设的条目集**——整份厂商文件粘贴时保留全部同族模型（选单只显示当前供应商），单条粘贴仅该条；切回其他预设时由其自带元数据重建 |
-| `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`        | 有 Key 时写入，无 Key 时**删除该键**（与块内 token 双通道兼容）                                                                                |
+| 文件          | 配置键                                                     | 来源                   | 规则                                                                                                                                                                                   |
+| ------------- | ---------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config.toml` | 顶层 `model`                                               | `preset.model`         | —                                                                                                                                                                                      |
+| `config.toml` | 顶层 `model_provider`                                      | —                      | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块                                                                                                                                 |
+| `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl`       | 第三方时写入；切回官方时移除该块                                                                                                                                                       |
+| `config.toml` | `[model_providers.jake_current].name`                      | `preset.providerName`  | 第三方时必写；Codex 要求块内 `name` 非空，缺失将导致整个 config.toml 加载失败、CLI/插件退回安装引导                                                                                    |
+| `config.toml` | `[model_providers.jake_current].wire_api`                  | 固定 `"responses"`     | 第三方时必写；**Codex 已彻底移除 `chat/completions` 协议**（openai/codex discussions/7782：2025-12 弃用，2026-02 起硬报错），写入 `chat` 会使 CLI 每次提交消息报 invalid configuration |
+| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时写入（DeepSeek 官方脚本模式）；apiKey 为空写空串                                                                                                                               |
+| `config.toml` | 顶层 `model_catalog_json`                                  | —                      | 预设携带元数据 → 指向 `~/.codex/models.json`；目录无当前模型条目 → 移除该键回落内置目录；其余保持现状                                                                                  |
+| `models.json` | `models[]` 条目                                            | `preset.modelMetadata` | 切换时重写为**当前预设的条目集**——整份厂商文件粘贴时保留全部同族模型（选单只显示当前供应商），单条粘贴仅该条；切回其他预设时由其自带元数据重建                                         |
+| `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`        | 有 Key 时写入，无 Key 时**删除该键**（与块内 token 双通道兼容）                                                                                                                        |
 
 **Codex 读取语义（导入/探测）**：供应商 = `model_provider` 指向的 `[model_providers.<id>]` 块（不猜测其他块）；供应商展示名优先块内 `name`；**Key 读取链 = 块内 `experimental_bearer_token` → `auth.json` 的 `OPENAI_API_KEY`**（DeepSeek 官方安装脚本将 Key 内嵌于 provider 块）。
 
@@ -190,7 +190,7 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 - **鉴权头**：`Authorization: Bearer`；Claude 额外携带 `x-api-key` 与 `anthropic-version: 2023-06-01` 以兼容官方与中转站；
 - **超时** 10s（AbortSignal）；
 - **结果归档**：2xx → ok（含耗时）；401/403 → Key 无效；404/405 → 供应商不支持探测；其余状态码/网络异常 → 无法连通；
-- **定位**：最佳努力预检，**不阻断切换**；部分中转站未实现 models 端点（归为 unsupported），提示直接切换验证；
+- **定位**：最佳努力预检，**不阻断切换**；部分中转站未实现 models 端点（归为 unsupported），提示直接切换验证；**网关类供应商**（如 OpenCode Zen / Go）的 models 端点免鉴权即可返回 2xx，此类结果只代表**可达性**，不能证明 Key 有效；
 - **网络通道**：Tauri http 插件（绕过 WebView CORS 限制）。
 
 ### 5.7 托盘与常驻（US-08）
@@ -224,7 +224,12 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 
 ### 5.10 供应商模板库与本地模型（US-19）
 
-- **模板**：内置 Claude 官方 / OpenAI GPT / GLM / DeepSeek / Kimi / 通义 / 豆包 / Ollama / LM Studio，仅预填品牌名 / Base URL / 建议模型名，**永不内嵌 API Key**；表单顶部「从模板填充」一键预填；模型名于 2026-08 依据 OpenRouter models API 与各厂商公开文档刷新，具体以供应商最新文档为准；
+- **模板**：内置 Claude 官方 / OpenAI GPT / OpenCode Zen / OpenCode Go / GLM / DeepSeek / Kimi / 通义 / 豆包 / Ollama / LM Studio，仅预填品牌名 / Base URL / 建议模型名 / 小模型，**永不内嵌 API Key**；表单顶部「从模板填充」一键预填；模型名于 2026-09 依据 OpenCode 官方 models 接口与各厂商公开文档刷新，具体以供应商最新文档为准；
+- **模板工具感知（2026-09）**：模板按工具声明预填值，表单只列出当前工具适用的模板，避免把 A 工具的地址填进 B 工具。同一供应商在两个工具下的 Base URL 与可用模型可能不同，典型为 OpenCode 套餐：
+  - Claude Code 侧：`https://opencode.ai/zen`（CLI 自动补 `/v1/messages`）、`https://opencode.ai/zen/go`；可用模型为该网关 `/messages` 路由的模型（Zen → Claude 系列；Go → MiniMax / Qwen 系列），并预填 `smallFastModel`；
+  - Codex 侧：`https://opencode.ai/zen/v1`、`https://opencode.ai/zen/go/v1`（CLI 自动补 `/responses`）；因 Codex **只支持 responses 协议**，两侧只预填该网关在 `/responses` 上确证可用的模型（Zen → GPT/Codex 系列，另含 DeepSeek；Go → DeepSeek 全系、Grok 4.7 / 4.6）；
+  - **网关按「模型 × 协议」作答（2026-09-26 实测 `POST /zen/go/v1/responses`）**：DeepSeek 全系与 Grok 4.7 / 4.6 返回 200，**可在 Codex 中使用**；GLM / Kimi / MiniMax / Qwen / MiMo / LongCat / Hy 返回 `400 ModelProtocolUnsupported`，这些模型只能在 Claude Code 侧（`/messages`）使用；GPT Luna 系列返回 `403 unsupported_country_region_territory`（部分地区不可用），故不预填；
+- **OpenCode 套餐说明**：Zen 为按量计费网关，Go 为 $10/月订阅；两者使用同一把 `opencode.ai/auth` API Key，官方文档将 Claude Code 与 Codex 列为已验证客户端（原生会话头已被识别，无需自定义请求头）；
 - **本地模型**：Ollama / LM Studio 无 API Key——`preset.apiKey` 改为可选；空 Key 时写入链路删除鉴权键（Claude `ANTHROPIC_AUTH_TOKEN`、Codex `auth.json OPENAI_API_KEY`），Codex provider 块 token 写空串；连通性探测无 Key 时不携带鉴权头；预设列表行显示「本地模型 · 无需 Key」标记；
 - **兼容**：预设库结构向后兼容（`apiKey` 可缺失），旧数据不受影响。
 

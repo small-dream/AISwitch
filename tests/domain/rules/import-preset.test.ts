@@ -159,7 +159,9 @@ describe('codexPresetInputFrom · Key 回退与边界', () => {
 
 describe('codexPresetInputFrom · 模型目录捕获', () => {
   const CATALOG = {
-    models: [{ slug: 'deepseek-v4-flash', context_window: 1048576, display_name: 'DeepSeek-V4-Flash' }],
+    models: [
+      { slug: 'deepseek-v4-flash', context_window: 1048576, display_name: 'DeepSeek-V4-Flash' },
+    ],
   }
   const deepseekConfig = {
     model: 'deepseek-v4-flash',
@@ -177,7 +179,9 @@ describe('codexPresetInputFrom · 模型目录捕获', () => {
       codexPresetInputFrom({ ...deepseekConfig, model_catalog_json: undefined }, null, CATALOG)
         ?.modelMetadata
     ).toBeUndefined()
-    expect(codexPresetInputFrom({ ...deepseekConfig, model: 'gpt-5.5' }, null, CATALOG)?.modelMetadata).toBeUndefined()
+    expect(
+      codexPresetInputFrom({ ...deepseekConfig, model: 'gpt-5.5' }, null, CATALOG)?.modelMetadata
+    ).toBeUndefined()
     expect(codexPresetInputFrom(deepseekConfig, null, null)?.modelMetadata).toBeUndefined()
   })
 })

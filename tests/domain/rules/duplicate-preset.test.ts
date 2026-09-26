@@ -44,7 +44,6 @@ describe('presetInputFromPreset', () => {
       expect(models[0]).not.toBe(metadata.models[0])
     }
   })
-
   it('可选字段为空时复制为 undefined，不携带原预设的缺失标记', () => {
     const preset = makePreset({ baseUrl: undefined, smallFastModel: undefined })
     expect(presetInputFromPreset(preset)).toMatchObject({

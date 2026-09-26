@@ -95,7 +95,11 @@ function codexProviderFrom(config: CodexConfig): CodexProviderSource {
   const provider = config.model_provider
   const blocks = config.model_providers
   if (!provider || provider === CODEX_CONFIG_KEYS.officialProvider) {
-    return { baseUrl: undefined, providerName: undefined, blockToken: undefined }
+    return {
+      baseUrl: undefined,
+      providerName: undefined,
+      blockToken: undefined,
+    }
   }
   const directed = blocks?.[provider]
   if (!directed) {
@@ -137,10 +141,7 @@ function importDisplayName(model: string, baseUrl: string | undefined): string {
   return model || (baseUrl ? hostOf(baseUrl) : '导入配置')
 }
 
-function importProviderName(
-  providerName: string | undefined,
-  baseUrl: string | undefined
-): string {
+function importProviderName(providerName: string | undefined, baseUrl: string | undefined): string {
   return providerName ?? (baseUrl ? hostOf(baseUrl) : 'OpenAI 官方')
 }
 

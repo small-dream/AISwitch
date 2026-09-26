@@ -141,9 +141,7 @@ describe('CodexConfigTarget · rollback', () => {
   it('rollback：恢复两个文件与模型目录的最近备份', async () => {
     const fs = seededFs()
     const target = createCodexTarget(fs)
-    await target.apply(
-      makePreset({ tool: 'codex', modelMetadata: { context_window: 128000 } })
-    )
+    await target.apply(makePreset({ tool: 'codex', modelMetadata: { context_window: 128000 } }))
 
     expect(await target.rollback()).toBe(true)
     expect(fs.files().get('.codex/config.toml')).toBe(CONFIG_FIXTURE)
