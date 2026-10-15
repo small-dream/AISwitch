@@ -12,6 +12,9 @@ import type { TargetTool } from '@/domain/entities/preset'
  * （openai/codex discussions/7782），因此 Codex 侧模型必须是供应商 `/responses`
  * 路由上的模型；只提供 `/chat/completions` 的模型无法用于 Codex。
  *
+ * **不收录官方端点**：官方 API / 官方订阅走内建「官方订阅」条目（清空托管键，
+ * 鉴权与模型都交回 CLI），模板只需覆盖第三方与本地供应商，预填模型名亦多余。
+ *
  * 模型名于 2026-09 依据 OpenCode 官方 models 接口与各厂商公开文档刷新，
  * 具体可用模型以供应商最新文档为准。
  */
@@ -40,29 +43,6 @@ function bothTools(
 }
 
 export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
-  {
-    id: 'claude-official',
-    label: 'Claude 官方',
-    variants: {
-      'claude-code': {
-        suggestModels: [
-          'claude-sonnet-5',
-          'claude-opus-5',
-          'claude-haiku-4.5',
-          'claude-sonnet-4.6',
-        ],
-      },
-    },
-  },
-  {
-    id: 'gpt-official',
-    label: 'OpenAI GPT',
-    variants: {
-      codex: {
-        suggestModels: ['gpt-5.6', 'gpt-5.4', 'gpt-5.1', 'gpt-5.3-codex', 'gpt-5-codex'],
-      },
-    },
-  },
   {
     /** OpenCode Zen：按量计费的模型网关（opencode.ai/auth 取 Key） */
     id: 'opencode-zen',

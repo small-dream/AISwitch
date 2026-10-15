@@ -29,6 +29,7 @@ vi.mock('@/hooks/use-presets', () => ({
 
 vi.mock('@/hooks/use-switch', () => ({
   useSwitchPreset: () => ({ isPending: false, mutate: vi.fn() }),
+  useClearManaged: () => ({ isPending: false, mutate: vi.fn() }),
 }))
 
 vi.mock('@/stores/toast-store', () => ({
@@ -92,18 +93,3 @@ describe('PresetRow 连通性测试', () => {
   })
 })
 
-describe('PresetRow 官方订阅', () => {
-  it('订阅预设展示订阅标记与免密钥说明，不展示密钥摘要', () => {
-    const preset = makePreset({
-      authMode: 'subscription',
-      baseUrl: undefined,
-      apiKey: undefined,
-      model: 'claude-sonnet-5',
-    })
-    render(<PresetRow preset={preset} onEdit={vi.fn()} onDuplicate={vi.fn()} />)
-
-    expect(screen.getByText('订阅登录')).toBeInTheDocument()
-    expect(screen.getByText('官方订阅 · 无需 Key（走 CLI 登录态）')).toBeInTheDocument()
-    expect(screen.queryByText('本地模型 · 无需 Key')).toBeNull()
-  })
-})

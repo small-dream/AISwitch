@@ -236,27 +236,19 @@ describe('CodexConfigTarget · 整份文件元数据（同族模型）', () => {
   })
 })
 
-describe('CodexConfigTarget · 官方订阅（走登录）', () => {
-  const SUBSCRIPTION = makePreset({
-    tool: 'codex',
-    authMode: 'subscription',
-    baseUrl: undefined,
-    apiKey: undefined,
-    model: 'gpt-5.6',
-  })
-
-  it('apply：切回官方 provider、移除注入块，auth.json 丢弃 API Key 保留既有字段', async () => {
+describe('CodexConfigTarget · clearManaged（官方订阅，交回 CLI）', () => {
+  it('移除托管供应商标识与目录指向，auth.json 丢弃 API Key 保留既有字段', async () => {
     const fs = seededFs({
       '.codex/config.toml': configWithCatalogKey(MANAGED_CATALOG),
       '.codex/auth.json': JSON.stringify({ OPENAI_API_KEY: 'sk-old', extra: 'keep-me' }),
     })
     const target = createCodexTarget(fs)
 
-    await target.apply(SUBSCRIPTION)
+    await target.clearManaged()
 
     const config = readToml(fs)
-    expect(config.model).toBe('gpt-5.6')
-    expect(config.model_provider).toBe(CODEX_CONFIG_KEYS.officialProvider)
+    expect(config.model).toBeUndefined()
+    expect(config.model_provider).toBeUndefined()
     expect(config.model_catalog_json).toBeUndefined()
     const providers = config.model_providers as Record<string, unknown>
     expect(providers[INJECTED]).toBeUndefined()
@@ -265,6 +257,23 @@ describe('CodexConfigTarget · 官方订阅（走登录）', () => {
     const auth = JSON.parse(fs.files().get('.codex/auth.json') ?? '{}') as Record<string, unknown>
     expect('OPENAI_API_KEY' in auth).toBe(false)
     expect(auth.extra).toBe('keep-me')
-    expect(await target.verify(SUBSCRIPTION)).toBe(true)
+  })
+
+  it('用户自维护的目录指向保持不动', async () => {
+    const ownCatalog = 'C:/Users/me/.codex/my-models.json'
+    const fs = seededFs({ '.codex/config.toml': configWithCatalogKey(ownCatalog) })
+    const target = createCodexTarget(fs)
+
+    await target.clearManaged()
+
+    expect(readToml(fs).model_catalog_json).toBe(ownCatalog)
+  })
+
+  it('auth.json 剥空即删除文件（不残留空对象）', async () => {
+    const fs = seededFs({ '.codex/auth.json': JSON.stringify({ OPENAI_API_KEY: 'sk-only' }) })
+
+    await createCodexTarget(fs).clearManaged()
+
+    expect(fs.files().has('.codex/auth.json')).toBe(false)
   })
 })

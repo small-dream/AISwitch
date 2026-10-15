@@ -69,7 +69,6 @@ describe('presetFormSchema · modelMetadataJson 跨字段校验', () => {
     tool: 'codex',
     name: 'X',
     providerName: 'Y',
-    authMode: 'api-key',
     apiKey: 'sk',
     model: 'glm-4.6',
     baseUrl: '',

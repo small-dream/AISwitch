@@ -12,7 +12,20 @@ export function useSwitchPreset() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.backups })
-      // 订阅预设切换后登录态提示需重新探测（可能刚在终端完成登录）
+      // 订阅条目切换后登录态提示需重新探测（可能刚在终端完成登录）
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.subscriptionAuthRoot })
+    },
+  })
+}
+
+/** 官方订阅条目（PRD §5.13）：清空该工具的全部托管键，交回 CLI 登录态与模型选择 */
+export function useClearManaged() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (tool: TargetTool) => switchService.clearManaged(tool),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.backups })
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.subscriptionAuthRoot })
     },
   })

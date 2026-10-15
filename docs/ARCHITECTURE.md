@@ -91,6 +91,7 @@ export interface ConfigTarget {
   apply(preset: Preset): Promise<ApplyResult> // 备份→写入→校验 三段式
   verify(preset: Preset): Promise<boolean>
   rollback(): Promise<void>
+  clearManaged(): Promise<ApplyResult> // 交回 CLI：删除全部托管键（官方订阅条目，US-27）
   authStatus(): Promise<SubscriptionAuthStatus> // 官方订阅登录态只读探测（US-27）
 }
 ```
@@ -109,14 +110,15 @@ export interface ConfigTarget {
 
 **D7 · 主题令牌体系（US-15）**：UI 一律使用语义工具类（`bg-app-*` / `text-app-*` / `border-app-*`，定义于 `src/styles/global.css` 的 `@theme`），**禁止硬编码 zinc-_/emerald-_/indigo-\_ 等色值**（StatusDot 等双主题通用色除外）；品牌色统一走 `--color-app-accent` 系列令牌（accent / accent-hover / accent-soft / accent-text），亮色用 indigo-600 系、暗色提亮至 indigo-300 系保证对比度。暗色主题通过 `.dark` 作用域整体覆盖同名变量实现，主题选择持久化于 localStorage 并在首帧前应用（防闪烁）。统一动效（`animate-dialog-in` / `animate-toast-in` / `animate-fade-in` / `animate-pulse-dot`）亦定义于 global.css，全部包裹在 `prefers-reduced-motion: no-preference` 媒体查询内；图标统一使用 `lucide-react`，禁止 emoji 充当图标。
 
-**D8 · 供应商模板库（US-19）**：静态常量 `constants/provider-templates.ts` + 纯函数 `domain/rules/apply-provider-template.ts`（零 IO、可单测）；表单顶部 picker 经 `form.setValue` 预填，模板永不内嵌 Key。本地模型以 `apiKey` 可选表达——写入链与探测链在空 Key 时删除鉴权头/键（PRD §5.9）。**模板按工具声明预填值**（`variants: Partial<Record<TargetTool, ProviderTemplateVariant>>`）：`templatesForTool(tool)` 过滤出适用模板，`applyProviderTemplate(template, tool)` 取该工具的 Base URL / 建议模型 / `smallFastModel`（Claude）；未声明某工具的模板不进该工具表单，从机制上杜绝「把 A 工具的地址填进 B 工具」。**Codex 侧模板只允许 responses 路由模型**：Codex 已移除 `chat/completions` 协议（PRD §5.1 表 B），网关对不支持的模型返回 `400 ModelProtocolUnsupported`，故 Codex 侧只预填网关在 `/responses` 上确认可用的模型；单测守卫禁止 GLM / Kimi / MiniMax / Qwen / MiMo / LongCat / Hy 族出现在 Codex 侧预填值中（DeepSeek / Grok 实测可用，不在禁止之列，PRD §5.9）。
+**D8 · 供应商模板库（US-19）**：静态常量 `constants/provider-templates.ts` + 纯函数 `domain/rules/apply-provider-template.ts`（零 IO、可单测）；表单顶部 picker 经 `form.setValue` 预填，模板永不内嵌 Key。本地模型以 `apiKey` 可选表达——写入链与探测链在空 Key 时删除鉴权头/键（PRD §5.9）。**模板按工具声明预填值**（`variants: Partial<Record<TargetTool, ProviderTemplateVariant>>`）：`templatesForTool(tool)` 过滤出适用模板，`applyProviderTemplate(template, tool)` 取该工具的 Base URL / 建议模型 / `smallFastModel`（Claude）；未声明某工具的模板不进该工具表单，从机制上杜绝「把 A 工具的地址填进 B 工具」。**Codex 侧模板只允许 responses 路由模型**：Codex 已移除 `chat/completions` 协议（PRD §5.1 表 B），网关对不支持的模型返回 `400 ModelProtocolUnsupported`，故 Codex 侧只预填网关在 `/responses` 上确认可用的模型；单测守卫禁止 GLM / Kimi / MiniMax / Qwen / MiMo / LongCat / Hy 族出现在 Codex 侧预填值中（DeepSeek / Grok 实测可用，不在禁止之列，PRD §5.9）。**不收录官方端点**：官方 API / 官方订阅由内建「官方订阅」条目承担（D12），模板只覆盖第三方与本地供应商，避免预填的官方模型名覆盖 CLI 内 `/model` 的选择。
 
 **D9 · 全局快捷键（US-20）**：Rust 仅注册 `tauri-plugin-global-shortcut`，业务全在前端 `hooks/use-global-shortcuts.ts`；快捷键字符串集中于 `constants/shortcut.ts`；循环切换逻辑为纯函数 `domain/rules/next-preset.ts`。
 
 **D10 · 应用更新（US-24）**：`adapters/updater/tauri-updater.ts` 封装 Tauri updater 与 process 插件；`UpdateService.prepare()` 负责「检查 → 预下载」，`hooks/use-app-update.ts` 同时提供启动查询与手动 `refetch`，并将无更新或失败结果统一反馈给 Toast；`UpdateButton` 依据查询状态呈现「检查更新 → 检查中 → 更新」的单一入口。更新元数据和下载包均由 Tauri 签名校验，Rust 侧只注册官方插件，不承载业务状态。
 
 **D11 · 模型名下拉候选（US-19）**：候选由三条来源拼成——离线模板反查 `domain/rules/model-options.ts`（纯函数，baseUrl 归一化后匹配模板变体）、按需拉取的供应商目录 `adapters/connectivity/model-catalog-fetcher.ts` → `services/model-catalog-service.ts` → `hooks/use-model-catalog.ts`、以及用户手填。URL 与鉴权头复用 `domain/rules/probe-url.ts` 与 `adapters/connectivity/provider-headers.ts`，与连通性探测共用「明文 http 仅回环」守卫（PRD §5.6）。该 hook 刻意用组件局部 state 而非 TanStack Query：结果只服务当前弹窗、无需缓存，也避免表单组件依赖 QueryClientProvider。响应解析收敛在纯函数 `domain/rules/model-catalog.ts`（`data[]` / `models[]` / 顶层数组均容错，非预期结构返回空数组）。 交互层为独立组件 `ui/features/preset-form/ModelComboBox.tsx`：输入框 + 常驻 ▼ 按钮，弹层经 `createPortal` + fixed 定位渲染到 `body`（不被弹窗滚动区裁切、不随内容滚动错位），点外部 / Esc 收起，按当前输入做子串过滤；无候选时弹层渲染 `role="status"` 提示，而不是静默隐藏按钮。 交互层为独立组件 `ui/features/preset-form/ModelComboBox.tsx`：输入框 + 常驻 ▼ 按钮，弹层经 `createPortal` + fixed 定位渲染到 `body`（不被弹窗滚动区裁切、不随内容滚动错位），点外部 / Esc 收起，按当前输入做子串过滤；无候选时弹层渲染 `role="status"` 提示，而不是静默隐藏按钮。**「点外部」判定必须同时包含弹层自身**：弹层不在输入框容器的 DOM 子树内，若只判断容器，`mousedown` 会先卸载弹层、随后的 `click` 落不到候选项上（表现为「点了没反应」）。 过滤规则：空输入或输入与某候选**完全一致**（= 刚从列表选中）时列出全部，否则按子串匹配——否则选中后重开会只剩一条，看起来像「列表出不来了」。弹层定位由 `popupStyle()` 计算：优先向下展开，下方空间不足则翻到上方并按住得下的一侧限制 `maxHeight`（固定向下时靠近窗口底部的字段会把尾段推出可视区），打开期间监听 `resize` 与 `scroll`（capture）重算位置。 候选**按来源分组**（`groupModelOptions()`：推荐在前，目录去掉与推荐重复的条目），弹层用分组标题标注出处——模板推荐只是人工挑选子集，合并成一个列表会让用户误以为那几条就是全部；因此 `ModelFields` 在**首次打开下拉时**自动静默补拉一次目录（`ensureCatalog`，`useRef` 保证只一次，失败不弹红字），显式「获取模型」按钮仍可重拉并显示成败。
-**D12 · 官方订阅登录态（US-27）**：预设的认证方式由 `authMode`（`api-key` | `subscription`）表达，写入语义由**纯函数** `domain/rules/auth-mode.ts` 统一裁决（订阅模式丢弃 `baseUrl` / `apiKey`），Claude/Codex merge 规则据此「只删不写」密钥键；历史预设库经 Zod `.default('api-key')` 无痛迁移。登录态探测实现为 `ConfigTarget.authStatus()`（`adapters/<tool>/auth-status.ts` + `domain/rules/subscription-credentials.ts` 纯解析器），经 `SubscriptionAuthService` 暴露给 `hooks/use-subscription-auth.ts`，结果**只含 state / plan / account / expiresAt，绝不携带 token**；登录本身由 CLI 完成，AISwitch 仅展示命令与官方文档入口（`constants/subscription-login.ts`），不新增 Rust 命令、不代持凭据。
+**D12 · 官方订阅登录态（US-27）**：订阅是**内建条目**而非用户预设：`ConfigTarget.clearManaged()` 是它唯一的写入通道（删除该工具的全部托管键，与 apply 共用「备份 → 原子写 → 校验」三段式），UI 在 `PresetList` 置顶渲染 `SubscriptionPresetRow` 并直接调 `SwitchService.clearManaged(tool)`；生效判定由 `domain/rules/subscription-active.ts` 按「无托管覆盖」给出（订阅不写模型，无法按模型名比对）。预设数据模型里没有 `authMode`——Claude / Codex 的 strip 规则（`stripManagedClaudeKeys` / `stripManagedCodexConfig`）直接充当清空语义，Codex 目录键仅在指向托管 `models.json` 时移除（用户自维护指向不动）。登录态探测实现为 `ConfigTarget.authStatus()`（`adapters/<tool>/auth-status.ts` + `domain/rules/subscription-credentials.ts` 纯解析器），经 `SubscriptionAuthService` 暴露给 `hooks/use-subscription-auth.ts`，结果**只含 state / plan / account / expiresAt，绝不携带 token**；登录本身由 CLI 完成，AISwitch 仅展示命令与官方文档入口（`constants/subscription-login.ts`），不新增 Rust 命令、不代持凭据。
+
 
 ## 3. 目录结构
 
@@ -141,7 +143,7 @@ AISwitch/
 │   ├── services/                # 应用服务：switch / detect / preset / backup / restore
 │   ├── domain/
 │   │   ├── entities/            # Preset、ToolStatus、SubscriptionAuthStatus 类型与不变式
-│   │   ├── rules/               # 纯函数：merge-config / auth-mode / subscription-credentials / diff-config / validate / active-preset / import-preset / duplicate-preset
+│   │   ├── rules/               # 纯函数：merge-config / subscription-credentials / subscription-active / diff-config / validate / active-preset / import-preset / duplicate-preset
 │   │   └── schemas/             # Zod：claude-config / codex-config / preset
 │   ├── adapters/
 │   │   ├── updater/              # Tauri 更新适配器

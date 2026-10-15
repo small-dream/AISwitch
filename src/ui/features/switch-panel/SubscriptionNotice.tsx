@@ -4,9 +4,7 @@ import { useEffect, useState } from 'react'
 import { SUBSCRIPTION_LOGIN } from '@/constants/subscription-login'
 import type { TargetTool } from '@/domain/entities/preset'
 import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
-import { isSubscriptionAuth } from '@/domain/rules/auth-mode'
 import { useT, type TFn, type TranslationKey } from '@/i18n/index'
-import { usePresets } from '@/hooks/use-presets'
 import { useSubscriptionAuth } from '@/hooks/use-subscription-auth'
 
 /** 各工具的登录步骤说明词条（UI 文案归属 i18n，常量表只放命令与文档地址） */
@@ -54,20 +52,12 @@ function useCopyCommand(command: string) {
   return { copied, copy }
 }
 
-/** 官方订阅登录提示（PRD §5.13）：仅当该工具存在订阅预设时出现，指引用户在 CLI 内完成登录 */
+/** 官方订阅登录提示（PRD §5.13）：官方订阅是每个工具的内建能力，故常显，指引用户在 CLI 内完成登录 */
 export function SubscriptionNotice({ tool }: { tool: TargetTool }) {
   const t = useT()
-  const { data: presets } = usePresets()
   const { data: status } = useSubscriptionAuth(tool)
   const guide = SUBSCRIPTION_LOGIN[tool]
   const { copied, copy } = useCopyCommand(guide.command)
-
-  const hasSubscriptionPreset = (presets ?? []).some(
-    (preset) => preset.tool === tool && isSubscriptionAuth(preset)
-  )
-  if (!hasSubscriptionPreset) {
-    return null
-  }
 
   return (
     <div className="mb-4 rounded-lg border border-app-border bg-app-sunken px-3 py-2.5 text-xs">

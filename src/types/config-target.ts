@@ -21,6 +21,11 @@ export interface ConfigTarget {
   verify(preset: Preset): Promise<boolean>
   /** 从最近一份备份恢复；无可用备份返回 false */
   rollback(): Promise<boolean>
+  /**
+   * 交回 CLI：删除 AISwitch 写入的全部托管键（保留用户自有配置），
+   * 与 apply 共用「备份 → 原子写 → 校验」三段式。官方订阅条目即调它（PRD §5.13）。
+   */
+  clearManaged(): Promise<ApplyResult>
   /** 官方订阅登录态探测（PRD §5.13）：只读，不修改任何配置 */
   authStatus(): Promise<SubscriptionAuthStatus>
 }

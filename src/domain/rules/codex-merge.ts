@@ -1,21 +1,33 @@
 import { CODEX_AUTH_KEYS, CODEX_CONFIG_KEYS } from '@/constants/config-keys'
 import type { Preset } from '@/domain/entities/preset'
-import { isSubscriptionAuth } from '@/domain/rules/auth-mode'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import { isRecord } from '@/utils/guards'
 
 export type CodexAuthFile = Record<string, unknown>
 
-/** 订阅模式不注入供应商块：鉴权交给 ChatGPT 登录态，模型仍可指定 */
-function effectiveBaseUrl(preset: Preset): string | undefined {
-  return isSubscriptionAuth(preset) ? undefined : preset.baseUrl
+/** 删除全部托管供应商标识：model / model_provider / 注入块（目录键由 catalog 计划单独处理） */
+function withoutProviderKeys(config: CodexConfig): CodexConfig {
+  const next = { ...config }
+  Reflect.deleteProperty(next, 'model')
+  Reflect.deleteProperty(next, 'model_provider')
+  if (!next.model_providers) {
+    return next
+  }
+  const providers = { ...next.model_providers }
+  Reflect.deleteProperty(providers, CODEX_CONFIG_KEYS.injectedProvider)
+  if (Object.keys(providers).length === 0) {
+    Reflect.deleteProperty(next, 'model_providers')
+  } else {
+    next.model_providers = providers
+  }
+  return next
 }
 
 /** 合并预设到现有 config.toml 结构（PRD §5.1 表 B） */
 export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexConfig {
   const providers = { ...(current.model_providers ?? {}) }
   const injected = CODEX_CONFIG_KEYS.injectedProvider
-  const baseUrl = effectiveBaseUrl(preset)
+  const baseUrl = preset.baseUrl
   let modelProvider: string
   if (baseUrl) {
     const existing = providers[injected] ?? {}
@@ -52,7 +64,7 @@ export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexCon
 /** 合并预设到 auth.json：覆盖 OPENAI_API_KEY，其余字段保留 */
 export function mergeCodexAuth(current: unknown, preset: Preset): CodexAuthFile {
   const base: CodexAuthFile = isRecord(current) ? current : {}
-  const apiKey = isSubscriptionAuth(preset) ? undefined : preset.apiKey
+  const apiKey = preset.apiKey
   if (!apiKey) {
     const next = { ...base }
     Reflect.deleteProperty(next, CODEX_AUTH_KEYS.apiKey)
@@ -71,21 +83,9 @@ export function stripManagedCodexConfig(
   config: CodexConfig,
   managedCatalogPath: string
 ): CodexConfig {
-  const next = { ...config }
-  Reflect.deleteProperty(next, 'model')
-  Reflect.deleteProperty(next, 'model_provider')
+  const next = withoutProviderKeys(config)
   if (next.model_catalog_json === managedCatalogPath) {
     Reflect.deleteProperty(next, 'model_catalog_json')
-  }
-  const injected = CODEX_CONFIG_KEYS.injectedProvider
-  if (next.model_providers) {
-    const providers = { ...next.model_providers }
-    Reflect.deleteProperty(providers, injected)
-    if (Object.keys(providers).length === 0) {
-      Reflect.deleteProperty(next, 'model_providers')
-    } else {
-      next.model_providers = providers
-    }
   }
   return next
 }

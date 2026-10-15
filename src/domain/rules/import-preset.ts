@@ -5,7 +5,6 @@ import {
   CODEX_CONFIG_KEYS,
 } from '@/constants/config-keys'
 import type { PresetInput } from '@/domain/entities/preset'
-import { defaultAuthMode } from '@/domain/rules/auth-mode'
 import { findCatalogEntry } from '@/domain/rules/codex-catalog'
 import type { ClaudeSettings } from '@/domain/schemas/claude-config'
 import type { CodexConfig, CodexProviderBlock } from '@/domain/schemas/codex-config'
@@ -58,11 +57,14 @@ export function claudePresetInputFrom(settings: ClaudeSettings): PresetInput | n
   const baseUrl = env[CLAUDE_ENV_KEYS.baseUrl]
   const apiKey = env[CLAUDE_ENV_KEYS.authToken]
   const model = claudeActiveModel(settings)
+  // 无供应商信息（官方订阅登录态 / 纯官方默认）：没有可导入的供应商配置，界面上的内建「官方订阅」即覆盖该状态
+  if (!baseUrl && !apiKey) {
+    return null
+  }
   return {
     tool: 'claude-code',
     name: model || (baseUrl ? hostOf(baseUrl) : '官方配置'),
     providerName: baseUrl ? hostOf(baseUrl) : '官方 API',
-    authMode: defaultAuthMode(baseUrl, apiKey),
     baseUrl,
     apiKey: apiKey ?? '',
     model,
@@ -126,14 +128,14 @@ export function codexPresetInputFrom(
   const apiKey = source.blockToken ?? codexApiKeyFrom(auth)
   const { baseUrl, providerName } = source
   const model = config.model ?? ''
-  if (!model && !apiKey && !baseUrl) {
+  // 同上：无供应商信息即官方订阅登录态，无可导入内容
+  if (!apiKey && !baseUrl) {
     return null
   }
   return {
     tool: 'codex',
     name: importDisplayName(model, baseUrl),
     providerName: importProviderName(providerName, baseUrl),
-    authMode: defaultAuthMode(baseUrl, apiKey),
     baseUrl,
     apiKey,
     model,

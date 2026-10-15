@@ -43,7 +43,7 @@
 | 供应商（Provider）     | 模型服务提供方：官方 API、GLM、DeepSeek、中转站等           |
 | 切换（Switch / Apply） | 将某预设写入目标工具全局配置的动作                          |
 | 回滚（Rollback）       | 从备份恢复上一次配置                                        |
-| 官方订阅（Subscription） | CLI 自带的官方账号登录态：Claude Code 走 `/login` OAuth、Codex 走 `codex login`（ChatGPT 订阅）；AISwitch 只改配置，不代持凭据（见 §5.13） |
+| 官方订阅（Subscription） | CLI 自带的官方账号登录态：Claude Code 走 `/login` OAuth、Codex 走 `codex login`（ChatGPT 订阅）；预设列表中每工具各一个**内建零字段条目**，一键把托管键交回 CLI；AISwitch 只改配置，不代持凭据（见 §5.13） |
 
 ## 3. 用户故事与优先级
 
@@ -73,7 +73,7 @@
 | US-19 | **供应商模板库 + 本地模型**                  | 内置模板一键填充；支持无 Key 的 Ollama / LM Studio（`apiKey` 可选）；策略见 §5.9                                                                   |
 | US-20 | **全局快捷键**                               | `CmdOrCtrl+Shift+A` 呼出主窗口；`CmdOrCtrl+Shift+S` 循环切换当前工具下一预设；策略见 §5.10                                                          |
 | US-24 | **应用内自动更新**                           | 顶栏可手动检查并预下载签名更新；下载完成后按钮切换为一键更新；策略见 §5.11                                                                          |
-| US-27 | **切回官方订阅（走登录）**                   | 预设可选「官方订阅（登录）」认证方式：不写入任何密钥/Base URL，鉴权交给 CLI 登录态；切换面板展示登录态探测结果与登录命令；策略见 §5.13                 |
+| US-27 | **切回官方订阅（走登录）**                   | 预设列表内置「官方订阅」条目（每工具一个、零字段、不可删除、不落盘）：一次点击即清除 AISwitch 写入的全部托管键（含模型），鉴权与模型都交回 CLI 登录态（模型用 `/model` 自行切换）；切换面板常显登录态探测结果与登录命令；策略见 §5.13 |
 
 ### 3.3 P2（远期规划）
 
@@ -114,14 +114,14 @@ flowchart TD
 
 | 配置键                       | 来源                    | 规则                                  |
 | ---------------------------- | ----------------------- | ------------------------------------- |
-| `ANTHROPIC_BASE_URL`         | `preset.baseUrl`        | 为空（官方）或 `authMode=subscription` 时**删除该键**      |
-| `ANTHROPIC_AUTH_TOKEN`       | `preset.apiKey`         | apiKey 为空（本地模型 / 官方订阅）时**删除该键**           |
+| `ANTHROPIC_BASE_URL`         | `preset.baseUrl`        | 为空（官方 API）时**删除该键**        |
+| `ANTHROPIC_AUTH_TOKEN`       | `preset.apiKey`         | apiKey 为空（本地模型）时**删除该键**  |
 | `ANTHROPIC_MODEL`            | `preset.model`          | —                                     |
 | `ANTHROPIC_SMALL_FAST_MODEL` | `preset.smallFastModel` | 为空时删除该键                        |
 
 规则：仅覆盖上表所列键，**保留文件中其余未知字段**（防止抹掉用户其他配置）。
 
-**官方订阅（US-27，§5.13）**：`authMode=subscription` 时**绝不写入也不保留** `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_AUTH_TOKEN`（写入任一键都会顶掉 CLI 的 OAuth 登录态并按量计费），`ANTHROPIC_MODEL` / 小模型与槽位键照常写入；即便预设携带 `baseUrl` / `apiKey` 也在写入链丢弃（防御式）。
+**官方订阅（US-27，§5.13）走独立通道**：它不是预设，而是 `ConfigTarget.clearManaged()`——把上表的**全部托管键**（含模型与三个槽位键）一次删干净，回归 CLI 自带的登录态与模型选择。理由：写入密钥 / 中转地址会顶掉 CLI 的 OAuth 登录态并按量计费，写入模型会把订阅账号固定在某模型上。
 
 **槽位映射兼容**：第三方中转常见用法是不写 `ANTHROPIC_MODEL`，而以 `ANTHROPIC_DEFAULT_SONNET/OPUS/HAIKU_MODEL` 三槽位映射实际模型。当检测到任一槽位键时视为「槽位映射模式」：切换将同步覆盖三槽位（SONNET/OPUS = 模型，HAIKU = 小模型或主模型），否则切换对该类配置不生效；导入与探测的模型读取链为 `ANTHROPIC_MODEL → 槽位键 → 顶层 model`。
 
@@ -129,13 +129,13 @@ flowchart TD
 
 | 文件          | 配置键                                                     | 来源                   | 规则                                                                                                                                                                                   |
 | ------------- | ---------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `config.toml` | 顶层 `model`                                               | `preset.model`         | —                                                                                                                                                                                      |
-| `config.toml` | 顶层 `model_provider`                                      | —                      | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块                                                                                                                                 |
+| `config.toml` | 顶层 `model`                                               | `preset.model`         | —（clearManaged 时移除该键，模型由 CLI 自选）                                                                                                                                          |
+| `config.toml` | 顶层 `model_provider`                                      | —                      | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块；**clearManaged → 移除该键**（回落 Codex 内置默认）                                                                             |
 | `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl`       | 第三方时写入；切回官方时移除该块                                                                                                                                                       |
 | `config.toml` | `[model_providers.jake_current].name`                      | `preset.providerName`  | 第三方时必写；Codex 要求块内 `name` 非空，缺失将导致整个 config.toml 加载失败、CLI/插件退回安装引导                                                                                    |
 | `config.toml` | `[model_providers.jake_current].wire_api`                  | 固定 `"responses"`     | 第三方时必写；**Codex 已彻底移除 `chat/completions` 协议**（openai/codex discussions/7782：2025-12 弃用，2026-02 起硬报错），写入 `chat` 会使 CLI 每次提交消息报 invalid configuration |
 | `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时写入（DeepSeek 官方脚本模式）；apiKey 为空写空串                                                                                                                               |
-| `config.toml` | 顶层 `model_catalog_json`                                  | —                      | 预设携带元数据 → 指向 `~/.codex/models.json`；目录无当前模型条目 → 移除该键回落内置目录；其余保持现状                                                                                  |
+| `config.toml` | 顶层 `model_catalog_json`                                  | —                      | 预设携带元数据 → 指向 `~/.codex/models.json`；目录无当前模型条目 → 移除该键回落内置目录；clearManaged → 仅在指向托管 `~/.codex/models.json` 时移除（用户自维护指向不动）；其余保持现状   |
 | `models.json` | `models[]` 条目                                            | `preset.modelMetadata` | 切换时重写为**当前预设的条目集**——整份厂商文件粘贴时保留全部同族模型（选单只显示当前供应商），单条粘贴仅该条；切回其他预设时由其自带元数据重建                                         |
 | `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`        | 有 Key 时写入，无 Key 时**删除该键**（与块内 token 双通道兼容）                                                                                                                        |
 
@@ -151,7 +151,6 @@ flowchart TD
 | `name`                    | string   | 是       | 1–50 字符，同一工具内唯一                                                                                      |
 | `tool`                    | enum     | 是       | `claude-code` \| `codex`                                                                                       |
 | `providerName`            | string   | 是       | 1–50 字符（如 GLM / 中转站名）                                                                                 |
-| `authMode`                | enum     | 是       | `api-key`（默认）\| `subscription`；`subscription` 时 `baseUrl` / `apiKey` 一律为空（见 §5.13）                 |
 | `baseUrl`                 | string   | 否       | 合法 URL；**留空 = 官方（API 或订阅）**                                                                        |
 | `apiKey`                  | string   | 否       | 本地模型（Ollama / LM Studio 等）与官方订阅可留空                                                              |
 | `model`                   | string   | 是       | 1–100 字符                                                                                                     |
@@ -223,7 +222,8 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 
 - **模型名下拉（2026-09-26）**：预设表单的「模型名」与「小模型」改为可下拉候选的输入框——候选 = 模板推荐模型（离线、按当前 baseUrl 反查同一供应商在该工具下的模板变体，编辑既有预设同样生效）+ 本次「获取模型」拉到的供应商目录；两字段共用同一份候选；候选下拉按钮（▼）常驻在输入框右侧，点开即列出候选（按当前输入子串过滤，点选回填并收起，点外部 / Esc 收起）；无候选时弹层给提示而不是静默消失（先「获取模型」或直接手填）；手填始终可用； 选中某项后再次打开仍列出全部候选（不会因为输入框已填上模型名而被过滤成一条）；弹层按可视空间自动向下或向上展开并限高，字段靠近窗口底部时不会被截断； 候选按来源分组并在列表里标注：**模板推荐（子集）** 是模板里人工挑选的几条，**供应商目录 · N 个** 来自本次拉取；为避免「没点获取模型就只有几条、还不知哪来的」，**首次打开下拉会自动静默拉一次目录补全**（失败不弹红字，只保留推荐），「获取模型」可随时重拉；
 - **「获取模型」按钮**：按当前 Base URL + Key 请求与 §5.6 相同的 models 端点（同一鉴权头、同一「明文 http 仅回环」守卫）；成功内联提示「已获取 N 个模型」，空结果 / 非 2xx / 网络异常一律内联报错并保留手填；结果不落库、不缓存，只服务当前弹窗；
-- **模板**：内置 Claude 官方 / OpenAI GPT / OpenCode Zen / OpenCode Go / GLM / DeepSeek / Kimi / 通义 / 豆包 / Ollama / LM Studio，仅预填品牌名 / Base URL / 建议模型名 / 小模型，**永不内嵌 API Key**；表单顶部「从模板填充」一键预填；模型名于 2026-09 依据 OpenCode 官方 models 接口与各厂商公开文档刷新，具体以供应商最新文档为准；
+- **模板**：内置 OpenCode Zen / OpenCode Go / GLM / DeepSeek / Kimi / 通义 / 豆包 / Ollama / LM Studio，仅预填品牌名 / Base URL / 建议模型名 / 小模型，**永不内嵌 API Key**；表单顶部「从模板填充」一键预填；模型名于 2026-09 依据 OpenCode 官方 models 接口与各厂商公开文档刷新，具体以供应商最新文档为准；
+- **不设官方模板**：官方 API 与官方订阅一律走内建「官方订阅」条目（§5.13，清空托管键、鉴权与模型交回 CLI），模板只覆盖第三方与本地供应商——预填官方模型名只会顶掉 CLI 内 `/model` 的选择；
 - **模板工具感知（2026-09）**：模板按工具声明预填值，表单只列出当前工具适用的模板，避免把 A 工具的地址填进 B 工具。同一供应商在两个工具下的 Base URL 与可用模型可能不同，典型为 OpenCode 套餐：
   - Claude Code 侧：`https://opencode.ai/zen`（CLI 自动补 `/v1/messages`）、`https://opencode.ai/zen/go`；可用模型为该网关 `/messages` 路由的模型（Zen → Claude 系列；Go → MiniMax / Qwen 系列），并预填 `smallFastModel`；
   - Codex 侧：`https://opencode.ai/zen/v1`、`https://opencode.ai/zen/go/v1`（CLI 自动补 `/responses`）；因 Codex **只支持 responses 协议**，两侧只预填该网关在 `/responses` 上确证可用的模型（Zen → GPT/Codex 系列，另含 DeepSeek；Go → DeepSeek 全系、Grok 4.7 / 4.6）；
@@ -259,12 +259,13 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 
 ### 5.13 官方订阅（走登录，US-27）
 
-- **概念**：预设新增 `authMode`（见 §5.2）。`api-key` 由 AISwitch 写入供应商密钥；`subscription` 表示「该预设使用 CLI 自带的官方订阅登录态」——AISwitch 不写任何密钥，鉴权完全交给 CLI 的 OAuth 凭据。
-- **写入语义**：Claude Code 删除 `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_AUTH_TOKEN`（模型、小模型与槽位键照常写入）；Codex 归一到官方 provider（`model_provider = "openai"`、移除注入的 `jake_current` 块、`auth.json` 删除 `OPENAI_API_KEY` 但保留 `tokens`、目录键回落内置目录）。表 A / 表 B 的既有规则不变，订阅模式只是在密钥维度上「只删不写」。
+- **内建条目**：官方订阅不是「要填写的预设」，而是预设列表中每个工具各一个的**内建条目**——零字段、不可删除、不落盘。点一次即完成切换，无需新建、无需填写任何配置；预设表单也因此只产出普通（API Key）预设。
+- **写入语义（一个托管键都不写）**：切换订阅条目走独立通道 `ConfigTarget.clearManaged()`，把该工具的全部托管键交回 CLI 自身——Claude Code 删除 `ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_MODEL`、`ANTHROPIC_SMALL_FAST_MODEL` 与三槽位键（env 清空后不留空对象）；Codex 移除顶层 `model` 与 `model_provider`、注入的 `jake_current` 块，`auth.json` 删除 `OPENAI_API_KEY` 但保留 `tokens`，`model_catalog_json` 仅在指向托管 `~/.codex/models.json` 时移除（用户自维护指向不动）。写密钥会顶掉 OAuth 登录态并按量计费，写模型会把订阅账号固定在某模型上，故两者都不写：**鉴权交给 CLI 登录态，模型交给 CLI 自己选**（Claude Code `/model`）。该通道与切换共用「备份 → 原子写 → 校验」三段式；本就没有托管键时不写入（不为一次「无须动作」的切换凭空创建配置文件）。
+- **生效判定**：订阅条目在「工具已配置 + 当前不在自定义中转上（探测供应商非 URL）+ 该工具没有任何预设生效」时标记为「当前」。订阅不写模型，故不能像普通预设那样按模型名比对。
 - **登录态探测**（只读、不代持凭据）：`domain/rules/subscription-credentials.ts` 的纯函数解析两个来源——Claude Code 的 `~/.claude/.credentials.json`（OAuth 凭据文件；macOS 凭据存于系统钥匙串时回落到 `~/.claude.json` 的 `oauthAccount` 记录）；Codex 的 `~/.codex/auth.json` 是否带 `tokens`（ChatGPT 订阅登录写入，仅 `OPENAI_API_KEY` 属 API Key 登录、不算订阅）。探测结果只暴露 `state / plan / account / expiresAt`，**绝不携带 token 内容**；解析失败归 `unknown`，避免误报「未登录」。
-- **登录引导**：登录由 CLI 自己完成（浏览器 OAuth），AISwitch 不代跑登录流程。切换面板在该工具存在订阅预设时展示登录提示：终端命令（Claude Code `claude` → `/login`；Codex `codex login`）一键复制 + 官方文档入口；已登录时展示订阅类型 / 账号。
-- **连通性测试**：订阅预设手上没有可用的 bearer token，探测请求只会得到误导性的 401，故直接返回 `unsupported` 并提示在 CLI 内确认可用性。
-- **兼容性**：预设库历史数据（无 `authMode` 字段）解析后一律按 `api-key` 处理；导入当前配置时，既无 Base URL 也无密钥的配置默认按订阅模式建草稿。
+- **登录引导**：登录由 CLI 自己完成（浏览器 OAuth），AISwitch 不代跑登录流程。切换面板**常显**登录提示（订阅是每个工具的内建能力）：终端命令（Claude Code `claude` → `/login`；Codex `codex login`）一键复制 + 官方文档入口；已登录时展示订阅类型 / 账号。
+- **连通性测试**：官方订阅条目不提供连通性测试按钮——它手上没有可用的 bearer token，探测请求只会得到误导性的 401。
+- **兼容性**：预设数据模型中不再有 `authMode` 字段（历史预设库中遗留的该字段解析时被忽略），这类预设按普通预设对待。导入当前配置时，既无 Base URL 也无密钥的配置视为正处于官方订阅态而**拒绝导入**，提示直接使用内建订阅条目。
 - **非目标**：不代持 / 不代刷新订阅凭据，不做账号切换、额度查询与用量统计。
 
 ## 6. 非功能需求

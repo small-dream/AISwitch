@@ -1,10 +1,8 @@
-import { Inbox } from 'lucide-react'
-
 import type { TargetTool, Preset } from '@/domain/entities/preset'
 import { useT } from '@/i18n/index'
 import { usePresets } from '@/hooks/use-presets'
-import { EmptyState } from '@/ui/components/EmptyState'
 import { PresetRow } from './PresetRow'
+import { SubscriptionPresetRow } from './SubscriptionPresetRow'
 
 export function PresetList({
   tool,
@@ -28,21 +26,16 @@ export function PresetList({
   }
 
   const items = (presets ?? []).filter((preset) => preset.tool === tool)
-  if (items.length === 0) {
-    return (
-      <EmptyState
-        icon={<Inbox className="h-8 w-8" strokeWidth={1.5} />}
-        title={t('presetList.emptyTitle')}
-        description={t('presetList.emptyDescription')}
-      />
-    )
-  }
 
   return (
     <ul className="space-y-2">
+      <SubscriptionPresetRow tool={tool} presets={items} />
       {items.map((preset) => (
         <PresetRow key={preset.id} preset={preset} onEdit={onEdit} onDuplicate={onDuplicate} />
       ))}
+      {items.length === 0 ? (
+        <li className="px-1 pt-1 text-xs text-app-faint">{t('presetList.emptyHint')}</li>
+      ) : null}
     </ul>
   )
 }

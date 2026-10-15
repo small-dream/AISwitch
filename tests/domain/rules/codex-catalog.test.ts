@@ -126,6 +126,7 @@ describe('planCodexCatalog', () => {
       type: 'remove',
     })
   })
+
 })
 
 describe('withCatalogKey', () => {
@@ -136,4 +137,5 @@ describe('withCatalogKey', () => {
     expect(withCatalogKey(CONFIG, { type: 'remove' }).model_catalog_json).toBeUndefined()
     expect(withCatalogKey(CONFIG, { type: 'keep' })).toBe(CONFIG)
   })
+
 })

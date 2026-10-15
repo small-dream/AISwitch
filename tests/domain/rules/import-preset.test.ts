@@ -38,9 +38,9 @@ describe('claudePresetInputFrom', () => {
     expect(input?.providerName).toBe('open.bigmodel.cn')
   })
 
-  it('兜底到 Claude Code 原生顶层 model 字段', () => {
-    const input = claudePresetInputFrom({ model: 'claude-sonnet-4-5' })
-    expect(input?.model).toBe('claude-sonnet-4-5')
+  it('无供应商信息（官方订阅登录态）→ 不生成草稿', () => {
+    expect(claudePresetInputFrom({ model: 'claude-sonnet-4-5' })).toBeNull()
+    expect(claudePresetInputFrom({ env: { [CLAUDE_ENV_KEYS.model]: 'claude-sonnet-5' } })).toBeNull()
   })
 
   it('官方配置：无 baseUrl，供应商显示官方 API', () => {
@@ -166,6 +166,7 @@ describe('codexPresetInputFrom · 模型目录捕获', () => {
   const deepseekConfig = {
     model: 'deepseek-v4-flash',
     model_provider: 'deepseek',
+    model_providers: { deepseek: { base_url: 'https://api.deepseek.com/' } },
     model_catalog_json: 'C:/Users/jakej/.codex/models.json',
   }
 
@@ -186,27 +187,25 @@ describe('codexPresetInputFrom · 模型目录捕获', () => {
   })
 })
 
-describe('导入时的默认认证方式（PRD §5.13）', () => {
-  it('Claude 无 Base URL / 无密钥的官方配置 → 订阅模式草稿', () => {
-    const input = claudePresetInputFrom({ env: { [CLAUDE_ENV_KEYS.model]: 'claude-sonnet-5' } })
-
-    expect(input?.authMode).toBe('subscription')
+describe('导入草稿：官方订阅态不可导入（PRD §5.13）', () => {
+  it('Claude 官方订阅登录态（无 Base URL / 无密钥）→ 不可导入，改用内建「官方订阅」', () => {
+    expect(claudePresetInputFrom({ env: { [CLAUDE_ENV_KEYS.model]: 'claude-sonnet-5' } })).toBeNull()
   })
 
-  it('Claude 携带密钥的中转配置 → API Key 模式草稿', () => {
+  it('Claude 携带密钥的中转配置 → 正常生成草稿', () => {
     const input = claudePresetInputFrom({
       env: { [CLAUDE_ENV_KEYS.authToken]: 'sk-tok', [CLAUDE_ENV_KEYS.model]: 'glm-4.6' },
     })
 
-    expect(input?.authMode).toBe('api-key')
+    expect(input?.apiKey).toBe('sk-tok')
   })
 
-  it('Codex 官方 provider 且 auth.json 无 Key → 订阅模式草稿', () => {
-    const input = codexPresetInputFrom(
-      { model: 'gpt-5.6', model_provider: CODEX_CONFIG_KEYS.officialProvider },
-      {}
-    )
-
-    expect(input?.authMode).toBe('subscription')
+  it('Codex 官方 provider 且 auth.json 无 Key → 同上，不可导入', () => {
+    expect(
+      codexPresetInputFrom(
+        { model: 'gpt-5.6', model_provider: CODEX_CONFIG_KEYS.officialProvider },
+        {}
+      )
+    ).toBeNull()
   })
 })

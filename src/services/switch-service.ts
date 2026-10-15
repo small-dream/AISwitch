@@ -20,6 +20,14 @@ export class SwitchService {
     return this.enqueue(tool, () => this.applySwitch(tool, presetId))
   }
 
+  /** 官方订阅条目（PRD §5.13）：清空该工具的全部托管键，把鉴权与模型都交回 CLI */
+  async clearManaged(tool: TargetTool): Promise<ApplyResult> {
+    return this.enqueue(tool, async () => {
+      await this.captureBaseline(tool)
+      return getTarget(tool).clearManaged()
+    })
+  }
+
   async rollback(tool: TargetTool): Promise<boolean> {
     return this.enqueue(tool, () => getTarget(tool).rollback())
   }
@@ -43,14 +51,20 @@ export class SwitchService {
 
   private async applySwitch(tool: TargetTool, presetId: string): Promise<ApplyResult> {
     const preset = await this.findPreset(tool, presetId)
-    // 首次写入前捕获安装前基线（一键还原的锚点）；
-    // 基线是尽力而为的保险，捕获失败只降级告警，不得阻断切换本身
+    await this.captureBaseline(tool)
+    return getTarget(tool).apply(preset)
+  }
+
+  /**
+   * 首次写入前捕获安装前基线（一键还原的锚点）；
+   * 基线是尽力而为的保险，捕获失败只降级告警，不得阻断切换本身。
+   */
+  private async captureBaseline(tool: TargetTool): Promise<void> {
     try {
       await this.baselines.captureIfAbsent(tool, MANAGED_FILES[tool])
     } catch (error) {
       console.warn('基线捕获失败，一键还原将降级为近似还原', error)
     }
-    return getTarget(tool).apply(preset)
   }
 
   private async findPreset(tool: TargetTool, presetId: string): Promise<Preset> {

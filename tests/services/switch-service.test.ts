@@ -16,6 +16,7 @@ function setup() {
   const repo = new PresetRepository(fs)
   const baselines = new BaselineManager(fs, new BackupManager(fs))
   const applied: string[] = []
+  let cleared = 0
   const target: ConfigTarget = {
     tool: 'claude-code',
     detect: () => Promise.resolve({ tool: 'claude-code', status: 'installed' }),
@@ -25,11 +26,23 @@ function setup() {
       return Promise.resolve(result)
     },
     verify: () => Promise.resolve(true),
+    clearManaged: () => {
+      cleared += 1
+      const result: ApplyResult = { tool: 'claude-code', appliedAt: new Date().toISOString() }
+      return Promise.resolve(result)
+    },
     rollback: () => Promise.resolve(true),
     authStatus: () => Promise.resolve({ tool: 'claude-code', state: 'logged-out' }),
   }
   registerTarget(target)
-  return { fs, repo, baselines, service: new SwitchService(repo, baselines), applied }
+  return {
+    fs,
+    repo,
+    baselines,
+    service: new SwitchService(repo, baselines),
+    applied,
+    cleared: () => cleared,
+  }
 }
 
 describe('SwitchService', () => {
@@ -49,6 +62,16 @@ describe('SwitchService', () => {
     await expect(service.switch('claude-code', 'missing')).rejects.toMatchObject({
       code: 'E_PRESET_NOT_FOUND',
     })
+  })
+
+  it('官方订阅：清空该工具的托管键（不写预设、不落盘），并捕获安装前基线', async () => {
+    const { repo, service, cleared } = setup()
+
+    const result = await service.clearManaged('claude-code')
+
+    expect(result.tool).toBe('claude-code')
+    expect(cleared()).toBe(1)
+    expect(await repo.list()).toEqual([])
   })
 
   it('预设与目标工具不匹配抛出 E_VALIDATION_FAILED', async () => {
@@ -116,6 +139,7 @@ function targetWith(apply: ConfigTarget['apply'], tool: 'claude-code' | 'codex' 
     detect: () => Promise.resolve({ tool, status: 'installed' }),
     apply,
     verify: () => Promise.resolve(true),
+    clearManaged: () => Promise.resolve(makeResult(tool)),
     rollback: () => Promise.resolve(true),
     authStatus: () => Promise.resolve({ tool, state: 'logged-out' }),
   }

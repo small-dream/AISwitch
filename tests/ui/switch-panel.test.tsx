@@ -29,12 +29,17 @@ vi.mock('@/hooks/use-active-preset', () => ({
   useIsPresetActive: () => false,
 }))
 
+vi.mock('@/hooks/use-tool-status', () => ({
+  useToolStatus: () => ({ data: [] }),
+}))
+
 vi.mock('@/hooks/use-subscription-auth', () => ({
   useSubscriptionAuth: (tool: string) => ({ data: { tool, state: 'logged-out' } }),
 }))
 
 vi.mock('@/hooks/use-switch', () => ({
   useSwitchPreset: () => ({ isPending: false, mutate: vi.fn() }),
+  useClearManaged: () => ({ isPending: false, mutate: vi.fn() }),
 }))
 
 vi.mock('@/stores/toast-store', () => ({

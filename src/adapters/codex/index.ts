@@ -3,8 +3,14 @@ import { CODEX_AUTH_KEYS, CODEX_CONFIG_KEYS } from '@/constants/config-keys'
 import { PATHS } from '@/constants/paths'
 import { AppError, toAppError, type AppErrorContext } from '@/domain/errors'
 import type { Preset, ToolStatus } from '@/domain/entities/preset'
-import { withCatalogKey } from '@/domain/rules/codex-catalog'
-import { codexProviderLabel, mergeCodexAuth, mergeCodexConfig } from '@/domain/rules/codex-merge'
+import { codexCatalogAbsolutePath, withCatalogKey } from '@/domain/rules/codex-catalog'
+import {
+  codexProviderLabel,
+  mergeCodexAuth,
+  mergeCodexConfig,
+  stripManagedCodexAuth,
+  stripManagedCodexConfig,
+} from '@/domain/rules/codex-merge'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import type { ApplyResult, ConfigTarget } from '@/types/config-target'
 import type { FileSystemPort } from '@/types/fs-port'
@@ -131,6 +137,79 @@ function applyFailure(error: unknown, outcome: RollbackOutcome): AppError {
   return new AppError(original.code, `${original.message}；${suffix}`, context)
 }
 
+/** 清空托管键后的回读校验：托管键一律不存在（用户自有字段忽略） */
+async function verifyCodexCleared(fs: FileSystemPort): Promise<boolean> {
+  try {
+    const config = await readCodexConfig(fs)
+    if (config) {
+      if (config.model !== undefined || config.model_provider !== undefined) {
+        return false
+      }
+      if (config.model_providers && INJECTED in config.model_providers) {
+        return false
+      }
+      if (config.model_catalog_json === codexCatalogAbsolutePath(await fs.homeDir())) {
+        return false
+      }
+    }
+    const auth = await readCodexAuth(fs)
+    return !isRecord(auth) || !(CODEX_AUTH_KEYS.apiKey in auth)
+  } catch {
+    return false
+  }
+}
+
+/** auth.json 剥离托管键：剥空即删除文件（与 stripManagedCodexAuth 的语义对齐） */
+async function writeClearedAuth(fs: FileSystemPort, auth: unknown): Promise<void> {
+  const stripped = stripManagedCodexAuth(auth)
+  if (stripped) {
+    await writeCodexAuth(fs, stripped)
+    return
+  }
+  if (await fs.exists(PATHS.codexAuth)) {
+    await fs.remove(PATHS.codexAuth)
+  }
+}
+
+/**
+ * 交回 CLI（官方订阅，PRD §5.13）：移除托管供应商标识、托管目录指向与 API Key，
+ * 保留 ChatGPT tokens 与用户自有字段；两文件都不存在时不写入任何内容。
+ */
+async function clearManagedCodex(
+  fs: FileSystemPort,
+  backups: BackupManager
+): Promise<ApplyResult> {
+  const config = await readCodexConfig(fs)
+  const auth = await readCodexAuth(fs)
+  if (!config && !isRecord(auth)) {
+    return { tool: 'codex', appliedAt: new Date().toISOString() }
+  }
+  const home = await fs.homeDir()
+  const configBackup = await backups.backup('codex', PATHS.codexConfig)
+  const authBackup = await backups.backup('codex', PATHS.codexAuth)
+  const managed: ManagedFile[] = [
+    { path: PATHS.codexConfig, backupName: configBackup },
+    { path: PATHS.codexAuth, backupName: authBackup },
+  ]
+  try {
+    if (config) {
+      await writeCodexConfig(fs, stripManagedCodexConfig(config, codexCatalogAbsolutePath(home)))
+    }
+    await writeClearedAuth(fs, auth)
+    if (!(await verifyCodexCleared(fs))) {
+      throw new AppError('E_CONFIG_VERIFY', '切换后回读校验失败', { tool: 'codex' })
+    }
+  } catch (error) {
+    const outcome = await rollbackManaged(fs, backups, managed)
+    throw applyFailure(error, outcome)
+  }
+  return {
+    tool: 'codex',
+    backupPath: configBackup ?? undefined,
+    appliedAt: new Date().toISOString(),
+  }
+}
+
 /** 备份 → 原子写 → 校验；失败时仅回滚本次实际改写的文件，错误码原样保留 */
 async function applyCodex(
   fs: FileSystemPort,
@@ -189,6 +268,10 @@ export function createCodexTarget(fs: FileSystemPort): ConfigTarget {
 
     verify(preset) {
       return verifyCodex(fs, preset)
+    },
+
+    clearManaged() {
+      return clearManagedCodex(fs, backups)
     },
 
     async rollback() {

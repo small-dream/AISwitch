@@ -24,16 +24,21 @@ export const zhCN = {
   'template.placeholder': '选择模板…',
   'template.local': '本地模型',
   'presetRow.localModel': '本地模型 · 无需 Key',
-  'presetRow.subscription': '官方订阅 · 无需 Key（走 CLI 登录态）',
 
   // 官方订阅（PRD §5.13）
-  'subscription.badge': '订阅登录',
+  'subscriptionPreset.name': '官方订阅',
+  'subscriptionPreset.description':
+    '不写密钥、Base URL 与模型：鉴权与模型选择都交回 CLI 自己（Claude Code 用 /model 切换）。',
+  'subscriptionPreset.switch': '切换到官方订阅',
+  'subscriptionPreset.loggedIn': '已登录',
+  'subscriptionPreset.loggedOut': '未登录',
+  'subscriptionPreset.unknown': '登录态未知',
   'subscription.title': '官方订阅登录',
   'subscription.checking': '正在检测登录状态…',
-  'subscription.loggedIn': '已检测到官方订阅登录态，可直接使用订阅预设。',
-  'subscription.loggedInAs': '已检测到官方订阅登录态（{detail}），可直接使用订阅预设。',
+  'subscription.loggedIn': '已检测到官方订阅登录态，可直接切换到「官方订阅」。',
+  'subscription.loggedInAs': '已检测到官方订阅登录态（{detail}），可直接切换到「官方订阅」。',
   'subscription.loggedOut':
-    '未检测到登录凭据：请先在终端完成官方登录，再切换到订阅预设（macOS 凭据存于系统钥匙串，若已登录可忽略本提示）。',
+    '未检测到登录凭据：请先在终端完成官方登录，再切换到「官方订阅」（macOS 凭据存于系统钥匙串，若已登录可忽略本提示）。',
   'subscription.unknown': '配置存在但无法解析，请在 CLI 内确认登录状态后再切换。',
   'subscription.copy': '复制命令',
   'subscription.copied': '已复制',
@@ -84,8 +89,7 @@ export const zhCN = {
   'switchPanel.importCurrent': '导入当前配置',
   'switchPanel.importing': '导入中…',
   'switchPanel.createPreset': '新建预设',
-  'presetList.emptyTitle': '暂无预设',
-  'presetList.emptyDescription': '点击右上角「新建预设」，创建第一个可复用的模型配置档案',
+  'presetList.emptyHint': '还没有自定义预设：点右上角「新建预设」，或从当前配置导入。',
 
   // 预设行
   'presetRow.active': '当前',
@@ -148,11 +152,6 @@ export const zhCN = {
   'presetForm.title.duplicate': '复制预设',
   'presetForm.title.create': '新建预设',
   'presetForm.targetTool': '目标工具',
-  'presetForm.authMode': '认证方式',
-  'presetForm.authModeApiKey': 'API Key / 中转站',
-  'presetForm.authModeSubscription': '官方订阅（登录）',
-  'presetForm.subscriptionHint':
-    '官方订阅不写入任何密钥与 Base URL：切换后由 CLI 自带的登录态（Claude Code 的 /login、Codex 的 codex login）鉴权，请先在本机完成登录。',
   'presetForm.name': '预设名称',
   'presetForm.namePlaceholder': '如：GLM-4.6',
   'presetForm.provider': '供应商名称',

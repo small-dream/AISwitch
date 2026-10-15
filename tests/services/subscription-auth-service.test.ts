@@ -11,6 +11,8 @@ function stubTarget(tool: 'claude-code' | 'codex'): ConfigTarget {
       Promise.resolve({ tool, appliedAt: '2026-08-14T00:00:00.000Z' } satisfies ApplyResult),
     verify: () => Promise.resolve(true),
     rollback: () => Promise.resolve(false),
+    clearManaged: () =>
+      Promise.resolve({ tool, appliedAt: '2026-08-14T00:00:00.000Z' } satisfies ApplyResult),
     authStatus: () => Promise.resolve({ tool, state: 'logged-in', plan: 'Pro' }),
   }
 }

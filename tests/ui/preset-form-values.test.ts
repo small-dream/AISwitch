@@ -9,41 +9,33 @@ function values(overrides: Partial<PresetFormValues> = {}): PresetFormValues {
 }
 
 describe('toFormValues', () => {
-  it('订阅预设回填订阅认证方式', () => {
-    const preset = makePreset({ authMode: 'subscription', baseUrl: undefined, apiKey: undefined })
+  it('编辑预设回填模型与供应商（表单不含认证方式字段）', () => {
+    const preset = makePreset({ model: 'glm-4.6', providerName: '智谱 GLM' })
 
-    expect(toFormValues(preset, null, 'claude-code').authMode).toBe('subscription')
-  })
-
-  it('新建草稿默认 API Key 模式', () => {
-    expect(toFormValues(null, null, 'codex')).toMatchObject({ authMode: 'api-key', tool: 'codex' })
-  })
-})
-
-describe('toPresetInput · 官方订阅', () => {
-  it('丢弃 Base URL 与 API Key，保留模型与供应商名', () => {
-    const input = toPresetInput(
-      values({
-        authMode: 'subscription',
-        baseUrl: 'https://relay.example.com',
-        apiKey: 'sk-typed',
-        model: 'claude-sonnet-5',
-      })
-    )
-
-    expect(input).toMatchObject({
-      authMode: 'subscription',
-      baseUrl: undefined,
-      apiKey: undefined,
-      model: 'claude-sonnet-5',
+    expect(toFormValues(preset, null, 'claude-code')).toMatchObject({
+      model: 'glm-4.6',
       providerName: '智谱 GLM',
     })
   })
 
-  it('API Key 模式照常归一化空串为 undefined', () => {
-    const input = toPresetInput(values({ authMode: 'api-key', baseUrl: '', apiKey: '' }))
+  it('新建草稿按当前工具预填空值', () => {
+    expect(toFormValues(null, null, 'codex')).toMatchObject({ tool: 'codex', name: '' })
+  })
+})
+
+describe('toPresetInput', () => {
+  it('归一化空串为 undefined，保留模型与供应商名', () => {
+    const input = toPresetInput(
+      values({
+        baseUrl: '',
+        apiKey: '',
+        model: 'claude-sonnet-5',
+      })
+    )
 
     expect(input.baseUrl).toBeUndefined()
     expect(input.apiKey).toBeUndefined()
+    expect(input.model).toBe('claude-sonnet-5')
+    expect(input.providerName).toBe('智谱 GLM')
   })
 })

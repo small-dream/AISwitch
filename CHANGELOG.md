@@ -2,6 +2,23 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Changed
+
+- The official subscription is now a built-in entry in the preset list (one per tool, no fields, cannot be deleted, not stored on disk) instead of a preset users had to create and fill in. One click hands the tool back to its CLI.
+- Subscriptions switch through a new `ConfigTarget.clearManaged()` path rather than a preset apply: it strips every managed key with the same backup and read-back verification as a switch, and writes nothing when there is nothing to strip, so a tool is never handed a config file just to say "no override".
+- Subscriptions no longer write a model: Claude Code drops `ANTHROPIC_MODEL`, `ANTHROPIC_SMALL_FAST_MODEL` and the `ANTHROPIC_DEFAULT_*_MODEL` slot keys, and Codex drops `model` and `model_provider`. Model choice belongs to the CLI (`/model`), so a subscription account is never pinned to one model.
+- The preset form no longer offers an auth-mode selector (`AuthModeField` and the auth-mode constants are gone), and the login notice is always shown because the subscription is now a built-in capability.
+- Importing a config that has neither a base URL nor a key is rejected with a pointer to the built-in entry instead of creating a subscription draft.
+- Codex `model_catalog_json` is only removed when it points at the managed `~/.codex/models.json`; a path the user maintains is left untouched.
+
+### Removed
+
+- The `authMode` preset field and `domain/rules/auth-mode.ts`: the built-in entry is now the only way to express "use the CLI login state", so the merge rules no longer branch on it. A legacy `authMode` in `~/.aiswitch/presets.json` is ignored on load and those presets are read as ordinary ones.
+- The connectivity-probe shortcut for subscription presets (`unsupported`): the built-in entry has no probe button.
+- The official provider templates (`claude-official`, `gpt-official`): official endpoints are handled by the built-in "official subscription" entry, and a template that only pre-filled a model name would fight the CLI's own `/model` choice, so it had nothing left to say.
+
 ## [0.1.19] - 2026-10-15
 
 ### Removed

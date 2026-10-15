@@ -7,30 +7,24 @@ import { PasswordInput } from '@/ui/components/PasswordInput'
 import type { PresetFormValues } from './preset-form-schema'
 
 /**
- * 供应商地址与密钥字段：官方订阅模式下禁用——
- * 写入 Base URL / Key 会顶掉 CLI 的登录态（PRD §5.13）。
+ * 供应商地址与密钥字段：Base URL 留空 = 官方 API。
+ * 官方订阅不再走表单（列表里有内建条目），故这里始终可编辑。
  */
 export function ProviderFields({
   register,
   errors,
-  keyless,
 }: {
   register: UseFormRegister<PresetFormValues>
   errors: FieldErrors<PresetFormValues>
-  keyless: boolean
 }) {
   const t = useT()
   return (
     <>
       <FormField label={t('presetForm.baseUrl')} error={errors.baseUrl?.message}>
-        <Input
-          {...register('baseUrl')}
-          disabled={keyless}
-          placeholder="https://open.bigmodel.cn/api/anthropic"
-        />
+        <Input {...register('baseUrl')} placeholder="https://open.bigmodel.cn/api/anthropic" />
       </FormField>
       <FormField label="API Key" error={errors.apiKey?.message}>
-        <PasswordInput {...register('apiKey')} disabled={keyless} placeholder="sk-…" />
+        <PasswordInput {...register('apiKey')} placeholder="sk-…" />
       </FormField>
     </>
   )

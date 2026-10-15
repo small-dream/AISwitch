@@ -24,16 +24,17 @@ const writeText = vi.fn(() => Promise.resolve())
 beforeEach(() => {
   writeText.mockClear()
   Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
-  state.presets = [makePreset({ authMode: 'subscription', baseUrl: undefined, apiKey: undefined })]
+  state.presets = [makePreset()]
   state.status = { tool: 'claude-code', state: 'logged-out' }
 })
 
 describe('SubscriptionNotice', () => {
-  it('该工具无订阅预设时不渲染', () => {
+  it('官方订阅是内建能力：没有订阅预设时也照常展示登录提示', () => {
     state.presets = [makePreset()]
     const { container } = render(<SubscriptionNotice tool="claude-code" />)
 
-    expect(container).toBeEmptyDOMElement()
+    expect(container).not.toBeEmptyDOMElement()
+    expect(screen.getByText('官方订阅登录')).toBeInTheDocument()
   })
 
   it('未登录时提示登录并给出终端命令', () => {
@@ -64,7 +65,7 @@ describe('SubscriptionNotice', () => {
   })
 
   it('Codex 使用 codex login 命令', () => {
-    state.presets = [makePreset({ tool: 'codex', authMode: 'subscription' })]
+    state.presets = [makePreset({ tool: 'codex' })]
     render(<SubscriptionNotice tool="codex" />)
 
     expect(screen.getByText('codex login')).toBeInTheDocument()

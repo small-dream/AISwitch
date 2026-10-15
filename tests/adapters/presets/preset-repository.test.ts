@@ -60,7 +60,7 @@ describe('PresetRepository 权限收紧', () => {
 })
 
 describe('PresetRepository 历史数据兼容', () => {
-  it('load：旧版预设库（无 authMode 字段）按 API Key 模式补默认值', async () => {
+  it('load：历史预设库可解析，未知字段（如已移除的 authMode）被忽略', async () => {
     const legacy = {
       version: 1,
       presets: [
@@ -69,6 +69,7 @@ describe('PresetRepository 历史数据兼容', () => {
           name: 'GLM-4.6',
           tool: 'claude-code',
           providerName: '智谱 GLM',
+          authMode: 'subscription',
           baseUrl: 'https://open.bigmodel.cn/api/anthropic',
           apiKey: 'sk-old',
           model: 'glm-4.6',
@@ -81,7 +82,7 @@ describe('PresetRepository 历史数据兼容', () => {
 
     const presets = await new PresetRepository(fs).list()
 
-    expect(presets[0]?.authMode).toBe('api-key')
+    expect(presets[0]).not.toHaveProperty('authMode')
     expect(presets[0]?.model).toBe('glm-4.6')
   })
 })

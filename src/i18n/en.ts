@@ -29,15 +29,21 @@ export const en: Record<TranslationKey, string> = {
   'presetRow.localModel': 'Local model · No key required',
 
   // Official subscription (PRD §5.13)
-  'presetRow.subscription': 'Official subscription · no key (uses CLI login)',
-  'subscription.badge': 'Subscription login',
+  'subscriptionPreset.name': 'Official subscription',
+  'subscriptionPreset.description':
+    'Writes no key, no base URL and no model: both auth and model choice stay with the CLI (/model in Claude Code).',
+  'subscriptionPreset.switch': 'Switch to official subscription',
+  'subscriptionPreset.loggedIn': 'Signed in',
+  'subscriptionPreset.loggedOut': 'Not signed in',
+  'subscriptionPreset.unknown': 'Login state unknown',
   'subscription.title': 'Official subscription login',
   'subscription.checking': 'Checking login status…',
-  'subscription.loggedIn': 'Subscription login detected — subscription presets are ready to use.',
+  'subscription.loggedIn':
+    'Subscription login detected — you can switch to the official subscription right away.',
   'subscription.loggedInAs':
-    'Subscription login detected ({detail}) — subscription presets are ready to use.',
+    'Subscription login detected ({detail}) — you can switch to the official subscription right away.',
   'subscription.loggedOut':
-    'No login credentials found: finish the official login in your terminal before switching to a subscription preset (on macOS credentials live in the system keychain — ignore this if you are already logged in).',
+    'No login credentials found: finish the official login in your terminal before switching to the official subscription (on macOS credentials live in the system keychain — ignore this if you are already logged in).',
   'subscription.unknown':
     'Config found but unreadable; confirm the login state inside the CLI before switching.',
   'subscription.copy': 'Copy command',
@@ -90,9 +96,8 @@ export const en: Record<TranslationKey, string> = {
   'switchPanel.importCurrent': 'Import current config',
   'switchPanel.importing': 'Importing…',
   'switchPanel.createPreset': 'New preset',
-  'presetList.emptyTitle': 'No presets yet',
-  'presetList.emptyDescription':
-    'Click "New preset" in the top-right to create your first reusable model profile',
+  'presetList.emptyHint':
+    'No custom presets yet: use "New preset" above, or import the current config.',
 
   // Preset row
   'presetRow.active': 'Active',
@@ -157,11 +162,6 @@ export const en: Record<TranslationKey, string> = {
   'presetForm.title.duplicate': 'Duplicate preset',
   'presetForm.title.create': 'New preset',
   'presetForm.targetTool': 'Target tool',
-  'presetForm.authMode': 'Auth mode',
-  'presetForm.authModeApiKey': 'API key / relay',
-  'presetForm.authModeSubscription': 'Official subscription (login)',
-  'presetForm.subscriptionHint':
-    'Official subscription writes no key and no base URL: after switching, auth is handled by the CLI login state (/login for Claude Code, codex login for Codex). Sign in on this machine first.',
   'presetForm.name': 'Preset name',
   'presetForm.namePlaceholder': 'e.g. GLM-4.6',
   'presetForm.provider': 'Provider name',

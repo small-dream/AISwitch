@@ -6,7 +6,6 @@ import { Button } from '@/ui/components/Button'
 import { FormField } from '@/ui/components/FormField'
 import { Input } from '@/ui/components/Input'
 import { Select } from '@/ui/components/Select'
-import { AuthModeField } from './AuthModeField'
 import { CodexMetadataSection } from './CodexMetadataSection'
 import { ModelFields } from './ModelFields'
 import { ProviderFields } from './ProviderFields'
@@ -26,9 +25,6 @@ function PresetFormFields({
   tool: TargetTool
 }) {
   const t = useT()
-  const authMode = form.watch('authMode')
-  // 订阅模式禁用密钥字段：写入 Base URL / Key 会顶掉 CLI 的登录态（PRD §5.13）
-  const keyless = authMode === 'subscription'
   return (
     <>
       <FormField label={t('presetForm.targetTool')} error={errors.tool?.message}>
@@ -37,14 +33,13 @@ function PresetFormFields({
           <option value="codex">Codex CLI</option>
         </Select>
       </FormField>
-      <AuthModeField register={register} errors={errors} authMode={authMode} />
       <FormField label={t('presetForm.name')} error={errors.name?.message}>
         <Input {...register('name')} placeholder={t('presetForm.namePlaceholder')} />
       </FormField>
       <FormField label={t('presetForm.provider')} error={errors.providerName?.message}>
         <Input {...register('providerName')} placeholder={t('presetForm.providerPlaceholder')} />
       </FormField>
-      <ProviderFields register={register} errors={errors} keyless={keyless} />
+      <ProviderFields register={register} errors={errors} />
       <ModelFields form={form} errors={errors} tool={tool} />
       {tool === 'codex' ? <CodexMetadataSection register={register} errors={errors} /> : null}
     </>

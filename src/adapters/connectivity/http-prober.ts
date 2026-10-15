@@ -1,6 +1,5 @@
 import type { ConnectivityResult } from '@/domain/entities/connectivity'
 import type { Preset } from '@/domain/entities/preset'
-import { isSubscriptionAuth } from '@/domain/rules/auth-mode'
 import { isAllowedBaseUrl } from '@/domain/rules/base-url'
 import { buildProbeUrl } from '@/domain/rules/probe-url'
 import type { HttpPort } from '@/types/http-port'
@@ -13,13 +12,6 @@ export class ConnectivityProber {
   constructor(private readonly http: HttpPort) {}
 
   async probe(preset: Preset): Promise<ConnectivityResult> {
-    // 官方订阅走 CLI 登录态，AISwitch 手上没有可用的 bearer token，探测只会得到误导性的 401
-    if (isSubscriptionAuth(preset)) {
-      return {
-        status: 'unsupported',
-        message: '官方订阅使用 CLI 登录态，请直接切换后在 CLI 内确认可用性',
-      }
-    }
     // 隐私红线：探测请求携带 API Key，不合规的 baseUrl 一律拒绝发出
     if (!isAllowedBaseUrl(preset.baseUrl)) {
       return {

@@ -7,7 +7,12 @@ import {
 import { PATHS } from '@/constants/paths'
 import { AppError, toAppError, type AppErrorContext } from '@/domain/errors'
 import type { Preset, TargetTool, ToolStatus } from '@/domain/entities/preset'
-import { expectedClaudeEnv, isSlotModeEnv, mergeClaudeSettings } from '@/domain/rules/claude-merge'
+import {
+  expectedClaudeEnv,
+  isSlotModeEnv,
+  mergeClaudeSettings,
+  stripManagedClaudeKeys,
+} from '@/domain/rules/claude-merge'
 import type { ClaudeSettings } from '@/domain/schemas/claude-config'
 import type { ApplyResult, ConfigTarget } from '@/types/config-target'
 import type { FileSystemPort } from '@/types/fs-port'
@@ -143,6 +148,47 @@ function applyFailure(error: unknown, tool: TargetTool, outcome: RollbackOutcome
   return new AppError(original.code, `${original.message}；${suffix}`, context)
 }
 
+/** 清空托管键后的回读校验：受管键必须全部不存在（用户自有键忽略） */
+async function verifyClaudeCleared(fs: FileSystemPort): Promise<boolean> {
+  try {
+    const settings = await readClaudeSettings(fs)
+    return settings ? envMatches(settings.env ?? {}, {}) : true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 交回 CLI（官方订阅，PRD §5.13）：删除全部托管 env 键，保留用户自有键与顶层字段。
+ * 本就无托管键时跳过写入——不为一次「什么都不用做」的切换凭空创建配置文件。
+ */
+async function clearManagedClaude(
+  fs: FileSystemPort,
+  backups: BackupManager
+): Promise<ApplyResult> {
+  const current = await readClaudeSettings(fs)
+  if (!current || !MANAGED_ENV_KEYS.some((key) => key in (current.env ?? {}))) {
+    return { tool: 'claude-code', appliedAt: new Date().toISOString() }
+  }
+  const backupName = await backups.backup('claude-code', PATHS.claudeSettings)
+  try {
+    await writeClaudeSettings(fs, stripManagedClaudeKeys(current))
+    if (!(await verifyClaudeCleared(fs))) {
+      throw new AppError('E_CONFIG_VERIFY', '切换后回读校验失败', { tool: 'claude-code' })
+    }
+  } catch (error) {
+    const outcome = await rollbackManaged(fs, backups, 'claude-code', [
+      { path: PATHS.claudeSettings, backupName },
+    ])
+    throw applyFailure(error, 'claude-code', outcome)
+  }
+  return {
+    tool: 'claude-code',
+    backupPath: backupName ?? undefined,
+    appliedAt: new Date().toISOString(),
+  }
+}
+
 /** Claude Code 目标工具适配器（备份 → 原子写 → 校验，三段式） */
 export function createClaudeTarget(fs: FileSystemPort): ConfigTarget {
   const backups = new BackupManager(fs)
@@ -183,6 +229,10 @@ export function createClaudeTarget(fs: FileSystemPort): ConfigTarget {
 
     verify(preset) {
       return verifyClaude(fs, preset)
+    },
+
+    clearManaged() {
+      return clearManagedClaude(fs, backups)
     },
 
     rollback() {

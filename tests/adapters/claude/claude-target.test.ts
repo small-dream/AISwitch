@@ -177,44 +177,40 @@ describe('ClaudeConfigTarget · apply 失败回滚（写阶段与回滚失败）
   })
 })
 
-describe('ClaudeConfigTarget · 官方订阅（走登录）', () => {
-  const SUBSCRIPTION = makePreset({
-    authMode: 'subscription',
-    baseUrl: undefined,
-    apiKey: undefined,
-    model: 'claude-sonnet-5',
-  })
-
-  it('apply：清除密钥与中转地址、写模型键，保留用户字段并校验通过', async () => {
+describe('ClaudeConfigTarget · clearManaged（官方订阅，交回 CLI）', () => {
+  it('删除全部托管键（含模型与槽位），保留用户字段并回读校验通过', async () => {
     const fs = createMemoryFs({ '.claude/settings.json': SETTINGS_FIXTURE })
     const target = createClaudeTarget(fs)
 
-    const result = await target.apply(SUBSCRIPTION)
+    const result = await target.clearManaged()
 
     expect(result.backupPath).toMatch(/--settings\.json$/)
     const written = parseSettings(fs.files().get('.claude/settings.json')) as {
       env: Record<string, string>
       permissions: unknown
     }
-    expect(written.env[CLAUDE_ENV_KEYS.authToken]).toBeUndefined()
-    expect(written.env[CLAUDE_ENV_KEYS.baseUrl]).toBeUndefined()
-    expect(written.env[CLAUDE_ENV_KEYS.model]).toBe('claude-sonnet-5')
+    for (const key of [
+      CLAUDE_ENV_KEYS.authToken,
+      CLAUDE_ENV_KEYS.baseUrl,
+      CLAUDE_ENV_KEYS.model,
+      CLAUDE_ENV_KEYS.smallFastModel,
+      CLAUDE_SLOT_KEYS.haiku,
+      CLAUDE_SLOT_KEYS.sonnet,
+      CLAUDE_SLOT_KEYS.opus,
+    ]) {
+      expect(key in written.env).toBe(false)
+    }
     expect(written.env.OTHER_KEY).toBe('keep-me')
     expect(written.permissions).toEqual({ allow: ['Bash'] })
-    expect(await target.verify(SUBSCRIPTION)).toBe(true)
   })
 
-  it('apply：首次（无既有配置）写入订阅预设也不产生密钥键', async () => {
+  it('本就无托管键时不写入：不给一次「无须动作」的切换凭空创建文件', async () => {
     const fs = createMemoryFs()
     const target = createClaudeTarget(fs)
 
-    const result = await target.apply(SUBSCRIPTION)
+    const result = await target.clearManaged()
 
     expect(result.backupPath).toBeUndefined()
-    const written = parseSettings(fs.files().get('.claude/settings.json')) as {
-      env: Record<string, string>
-    }
-    expect(Object.keys(written.env)).toEqual([CLAUDE_ENV_KEYS.model])
-    expect(await target.verify(SUBSCRIPTION)).toBe(true)
+    expect(fs.files().has('.claude/settings.json')).toBe(false)
   })
 })

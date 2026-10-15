@@ -17,7 +17,6 @@ describe('presetInputFromPreset', () => {
       tool: 'claude-code',
       name: 'GLM-4.6 副本',
       providerName: '智谱 GLM',
-      authMode: 'api-key',
       baseUrl: 'https://open.bigmodel.cn/api/anthropic',
       apiKey: 'sk-test-key',
       model: 'glm-4.6',

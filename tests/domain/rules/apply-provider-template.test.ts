@@ -5,27 +5,36 @@ import {
   PROVIDER_TEMPLATES,
   templatesForTool,
 } from '@/constants/provider-templates'
+import type { ProviderTemplate } from '@/constants/provider-templates'
 import type { TargetTool } from '@/domain/entities/preset'
 import { applyProviderTemplate } from '@/domain/rules/apply-provider-template'
 
 const TOOLS: readonly TargetTool[] = ['claude-code', 'codex']
 
 describe('applyProviderTemplate', () => {
-  it('官方模板：无 Base URL（官方 API），模型取该工具第一个建议模型', () => {
-    const template = findProviderTemplate('claude-official')
-    const fill = template ? applyProviderTemplate(template, 'claude-code') : null
+  it('模板未声明该工具时返回 null（绝不填出另一工具的地址）', () => {
+    const claudeOnly: ProviderTemplate = {
+      id: 'claude-only',
+      label: '仅 Claude Code',
+      variants: { 'claude-code': { baseUrl: 'https://relay.example.com', suggestModels: ['m1'] } },
+    }
+    const codexOnly: ProviderTemplate = {
+      id: 'codex-only',
+      label: '仅 Codex',
+      variants: { codex: { baseUrl: 'https://relay.example.com/v1', suggestModels: ['m2'] } },
+    }
 
-    expect(fill?.baseUrl).toBeUndefined()
-    expect(fill?.providerName).toBe('Claude 官方')
-    expect(fill?.model).toBe(template?.variants['claude-code']?.suggestModels[0])
+    expect(applyProviderTemplate(claudeOnly, 'codex')).toBeNull()
+    expect(applyProviderTemplate(codexOnly, 'claude-code')).toBeNull()
   })
 
-  it('模板未声明该工具时返回 null（绝不填出另一工具的地址）', () => {
-    const claudeOfficial = findProviderTemplate('claude-official')
-    const gptOfficial = findProviderTemplate('gpt-official')
+  it('预填品牌名 / Base URL / 首个建议模型，Key 不参与', () => {
+    const template = findProviderTemplate('deepseek')
+    const fill = template ? applyProviderTemplate(template, 'codex') : null
 
-    expect(claudeOfficial && applyProviderTemplate(claudeOfficial, 'codex')).toBeNull()
-    expect(gptOfficial && applyProviderTemplate(gptOfficial, 'claude-code')).toBeNull()
+    expect(fill?.providerName).toBe('DeepSeek')
+    expect(fill?.baseUrl).toBe('https://api.deepseek.com/v1')
+    expect(fill?.model).toBe(template?.variants.codex?.suggestModels[0])
   })
 
   it('本地模板（Ollama）：两个工具通用、带 Base URL 且不内嵌 Key', () => {
