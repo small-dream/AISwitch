@@ -4,7 +4,7 @@ import { CheckCircle2 } from 'lucide-react'
 import type { Preset, TargetTool } from '@/domain/entities/preset'
 import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
 import { isSubscriptionActive } from '@/domain/rules/subscription-active'
-import { useT, type TranslationKey } from '@/i18n/index'
+import { useT } from '@/i18n/index'
 import { useSubscriptionAuth } from '@/hooks/use-subscription-auth'
 import { useClearManaged } from '@/hooks/use-switch'
 import { useToolStatus } from '@/hooks/use-tool-status'
@@ -12,33 +12,27 @@ import { toastError, toastSuccess } from '@/stores/toast-store'
 import { errorMessage } from '@/utils/error-message'
 import { Badge } from '@/ui/components/Badge'
 import { Button } from '@/ui/components/Button'
+import { SubscriptionStatusBadge } from './SubscriptionStatusBadge'
 
-type BadgeTone = 'default' | 'success' | 'warning'
-
-const LOGIN_BADGE: Record<
-  SubscriptionAuthStatus['state'],
-  { key: TranslationKey; tone: BadgeTone }
-> = {
-  'logged-in': { key: 'subscriptionPreset.loggedIn', tone: 'success' },
-  'logged-out': { key: 'subscriptionPreset.loggedOut', tone: 'warning' },
-  unknown: { key: 'subscriptionPreset.unknown', tone: 'default' },
-}
-
-/** 信息列：名称 + 登录态 + 生效标记 + 语义说明（订阅不写模型，故不展示模型名） */
+/**
+ * 信息列：名称 + 登录态徽标 + 生效标记 + 语义说明（订阅不写模型，故不展示模型名）。
+ * 登录命令等细节收进徽标气泡，常态只留一枚徽标。
+ */
 function SubscriptionRowInfo({
+  tool,
   auth,
   isActive,
 }: {
+  tool: TargetTool
   auth: SubscriptionAuthStatus | undefined
   isActive: boolean
 }) {
   const t = useT()
-  const login = auth ? LOGIN_BADGE[auth.state] : undefined
   return (
     <div className="min-w-0">
       <div className="flex items-center gap-2">
         <span className="truncate font-medium">{t('subscriptionPreset.name')}</span>
-        {login ? <Badge tone={login.tone}>{t(login.key)}</Badge> : null}
+        {auth ? <SubscriptionStatusBadge tool={tool} status={auth} /> : null}
         {isActive ? (
           <Badge tone="success">
             <CheckCircle2 className="h-3 w-3" aria-hidden />
@@ -90,7 +84,7 @@ export function SubscriptionPresetRow({
       )}
     >
       <div className="flex items-start justify-between gap-3">
-        <SubscriptionRowInfo auth={auth} isActive={isActive} />
+        <SubscriptionRowInfo tool={tool} auth={auth} isActive={isActive} />
         <div className="flex shrink-0 items-center gap-2">
           <Button size="sm" disabled={clearMutation.isPending} onClick={apply}>
             {clearMutation.isPending ? t('presetRow.applying') : t('subscriptionPreset.switch')}

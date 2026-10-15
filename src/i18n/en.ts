@@ -37,7 +37,6 @@ export const en: Record<TranslationKey, string> = {
   'subscriptionPreset.loggedOut': 'Not signed in',
   'subscriptionPreset.unknown': 'Login state unknown',
   'subscription.title': 'Official subscription login',
-  'subscription.checking': 'Checking login status…',
   'subscription.loggedIn':
     'Subscription login detected — you can switch to the official subscription right away.',
   'subscription.loggedInAs':

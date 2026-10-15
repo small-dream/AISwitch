@@ -13,7 +13,6 @@ import { Button } from '@/ui/components/Button'
 import { Card } from '@/ui/components/Card'
 import { PresetDialog } from '@/ui/features/preset-form/PresetDialog'
 import { PresetList } from './PresetList'
-import { SubscriptionNotice } from './SubscriptionNotice'
 
 function ToolTabs({
   activeTool,
@@ -105,8 +104,6 @@ export function SwitchPanel() {
       </div>
 
       <ToolTabs activeTool={activeTool} onChange={setActiveTool} />
-
-      <SubscriptionNotice tool={activeTool} />
 
       <PresetList tool={activeTool} onEdit={dialog.openEdit} onDuplicate={dialog.openDuplicate} />
 

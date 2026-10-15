@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Changed
+
+- The subscription login guide is no longer an always-on notice above the preset list: it now hangs off the login-state badge in the built-in subscription row (`SubscriptionStatusBadge` + `SubscriptionLoginPopover`) and expands on hover or keyboard focus, so an idle panel shows one small badge instead of a block of commands and docs. Clicking "copy command" no longer collapses it.
+
 ## [0.1.20] - 2026-10-15
 
 ### Changed

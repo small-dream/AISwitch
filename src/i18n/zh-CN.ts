@@ -34,7 +34,6 @@ export const zhCN = {
   'subscriptionPreset.loggedOut': '未登录',
   'subscriptionPreset.unknown': '登录态未知',
   'subscription.title': '官方订阅登录',
-  'subscription.checking': '正在检测登录状态…',
   'subscription.loggedIn': '已检测到官方订阅登录态，可直接切换到「官方订阅」。',
   'subscription.loggedInAs': '已检测到官方订阅登录态（{detail}），可直接切换到「官方订阅」。',
   'subscription.loggedOut':

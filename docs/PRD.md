@@ -73,7 +73,7 @@
 | US-19 | **供应商模板库 + 本地模型**                  | 内置模板一键填充；支持无 Key 的 Ollama / LM Studio（`apiKey` 可选）；策略见 §5.9                                                                   |
 | US-20 | **全局快捷键**                               | `CmdOrCtrl+Shift+A` 呼出主窗口；`CmdOrCtrl+Shift+S` 循环切换当前工具下一预设；策略见 §5.10                                                          |
 | US-24 | **应用内自动更新**                           | 顶栏可手动检查并预下载签名更新；下载完成后按钮切换为一键更新；策略见 §5.11                                                                          |
-| US-27 | **切回官方订阅（走登录）**                   | 预设列表内置「官方订阅」条目（每工具一个、零字段、不可删除、不落盘）：一次点击即清除 AISwitch 写入的全部托管键（含模型），鉴权与模型都交回 CLI 登录态（模型用 `/model` 自行切换）；切换面板常显登录态探测结果与登录命令；策略见 §5.13 |
+| US-27 | **切回官方订阅（走登录）**                   | 预设列表内置「官方订阅」条目（每工具一个、零字段、不可删除、不落盘）：一次点击即清除 AISwitch 写入的全部托管键（含模型），鉴权与模型都交回 CLI 登录态（模型用 `/model` 自行切换）；行内登录态徽标悬停即展开登录态与登录命令（常态不占版面）；策略见 §5.13 |
 
 ### 3.3 P2（远期规划）
 
@@ -263,7 +263,7 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 - **写入语义（一个托管键都不写）**：切换订阅条目走独立通道 `ConfigTarget.clearManaged()`，把该工具的全部托管键交回 CLI 自身——Claude Code 删除 `ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_MODEL`、`ANTHROPIC_SMALL_FAST_MODEL` 与三槽位键（env 清空后不留空对象）；Codex 移除顶层 `model` 与 `model_provider`、注入的 `jake_current` 块，`auth.json` 删除 `OPENAI_API_KEY` 但保留 `tokens`，`model_catalog_json` 仅在指向托管 `~/.codex/models.json` 时移除（用户自维护指向不动）。写密钥会顶掉 OAuth 登录态并按量计费，写模型会把订阅账号固定在某模型上，故两者都不写：**鉴权交给 CLI 登录态，模型交给 CLI 自己选**（Claude Code `/model`）。该通道与切换共用「备份 → 原子写 → 校验」三段式；本就没有托管键时不写入（不为一次「无须动作」的切换凭空创建配置文件）。
 - **生效判定**：订阅条目在「工具已配置 + 当前不在自定义中转上（探测供应商非 URL）+ 该工具没有任何预设生效」时标记为「当前」。订阅不写模型，故不能像普通预设那样按模型名比对。
 - **登录态探测**（只读、不代持凭据）：`domain/rules/subscription-credentials.ts` 的纯函数解析两个来源——Claude Code 的 `~/.claude/.credentials.json`（OAuth 凭据文件；macOS 凭据存于系统钥匙串时回落到 `~/.claude.json` 的 `oauthAccount` 记录）；Codex 的 `~/.codex/auth.json` 是否带 `tokens`（ChatGPT 订阅登录写入，仅 `OPENAI_API_KEY` 属 API Key 登录、不算订阅）。探测结果只暴露 `state / plan / account / expiresAt`，**绝不携带 token 内容**；解析失败归 `unknown`，避免误报「未登录」。
-- **登录引导**：登录由 CLI 自己完成（浏览器 OAuth），AISwitch 不代跑登录流程。切换面板**常显**登录提示（订阅是每个工具的内建能力）：终端命令（Claude Code `claude` → `/login`；Codex `codex login`）一键复制 + 官方文档入口；已登录时展示订阅类型 / 账号。
+- **登录引导**：登录由 CLI 自己完成（浏览器 OAuth），AISwitch 不代跑登录流程。引导挂在订阅条目行内的**登录态徽标**上：常态只显示一枚徽标（已登录 / 未登录 / 登录态未知），鼠标悬停或键盘聚焦时才展开气泡，内含终端命令（Claude Code `claude` → `/login`；Codex `codex login`）一键复制、账号查询命令与官方文档入口；已登录时气泡内展示订阅类型 / 账号。**不做常驻提示条**——订阅是每个工具的内建能力，常显说明会在空闲时与预设列表争注意力。
 - **连通性测试**：官方订阅条目不提供连通性测试按钮——它手上没有可用的 bearer token，探测请求只会得到误导性的 401。
 - **兼容性**：预设数据模型中不再有 `authMode` 字段（历史预设库中遗留的该字段解析时被忽略），这类预设按普通预设对待。导入当前配置时，既无 Base URL 也无密钥的配置视为正处于官方订阅态而**拒绝导入**，提示直接使用内建订阅条目。
 - **非目标**：不代持 / 不代刷新订阅凭据，不做账号切换、额度查询与用量统计。

@@ -46,6 +46,8 @@ describe('SubscriptionPresetRow', () => {
     expect(screen.getByText('官方订阅')).toBeInTheDocument()
     expect(screen.getByText('已登录')).toBeInTheDocument()
     expect(screen.queryByText('glm-4.6')).toBeNull()
+    // 登录命令等细节收进徽标气泡，常态不占版面
+    expect(screen.queryByText('官方订阅登录')).toBeNull()
   })
 
   it('未登录时给出未登录徽标', () => {
