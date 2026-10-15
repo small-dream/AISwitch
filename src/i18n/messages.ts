@@ -24,8 +24,7 @@ const EN_MESSAGES: Record<string, string> = {
   预设不存在: 'Preset not found',
   同一工具下已存在同名预设: 'A preset with this name already exists for this tool',
   预设与目标工具不匹配: 'Preset does not match the target tool',
-  '切换后回读校验失败；已自动回滚':
-    'Post-switch verification failed; rolled back automatically',
+  '切换后回读校验失败；已自动回滚': 'Post-switch verification failed; rolled back automatically',
   '切换后回读校验失败；已清理本次新建的配置文件':
     'Post-switch verification failed; the newly created config file was removed',
   '切换后回读校验失败；自动回滚也失败，请从备份目录手动恢复':

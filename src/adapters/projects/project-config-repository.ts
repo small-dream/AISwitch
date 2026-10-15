@@ -59,6 +59,10 @@ export class ProjectConfigRepository {
   private async save(collection: ProjectConfigRecordCollection): Promise<void> {
     await this.fs.mkdir(PATHS.appDir)
     await this.fs.restrictPermissions(PATHS.appDir)
-    await writeTextAtomic(this.fs, PATHS.projectConfigsFile, `${JSON.stringify(collection, null, 2)}\n`)
+    await writeTextAtomic(
+      this.fs,
+      PATHS.projectConfigsFile,
+      `${JSON.stringify(collection, null, 2)}\n`
+    )
   }
 }

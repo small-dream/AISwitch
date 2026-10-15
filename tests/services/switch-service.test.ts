@@ -133,7 +133,10 @@ function makeResult(tool: 'claude-code' | 'codex'): ApplyResult {
   return { tool, appliedAt: new Date().toISOString() }
 }
 
-function targetWith(apply: ConfigTarget['apply'], tool: 'claude-code' | 'codex' = 'claude-code'): ConfigTarget {
+function targetWith(
+  apply: ConfigTarget['apply'],
+  tool: 'claude-code' | 'codex' = 'claude-code'
+): ConfigTarget {
   return {
     tool,
     detect: () => Promise.resolve({ tool, status: 'installed' }),

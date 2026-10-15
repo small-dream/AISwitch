@@ -40,9 +40,7 @@ export function latestBackupName(names: readonly string[], basename: string): st
 
 /** 指定源文件最早一份备份的文件名（一键还原的近似基线）；无则 null */
 export function earliestBackupName(names: readonly string[], basename: string): string | null {
-  const matched = names
-    .filter((name) => name.endsWith(`${BACKUP_SEPARATOR}${basename}`))
-    .sort()
+  const matched = names.filter((name) => name.endsWith(`${BACKUP_SEPARATOR}${basename}`)).sort()
   return matched[0] ?? null
 }
 

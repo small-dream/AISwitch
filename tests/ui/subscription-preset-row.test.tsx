@@ -77,10 +77,7 @@ describe('SubscriptionPresetRow', () => {
   it('有预设生效（含官方 API 预设）时不标记为当前', () => {
     state.statuses = [makeStatus({ activeModel: 'glm-4.6' })]
     render(
-      <SubscriptionPresetRow
-        tool="claude-code"
-        presets={[makePreset({ baseUrl: undefined })]}
-      />
+      <SubscriptionPresetRow tool="claude-code" presets={[makePreset({ baseUrl: undefined })]} />
     )
 
     expect(screen.queryByText('当前')).toBeNull()

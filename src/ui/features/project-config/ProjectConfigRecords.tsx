@@ -22,12 +22,28 @@ export function ProjectConfigRecords({
       <h3 className="mb-2 text-xs font-medium text-app-muted">{t('project.records')}</h3>
       <ul className="space-y-2">
         {records.map((record) => (
-          <li key={`${record.tool}:${record.projectPath}`} className="flex items-center gap-2 rounded-lg border border-app-border bg-app-sunken px-3 py-2">
-            <button type="button" className="min-w-0 flex-1 truncate text-left text-sm text-app hover:text-app-accent" title={record.projectPath} onClick={() => { onSelect(record.projectPath) }}>
+          <li
+            key={`${record.tool}:${record.projectPath}`}
+            className="flex items-center gap-2 rounded-lg border border-app-border bg-app-sunken px-3 py-2"
+          >
+            <button
+              type="button"
+              className="min-w-0 flex-1 truncate text-left text-sm text-app hover:text-app-accent"
+              title={record.projectPath}
+              onClick={() => {
+                onSelect(record.projectPath)
+              }}
+            >
               <span className="mr-2 text-xs text-app-muted">{TOOL_META[record.tool].label}</span>
               {record.projectPath}
             </button>
-            <ProjectRemoveButton disabled={false} pending={pending} onRemove={() => { onRemove(record.projectPath, record.tool) }} />
+            <ProjectRemoveButton
+              disabled={false}
+              pending={pending}
+              onRemove={() => {
+                onRemove(record.projectPath, record.tool)
+              }}
+            />
           </li>
         ))}
       </ul>

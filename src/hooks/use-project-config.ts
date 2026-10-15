@@ -26,8 +26,12 @@ export function useApplyProjectConfig() {
     mutationFn: (args: { projectPath: string; tool: TargetTool; presetId: string }) =>
       projectConfigService.apply(args.projectPath, args.tool, args.presetId),
     onSuccess: (_result, args) => {
-      void queryClient.invalidateQueries({ queryKey: ['project-status', args.projectPath, args.tool] })
-      void queryClient.invalidateQueries({ queryKey: [...PROJECT_CONFIG_RECORDS_QUERY_KEY, args.tool] })
+      void queryClient.invalidateQueries({
+        queryKey: ['project-status', args.projectPath, args.tool],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: [...PROJECT_CONFIG_RECORDS_QUERY_KEY, args.tool],
+      })
     },
   })
 }
@@ -38,8 +42,12 @@ export function useRemoveProjectConfig() {
     mutationFn: (args: { projectPath: string; tool: TargetTool }) =>
       projectConfigService.remove(args.projectPath, args.tool),
     onSuccess: (_result, args) => {
-      void queryClient.invalidateQueries({ queryKey: ['project-status', args.projectPath, args.tool] })
-      void queryClient.invalidateQueries({ queryKey: [...PROJECT_CONFIG_RECORDS_QUERY_KEY, args.tool] })
+      void queryClient.invalidateQueries({
+        queryKey: ['project-status', args.projectPath, args.tool],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: [...PROJECT_CONFIG_RECORDS_QUERY_KEY, args.tool],
+      })
     },
   })
 }

@@ -67,7 +67,9 @@ export function parseCodexModels(raw: string): unknown {
   try {
     return JSON.parse(raw)
   } catch {
-    throw new AppError('E_CONFIG_PARSE', 'Codex models.json 不是合法 JSON', { path: PATHS.codexModels })
+    throw new AppError('E_CONFIG_PARSE', 'Codex models.json 不是合法 JSON', {
+      path: PATHS.codexModels,
+    })
   }
 }
 

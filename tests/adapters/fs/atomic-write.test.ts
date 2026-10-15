@@ -27,10 +27,7 @@ describe('writeTextAtomic', () => {
 
     await writeTextAtomic(fs, '.aiswitch/presets.json', '{}')
 
-    expect(fs.restricted()).toEqual([
-      '.aiswitch/presets.json.jake-tmp',
-      '.aiswitch/presets.json',
-    ])
+    expect(fs.restricted()).toEqual(['.aiswitch/presets.json.jake-tmp', '.aiswitch/presets.json'])
     expect(fs.files().has('.aiswitch/presets.json.jake-tmp')).toBe(false)
     expect(fs.files().get('.aiswitch/presets.json')).toBe('{}')
   })

@@ -14,7 +14,11 @@ import { ProjectToolConfigSection } from './ProjectToolConfigSection'
 
 function ProjectStatus({ error }: { error: unknown }) {
   const t = useT()
-  return error ? <p className="mt-2 text-xs text-app-danger" role="alert">{t('project.failed')} {errorMessage(error)}</p> : null
+  return error ? (
+    <p className="mt-2 text-xs text-app-danger" role="alert">
+      {t('project.failed')} {errorMessage(error)}
+    </p>
+  ) : null
 }
 
 export function ProjectConfigPanel() {
@@ -27,8 +31,13 @@ export function ProjectConfigPanel() {
   const remove = useRemoveProjectConfig()
   const records = [...claudeRecords, ...codexRecords]
   const presetsFor = (tool: TargetTool) => presets.filter((preset) => preset.tool === tool)
-  const handleApplied = (): void => { setProjectPath(''); setError(null) }
-  const handleRemove = (path: string, tool: TargetTool): void => { remove.mutate({ projectPath: path, tool }, { onError: setError }) }
+  const handleApplied = (): void => {
+    setProjectPath('')
+    setError(null)
+  }
+  const handleRemove = (path: string, tool: TargetTool): void => {
+    remove.mutate({ projectPath: path, tool }, { onError: setError })
+  }
 
   return (
     <Card className="p-4">
@@ -39,8 +48,25 @@ export function ProjectConfigPanel() {
       <p className="mb-3 text-xs text-app-muted">{t('project.priority')}</p>
       <ProjectDirectoryPicker value={projectPath} onChange={setProjectPath} />
       <ProjectStatus error={error} />
-      {projectPath ? <div className="mt-3 space-y-2">{TARGET_TOOLS.map((tool) => <ProjectToolConfigSection key={tool} tool={tool} projectPath={projectPath} presets={presetsFor(tool)} onApplied={handleApplied} />)}</div> : null}
-      <ProjectConfigRecords records={records} pending={remove.isPending} onSelect={setProjectPath} onRemove={handleRemove} />
+      {projectPath ? (
+        <div className="mt-3 space-y-2">
+          {TARGET_TOOLS.map((tool) => (
+            <ProjectToolConfigSection
+              key={tool}
+              tool={tool}
+              projectPath={projectPath}
+              presets={presetsFor(tool)}
+              onApplied={handleApplied}
+            />
+          ))}
+        </div>
+      ) : null}
+      <ProjectConfigRecords
+        records={records}
+        pending={remove.isPending}
+        onSelect={setProjectPath}
+        onRemove={handleRemove}
+      />
     </Card>
   )
 }

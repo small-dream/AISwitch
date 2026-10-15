@@ -1,23 +1,37 @@
 import { describe, expect, it } from 'vitest'
 
 import { PresetRepository } from '@/adapters/presets/preset-repository'
-import { createProjectConfigRecordStore, projectConfigOps } from '@/adapters/projects/project-config-ops'
+import {
+  createProjectConfigRecordStore,
+  projectConfigOps,
+} from '@/adapters/projects/project-config-ops'
 import { AppError } from '@/domain/errors'
 import { ProjectConfigService } from '@/services/project-config-service'
 import { makePreset } from '../helpers/make-preset'
 import { createMemoryFs, type MemoryFs } from '../helpers/memory-fs'
 
-function serviceWithPreset(initial: Record<string, string>, overrides: Parameters<typeof makePreset>[0] = {}) {
+function serviceWithPreset(
+  initial: Record<string, string>,
+  overrides: Parameters<typeof makePreset>[0] = {}
+) {
   const fs = createMemoryFs(initial)
   const repo = new PresetRepository(fs)
   const preset = makePreset({ id: 'p1', ...overrides })
-  const service = new ProjectConfigService(fs, repo, createProjectConfigRecordStore(fs), projectConfigOps)
+  const service = new ProjectConfigService(
+    fs,
+    repo,
+    createProjectConfigRecordStore(fs),
+    projectConfigOps
+  )
   return { fs, preset, service, repo }
 }
 
-describe('ProjectConfigService', () => {
+describe('ProjectConfigService · 应用与探测', () => {
   it('仅写入项目目录并保留全局配置', async () => {
-    const { fs, preset, service, repo } = serviceWithPreset({ '.claude/settings.json': '{"env":{"OTHER":"keep"}}' }, { model: 'project-model' })
+    const { fs, preset, service, repo } = serviceWithPreset(
+      { '.claude/settings.json': '{"env":{"OTHER":"keep"}}' },
+      { model: 'project-model' }
+    )
     await repo.save({ version: 1, presets: [preset] })
 
     await service.apply('repos/demo', 'claude-code', preset.id)
@@ -27,15 +41,22 @@ describe('ProjectConfigService', () => {
   })
 
   it('读取项目配置用于优先级判定', async () => {
-    const { service } = serviceWithPreset({ 'repos/demo/.codex/config.toml': 'model = "project-model"\n' })
+    const { service } = serviceWithPreset({
+      'repos/demo/.codex/config.toml': 'model = "project-model"\n',
+    })
 
     const status = await service.detect('repos/demo', 'codex')
 
     expect(status).toMatchObject({ status: 'installed', activeModel: 'project-model' })
   })
+})
 
+describe('ProjectConfigService · 移除托管项', () => {
   it('移除 Claude 项目配置但保留用户自有字段', async () => {
-    const { fs, preset, service, repo } = serviceWithPreset({ 'repos/demo/.claude/settings.json': '{"env":{"OTHER":"keep"}}' }, { model: 'project-model' })
+    const { fs, preset, service, repo } = serviceWithPreset(
+      { 'repos/demo/.claude/settings.json': '{"env":{"OTHER":"keep"}}' },
+      { model: 'project-model' }
+    )
     await repo.save({ version: 1, presets: [preset] })
     await service.apply('repos/demo', 'claude-code', preset.id)
 
@@ -56,10 +77,13 @@ describe('ProjectConfigService', () => {
   })
 
   it('移除 Codex 托管键但保留其他 provider 与 auth 字段', async () => {
-    const { fs, preset, service, repo } = serviceWithPreset({
-      'repos/demo/.codex/config.toml': '[model_providers.other]\nname = "Other"\n',
-      'repos/demo/.codex/auth.json': '{"OTHER_TOKEN":"keep"}',
-    }, { tool: 'codex', baseUrl: 'https://relay.example.com' })
+    const { fs, preset, service, repo } = serviceWithPreset(
+      {
+        'repos/demo/.codex/config.toml': '[model_providers.other]\nname = "Other"\n',
+        'repos/demo/.codex/auth.json': '{"OTHER_TOKEN":"keep"}',
+      },
+      { tool: 'codex', baseUrl: 'https://relay.example.com' }
+    )
     await repo.save({ version: 1, presets: [preset] })
     await service.apply('repos/demo', 'codex', preset.id)
 
@@ -89,6 +113,15 @@ describe('ProjectConfigService records', () => {
   })
 })
 
+/** 以自定义 fs 包装装配服务（回滚用例需让指定路径写入失败） */
+function serviceOn(fs: MemoryFs): ProjectConfigService {
+  return new ProjectConfigService(
+    fs,
+    new PresetRepository(fs),
+    createProjectConfigRecordStore(fs),
+    projectConfigOps
+  )
+}
 
 /** 让指定子串路径的写入失败，其余写入照常（模拟写序列中途磁盘故障） */
 function failingWrite(fs: MemoryFs, failOn: string): MemoryFs {
@@ -112,7 +145,7 @@ describe('ProjectConfigService.apply 失败回滚', () => {
     const repo = new PresetRepository(fs)
     const preset = makePreset({ id: 'p1', tool: 'codex' })
     await repo.save({ version: 1, presets: [preset] })
-    const service = new ProjectConfigService(fs, repo, createProjectConfigRecordStore(fs), projectConfigOps)
+    const service = serviceOn(fs)
 
     const error = await service.apply('repos/demo', 'codex', preset.id).catch((e: unknown) => e)
 
@@ -138,7 +171,7 @@ describe('ProjectConfigService.apply 失败回滚', () => {
       modelMetadata: { 'glm-4.6': { slug: 'glm-4.6' } },
     })
     await repo.save({ version: 1, presets: [preset] })
-    const service = new ProjectConfigService(fs, repo, createProjectConfigRecordStore(fs), projectConfigOps)
+    const service = serviceOn(fs)
 
     const error = await service.apply('repos/demo', 'codex', preset.id).catch((e: unknown) => e)
 

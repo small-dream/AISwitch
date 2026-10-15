@@ -17,9 +17,7 @@ export interface CodexModelCatalogFile {
  * 目录里没有当前模型时必须移除该键，否则官方模型元数据被遮蔽。
  */
 export type CatalogKeyAction =
-  | { type: 'point'; path: string }
-  | { type: 'remove' }
-  | { type: 'keep' }
+  { type: 'point'; path: string } | { type: 'remove' } | { type: 'keep' }
 
 export interface CodexCatalogPlan {
   /** 需写回的 models.json 全量内容；null = 不修改文件 */
@@ -42,10 +40,7 @@ export function catalogHasEntry(catalog: unknown, slug: string): boolean {
 }
 
 /** 查找指定 slug 的条目（导入捕获用）；无目录或无条目返回 null */
-export function findCatalogEntry(
-  catalog: unknown,
-  slug: string
-): Record<string, unknown> | null {
+export function findCatalogEntry(catalog: unknown, slug: string): Record<string, unknown> | null {
   if (!isCatalogFile(catalog)) {
     return null
   }
@@ -77,10 +72,7 @@ export function resolveCatalogEntry(
 }
 
 /** 补齐 Codex 反序列化必填的 slug 与 display_name（缺失将导致整个目录加载失败） */
-function normalizeEntry(
-  entry: Record<string, unknown>,
-  model: string
-): Record<string, unknown> {
+function normalizeEntry(entry: Record<string, unknown>, model: string): Record<string, unknown> {
   if (typeof entry.slug === 'string' && entry.slug !== model) {
     throw new AppError('E_VALIDATION_FAILED', '元数据条目 slug 与预设模型不一致', {
       slug: entry.slug,
@@ -116,11 +108,17 @@ function resolveCatalogEntries(preset: Preset): Record<string, unknown>[] {
   const records = raw.models.filter(isRecord)
   const matched = records.find((entry) => entry.slug === preset.model)
   if (!matched) {
-    throw new AppError('E_VALIDATION_FAILED', '模型元数据是整份目录文件，但其中没有与模型名匹配的条目', {
-      model: preset.model,
-    })
+    throw new AppError(
+      'E_VALIDATION_FAILED',
+      '模型元数据是整份目录文件，但其中没有与模型名匹配的条目',
+      {
+        model: preset.model,
+      }
+    )
   }
-  return records.map((entry) => (entry === matched ? normalizeEntry(entry, preset.model) : withDisplayName(entry)))
+  return records.map((entry) =>
+    entry === matched ? normalizeEntry(entry, preset.model) : withDisplayName(entry)
+  )
 }
 
 /**

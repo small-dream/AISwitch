@@ -32,7 +32,10 @@ describe('codexCatalogAbsolutePath', () => {
 describe('catalogHasEntry / findCatalogEntry', () => {
   it('按 slug 查找；非目录结构返回未命中', () => {
     expect(catalogHasEntry(CATALOG, 'glm-4.6')).toBe(true)
-    expect(findCatalogEntry(CATALOG, 'glm-4.6')).toEqual({ slug: 'glm-4.6', context_window: 200000 })
+    expect(findCatalogEntry(CATALOG, 'glm-4.6')).toEqual({
+      slug: 'glm-4.6',
+      context_window: 200000,
+    })
     expect(catalogHasEntry(CATALOG, 'gpt-5.5')).toBe(false)
     expect(findCatalogEntry(null, 'glm-4.6')).toBeNull()
     expect(findCatalogEntry({ models: 'x' }, 'glm-4.6')).toBeNull()
@@ -63,7 +66,10 @@ describe('replaceModelCatalog', () => {
     expect(replaceModelCatalog(null, preset).models).toEqual([
       { slug: 'glm-4.6', context_window: 1, display_name: 'glm-4.6' },
     ])
-    const bad = makePreset({ tool: 'codex', modelMetadata: 'nope' as unknown as Preset['modelMetadata'] })
+    const bad = makePreset({
+      tool: 'codex',
+      modelMetadata: 'nope' as unknown as Preset['modelMetadata'],
+    })
     expect(() => replaceModelCatalog(CATALOG, bad)).toThrow(AppError)
   })
 })
@@ -126,16 +132,16 @@ describe('planCodexCatalog', () => {
       type: 'remove',
     })
   })
-
 })
 
 describe('withCatalogKey', () => {
   const CONFIG: CodexConfig = { model: 'm', model_catalog_json: 'C:/old/catalog.json' }
 
   it('point 覆盖键值；remove 删除键；keep 原样保留（含既有值）', () => {
-    expect(withCatalogKey(CONFIG, { type: 'point', path: ABS_PATH }).model_catalog_json).toBe(ABS_PATH)
+    expect(withCatalogKey(CONFIG, { type: 'point', path: ABS_PATH }).model_catalog_json).toBe(
+      ABS_PATH
+    )
     expect(withCatalogKey(CONFIG, { type: 'remove' }).model_catalog_json).toBeUndefined()
     expect(withCatalogKey(CONFIG, { type: 'keep' })).toBe(CONFIG)
   })
-
 })

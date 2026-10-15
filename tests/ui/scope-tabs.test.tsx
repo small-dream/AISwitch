@@ -11,7 +11,14 @@ describe('ScopeTabs', () => {
         scope={scope}
         onChange={(next) => {
           scope = next
-          rerender.rerender(<ScopeTabs scope={scope} onChange={(value) => { scope = value }} />)
+          rerender.rerender(
+            <ScopeTabs
+              scope={scope}
+              onChange={(value) => {
+                scope = value
+              }}
+            />
+          )
         }}
       />
     )

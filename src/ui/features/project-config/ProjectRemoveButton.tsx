@@ -24,7 +24,11 @@ export function ProjectRemoveButton({
       aria-label={remove.confirming ? t('project.confirmRemove') : t('project.remove')}
     >
       <Trash2 className="h-3.5 w-3.5" aria-hidden />
-      {pending ? t('project.removing') : remove.confirming ? t('project.confirmRemove') : t('project.remove')}
+      {pending
+        ? t('project.removing')
+        : remove.confirming
+          ? t('project.confirmRemove')
+          : t('project.remove')}
     </Button>
   )
 }

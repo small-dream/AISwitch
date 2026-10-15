@@ -175,10 +175,7 @@ async function writeClearedAuth(fs: FileSystemPort, auth: unknown): Promise<void
  * 交回 CLI（官方订阅，PRD §5.13）：移除托管供应商标识、托管目录指向与 API Key，
  * 保留 ChatGPT tokens 与用户自有字段；两文件都不存在时不写入任何内容。
  */
-async function clearManagedCodex(
-  fs: FileSystemPort,
-  backups: BackupManager
-): Promise<ApplyResult> {
+async function clearManagedCodex(fs: FileSystemPort, backups: BackupManager): Promise<ApplyResult> {
   const config = await readCodexConfig(fs)
   const auth = await readCodexAuth(fs)
   if (!config && !isRecord(auth)) {

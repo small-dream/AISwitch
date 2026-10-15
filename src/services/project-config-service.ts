@@ -1,6 +1,11 @@
 import { replaceModelCatalog } from '@/domain/rules/codex-catalog'
 import { mergeClaudeSettings, stripManagedClaudeKeys } from '@/domain/rules/claude-merge'
-import { mergeCodexAuth, mergeCodexConfig, stripManagedCodexAuth, stripManagedCodexConfig } from '@/domain/rules/codex-merge'
+import {
+  mergeCodexAuth,
+  mergeCodexConfig,
+  stripManagedCodexAuth,
+  stripManagedCodexConfig,
+} from '@/domain/rules/codex-merge'
 import { normalizeProjectPath, projectConfigPath } from '@/domain/rules/project-path'
 import { AppError, toAppError } from '@/domain/errors'
 import type { Preset, TargetTool, ToolStatus } from '@/domain/entities/preset'
@@ -57,7 +62,11 @@ export class ProjectConfigService {
     return records.filter((record) => record.tool === tool)
   }
 
-  async apply(projectPath: string, tool: TargetTool, presetId: string): Promise<ProjectConfigResult> {
+  async apply(
+    projectPath: string,
+    tool: TargetTool,
+    presetId: string
+  ): Promise<ProjectConfigResult> {
     const preset = await this.findPreset(tool, presetId)
     const scoped = projectFs(this.fs, projectPath)
     if (tool === 'claude-code') {
@@ -96,11 +105,20 @@ export class ProjectConfigService {
     const config = mergeCodexConfig(current ?? {}, preset)
     const projectModelsPath = projectConfigPath(projectPath, '.codex/models.json')
     const configWithCatalog = preset.modelMetadata
-      ? { ...config, model_catalog_json: `${await this.fs.homeDir()}/${projectModelsPath}`.replaceAll('\\', '/') }
+      ? {
+          ...config,
+          model_catalog_json: `${await this.fs.homeDir()}/${projectModelsPath}`.replaceAll(
+            '\\',
+            '/'
+          ),
+        }
       : config
     const writes: FileWrite[] = [
       { path: '.codex/config.toml', contents: this.ops.serializeCodexConfig(configWithCatalog) },
-      { path: '.codex/auth.json', contents: this.ops.serializeCodexAuth(mergeCodexAuth(auth, preset)) },
+      {
+        path: '.codex/auth.json',
+        contents: this.ops.serializeCodexAuth(mergeCodexAuth(auth, preset)),
+      },
     ]
     if (preset.modelMetadata) {
       const catalog = await this.ops.readCodexModels(scoped)
@@ -166,36 +184,66 @@ export class ProjectConfigService {
 
   /** 移除 AISwitch 托管配置项，保留项目文件中的其他用户内容。 */
   async remove(projectPath: string, tool: TargetTool): Promise<ProjectConfigResult> {
+    return tool === 'claude-code' ? this.removeClaude(projectPath) : this.removeCodex(projectPath)
+  }
+
+  private async removeClaude(projectPath: string): Promise<ProjectConfigResult> {
     const scoped = projectFs(this.fs, projectPath)
-    if (tool === 'claude-code') {
-      const path = '.claude/settings.json'
-      if (await scoped.exists(path)) {
-        const current = await this.ops.readClaudeSettings(scoped)
-        if (current) {
-          const stripped = stripManagedClaudeKeys(current)
-          await this.writeOrRemove(scoped, path, this.ops.serializeClaudeSettings(stripped), Object.keys(stripped).length === 0)
-        }
+    const path = '.claude/settings.json'
+    if (await scoped.exists(path)) {
+      const current = await this.ops.readClaudeSettings(scoped)
+      if (current) {
+        const stripped = stripManagedClaudeKeys(current)
+        await this.writeOrRemove(
+          scoped,
+          path,
+          this.ops.serializeClaudeSettings(stripped),
+          Object.keys(stripped).length === 0
+        )
       }
-      await this.records.remove(normalizeProjectPath(projectPath), tool)
-      return { projectPath: normalizeProjectPath(projectPath), tool, configPath: projectConfigPath(projectPath, path) }
     }
+    await this.records.remove(normalizeProjectPath(projectPath), 'claude-code')
+    return {
+      projectPath: normalizeProjectPath(projectPath),
+      tool: 'claude-code',
+      configPath: projectConfigPath(projectPath, path),
+    }
+  }
+
+  private async removeCodex(projectPath: string): Promise<ProjectConfigResult> {
+    const scoped = projectFs(this.fs, projectPath)
     const configPath = '.codex/config.toml'
     const authPath = '.codex/auth.json'
     const config = await this.ops.readCodexConfig(scoped)
     const home = await this.fs.homeDir()
-    const managedCatalogPath = `${home}/${projectConfigPath(projectPath, '.codex/models.json')}`.replaceAll('\\', '/')
+    const managedCatalogPath =
+      `${home}/${projectConfigPath(projectPath, '.codex/models.json')}`.replaceAll('\\', '/')
     if (config) {
       const stripped = stripManagedCodexConfig(config, managedCatalogPath)
-      await this.writeOrRemove(scoped, configPath, this.ops.serializeCodexConfig(stripped), Object.keys(stripped).length === 0)
+      await this.writeOrRemove(
+        scoped,
+        configPath,
+        this.ops.serializeCodexConfig(stripped),
+        Object.keys(stripped).length === 0
+      )
     }
     const auth = await this.ops.readCodexAuth(scoped)
     if (auth !== null) {
       const strippedAuth = stripManagedCodexAuth(auth)
-      await this.writeOrRemove(scoped, authPath, strippedAuth ? this.ops.serializeCodexAuth(strippedAuth) : '', strippedAuth === null)
+      await this.writeOrRemove(
+        scoped,
+        authPath,
+        strippedAuth ? this.ops.serializeCodexAuth(strippedAuth) : '',
+        strippedAuth === null
+      )
     }
     // models.json 可能由用户或供应商预先维护，移除项目配置时保守保留，避免误删模型目录。
-    await this.records.remove(normalizeProjectPath(projectPath), tool)
-    return { projectPath: normalizeProjectPath(projectPath), tool, configPath: projectConfigPath(projectPath, configPath) }
+    await this.records.remove(normalizeProjectPath(projectPath), 'codex')
+    return {
+      projectPath: normalizeProjectPath(projectPath),
+      tool: 'codex',
+      configPath: projectConfigPath(projectPath, configPath),
+    }
   }
 
   async detect(projectPath: string, tool: TargetTool): Promise<ToolStatus> {
@@ -203,11 +251,23 @@ export class ProjectConfigService {
     try {
       if (tool === 'claude-code') {
         const config = await this.ops.readClaudeSettings(scoped)
-        return config ? { tool, status: 'installed', activeModel: config.env?.ANTHROPIC_MODEL ?? config.model, activeProviderName: config.env?.ANTHROPIC_BASE_URL ?? '官方 API' } : { tool, status: 'not-configured' }
+        return config
+          ? {
+              tool,
+              status: 'installed',
+              activeModel: config.env?.ANTHROPIC_MODEL ?? config.model,
+              activeProviderName: config.env?.ANTHROPIC_BASE_URL ?? '官方 API',
+            }
+          : { tool, status: 'not-configured' }
       }
       const config = await this.ops.readCodexConfig(scoped)
       return config?.model
-        ? { tool, status: 'installed', activeModel: config.model, activeProviderName: config.model_provider }
+        ? {
+            tool,
+            status: 'installed',
+            activeModel: config.model,
+            activeProviderName: config.model_provider,
+          }
         : { tool, status: 'not-configured' }
     } catch {
       return { tool, status: 'unknown' }

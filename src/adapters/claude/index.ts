@@ -1,9 +1,5 @@
 import { BackupManager } from '@/adapters/backup/backup-manager'
-import {
-  CLAUDE_ENV_KEYS,
-  CLAUDE_MANAGED_ENV_KEYS,
-  CLAUDE_SLOT_KEYS,
-} from '@/constants/config-keys'
+import { CLAUDE_ENV_KEYS, CLAUDE_MANAGED_ENV_KEYS, CLAUDE_SLOT_KEYS } from '@/constants/config-keys'
 import { PATHS } from '@/constants/paths'
 import { AppError, toAppError, type AppErrorContext } from '@/domain/errors'
 import type { Preset, TargetTool, ToolStatus } from '@/domain/entities/preset'
