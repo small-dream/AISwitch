@@ -43,6 +43,7 @@
 | 供应商（Provider）     | 模型服务提供方：官方 API、GLM、DeepSeek、中转站等           |
 | 切换（Switch / Apply） | 将某预设写入目标工具全局配置的动作                          |
 | 回滚（Rollback）       | 从备份恢复上一次配置                                        |
+| 官方订阅（Subscription） | CLI 自带的官方账号登录态：Claude Code 走 `/login` OAuth、Codex 走 `codex login`（ChatGPT 订阅）；AISwitch 只改配置，不代持凭据（见 §5.14） |
 
 ## 3. 用户故事与优先级
 
@@ -58,7 +59,7 @@
 
 ### 3.2 P1（体验增强）
 
-> 实施状态（2026-08-22）：**US-06 / US-07 / US-08 / US-10 / US-14 / US-15 / US-16 / US-24 已交付**；**US-17 / US-19 / US-20 已交付（2026-08-22）**；US-09（CLI）、US-18（钥匙串）排期下一迭代。
+> 实施状态（2026-10-15）：**US-06 / US-07 / US-08 / US-10 / US-14 / US-15 / US-16 / US-24 已交付**；**US-17 / US-19 / US-20 已交付（2026-08-22）**；**US-27 已交付（2026-10-15）**；US-09（CLI）、US-18（钥匙串）排期下一迭代。
 
 | ID    | 用户故事                                     | 说明                                                                                                                                                |
 | ----- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -73,6 +74,7 @@
 | US-19 | **供应商模板库 + 本地模型**                  | 内置模板一键填充；支持无 Key 的 Ollama / LM Studio（`apiKey` 可选）；策略见 §5.10                                                                   |
 | US-20 | **全局快捷键**                               | `CmdOrCtrl+Shift+A` 呼出主窗口；`CmdOrCtrl+Shift+S` 循环切换当前工具下一预设；策略见 §5.11                                                          |
 | US-24 | **应用内自动更新**                           | 顶栏可手动检查并预下载签名更新；下载完成后按钮切换为一键更新；策略见 §5.12                                                                          |
+| US-27 | **切回官方订阅（走登录）**                   | 预设可选「官方订阅（登录）」认证方式：不写入任何密钥/Base URL，鉴权交给 CLI 登录态；切换面板展示登录态探测结果与登录命令；策略见 §5.14                 |
 
 ### 3.3 P2（远期规划）
 
@@ -113,12 +115,14 @@ flowchart TD
 
 | 配置键                       | 来源                    | 规则                                  |
 | ---------------------------- | ----------------------- | ------------------------------------- |
-| `ANTHROPIC_BASE_URL`         | `preset.baseUrl`        | 为空（官方）时**删除该键**            |
-| `ANTHROPIC_AUTH_TOKEN`       | `preset.apiKey`         | apiKey 为空（本地模型）时**删除该键** |
+| `ANTHROPIC_BASE_URL`         | `preset.baseUrl`        | 为空（官方）或 `authMode=subscription` 时**删除该键**      |
+| `ANTHROPIC_AUTH_TOKEN`       | `preset.apiKey`         | apiKey 为空（本地模型 / 官方订阅）时**删除该键**           |
 | `ANTHROPIC_MODEL`            | `preset.model`          | —                                     |
 | `ANTHROPIC_SMALL_FAST_MODEL` | `preset.smallFastModel` | 为空时删除该键                        |
 
 规则：仅覆盖上表所列键，**保留文件中其余未知字段**（防止抹掉用户其他配置）。
+
+**官方订阅（US-27，§5.14）**：`authMode=subscription` 时**绝不写入也不保留** `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_AUTH_TOKEN`（写入任一键都会顶掉 CLI 的 OAuth 登录态并按量计费），`ANTHROPIC_MODEL` / 小模型与槽位键照常写入；即便预设携带 `baseUrl` / `apiKey` 也在写入链丢弃（防御式）。
 
 **槽位映射兼容**：第三方中转常见用法是不写 `ANTHROPIC_MODEL`，而以 `ANTHROPIC_DEFAULT_SONNET/OPUS/HAIKU_MODEL` 三槽位映射实际模型。当检测到任一槽位键时视为「槽位映射模式」：切换将同步覆盖三槽位（SONNET/OPUS = 模型，HAIKU = 小模型或主模型），否则切换对该类配置不生效；导入与探测的模型读取链为 `ANTHROPIC_MODEL → 槽位键 → 顶层 model`。
 
@@ -148,8 +152,9 @@ flowchart TD
 | `name`                    | string   | 是       | 1–50 字符，同一工具内唯一                                                                                      |
 | `tool`                    | enum     | 是       | `claude-code` \| `codex`                                                                                       |
 | `providerName`            | string   | 是       | 1–50 字符（如 GLM / 中转站名）                                                                                 |
-| `baseUrl`                 | string   | 否       | 合法 URL；**留空 = 官方 API**                                                                                  |
-| `apiKey`                  | string   | 否       | 本地模型（Ollama / LM Studio 等）可留空                                                                        |
+| `authMode`                | enum     | 是       | `api-key`（默认）\| `subscription`；`subscription` 时 `baseUrl` / `apiKey` 一律为空（见 §5.14）                 |
+| `baseUrl`                 | string   | 否       | 合法 URL；**留空 = 官方（API 或订阅）**                                                                        |
+| `apiKey`                  | string   | 否       | 本地模型（Ollama / LM Studio 等）与官方订阅可留空                                                              |
 | `model`                   | string   | 是       | 1–100 字符                                                                                                     |
 | `smallFastModel`          | string   | 否       | 仅 claude-code 使用                                                                                            |
 | `modelMetadata`           | object   | 否       | 仅 codex 使用：models.json 目录条目，opaque 透传（结构与 Codex 版本耦合，不做字段校验）；`slug` 须等于 `model` |
@@ -261,6 +266,16 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 - **写入后重置**：项目配置写入成功后，目录选择与预设选择回到初始状态，已写入项目记录保留在列表中，便于继续添加其他项目。
 - **交互稳定性**：项目配置写入不触发应用整页刷新；开发环境忽略项目 `.claude` / `.codex` 配置变更，避免 Vite 监听配置文件造成闪刷。
 
+### 5.14 官方订阅（走登录，US-27）
+
+- **概念**：预设新增 `authMode`（见 §5.2）。`api-key` 由 AISwitch 写入供应商密钥；`subscription` 表示「该预设使用 CLI 自带的官方订阅登录态」——AISwitch 不写任何密钥，鉴权完全交给 CLI 的 OAuth 凭据。
+- **写入语义**：Claude Code 删除 `ANTHROPIC_BASE_URL` 与 `ANTHROPIC_AUTH_TOKEN`（模型、小模型与槽位键照常写入）；Codex 归一到官方 provider（`model_provider = "openai"`、移除注入的 `jake_current` 块、`auth.json` 删除 `OPENAI_API_KEY` 但保留 `tokens`、目录键回落内置目录）。表 A / 表 B 的既有规则不变，订阅模式只是在密钥维度上「只删不写」。
+- **登录态探测**（只读、不代持凭据）：`domain/rules/subscription-credentials.ts` 的纯函数解析两个来源——Claude Code 的 `~/.claude/.credentials.json`（OAuth 凭据文件；macOS 凭据存于系统钥匙串时回落到 `~/.claude.json` 的 `oauthAccount` 记录）；Codex 的 `~/.codex/auth.json` 是否带 `tokens`（ChatGPT 订阅登录写入，仅 `OPENAI_API_KEY` 属 API Key 登录、不算订阅）。探测结果只暴露 `state / plan / account / expiresAt`，**绝不携带 token 内容**；解析失败归 `unknown`，避免误报「未登录」。
+- **登录引导**：登录由 CLI 自己完成（浏览器 OAuth），AISwitch 不代跑登录流程。切换面板在该工具存在订阅预设时展示登录提示：终端命令（Claude Code `claude` → `/login`；Codex `codex login`）一键复制 + 官方文档入口；已登录时展示订阅类型 / 账号。
+- **连通性测试**：订阅预设手上没有可用的 bearer token，探测请求只会得到误导性的 401，故直接返回 `unsupported` 并提示在 CLI 内确认可用性。
+- **兼容性**：预设库历史数据（无 `authMode` 字段）解析后一律按 `api-key` 处理；导入当前配置时，既无 Base URL 也无密钥的配置默认按订阅模式建草稿。
+- **非目标**：不代持 / 不代刷新订阅凭据，不做账号切换、额度查询与用量统计。
+
 ## 6. 非功能需求
 
 | 类别   | 要求                                                                      |
@@ -279,3 +294,4 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 | 7.2  | 用户在本软件之外并发手改配置            | 写入前重读并 diff，提示「外部已变更，是否覆盖」                                              |
 | 7.3  | API Key 本地明文存储风险                | 路线：v0.1 本地 JSON + 收紧文件权限；v0.2 评估接入 OS Keychain（Tauri stronghold / keyring） |
 | 7.4  | 多实例同时写配置                        | P1 引入单实例锁                                                                              |
+| 7.5  | 订阅凭据的平台差异（macOS 存于系统钥匙串，无法直接读取） | 以 `~/.claude.json` 的 `oauthAccount` 作兜底信号；解析失败一律归 `unknown` 并提示在 CLI 内确认，绝不误报「未登录」 |

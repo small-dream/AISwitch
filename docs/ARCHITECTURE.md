@@ -35,11 +35,11 @@ graph TB
     end
 
     subgraph L2["⚙️ 应用层 Application"]
-        SVC["services/<br/>SwitchService · BundleService<br/>DetectService · PresetService · BackupService"]
+        SVC["services/<br/>SwitchService · BundleService<br/>DetectService · PresetService · BackupService<br/>SubscriptionAuthService"]
     end
 
     subgraph L3["🧠 领域层 Domain (纯TS·零IO)"]
-        ENT["entities: Preset / Bundle / ToolStatus"]
+        ENT["entities: Preset / Bundle / ToolStatus / SubscriptionAuthStatus"]
         RULE["rules: 配置合并/校验/差异计算"]
         SCH["schemas: Zod 单一事实来源"]
     end
@@ -91,6 +91,7 @@ export interface ConfigTarget {
   apply(preset: Preset): Promise<ApplyResult> // 备份→写入→校验 三段式
   verify(preset: Preset): Promise<boolean>
   rollback(): Promise<void>
+  authStatus(): Promise<SubscriptionAuthStatus> // 官方订阅登录态只读探测（US-27）
 }
 ```
 
@@ -117,6 +118,7 @@ export interface ConfigTarget {
 **D11 · 应用更新（US-24）**：`adapters/updater/tauri-updater.ts` 封装 Tauri updater 与 process 插件；`UpdateService.prepare()` 负责「检查 → 预下载」，`hooks/use-app-update.ts` 同时提供启动查询与手动 `refetch`，并将无更新或失败结果统一反馈给 Toast；`UpdateButton` 依据查询状态呈现「检查更新 → 检查中 → 更新」的单一入口。更新元数据和下载包均由 Tauri 签名校验，Rust 侧只注册官方插件，不承载业务状态。
 
 **D12 · 模型名下拉候选（US-19）**：候选由三条来源拼成——离线模板反查 `domain/rules/model-options.ts`（纯函数，baseUrl 归一化后匹配模板变体）、按需拉取的供应商目录 `adapters/connectivity/model-catalog-fetcher.ts` → `services/model-catalog-service.ts` → `hooks/use-model-catalog.ts`、以及用户手填。URL 与鉴权头复用 `domain/rules/probe-url.ts` 与 `adapters/connectivity/provider-headers.ts`，与连通性探测共用「明文 http 仅回环」守卫（PRD §5.6）。该 hook 刻意用组件局部 state 而非 TanStack Query：结果只服务当前弹窗、无需缓存，也避免表单组件依赖 QueryClientProvider。响应解析收敛在纯函数 `domain/rules/model-catalog.ts`（`data[]` / `models[]` / 顶层数组均容错，非预期结构返回空数组）。 交互层为独立组件 `ui/features/preset-form/ModelComboBox.tsx`：输入框 + 常驻 ▼ 按钮，弹层经 `createPortal` + fixed 定位渲染到 `body`（不被弹窗滚动区裁切、不随内容滚动错位），点外部 / Esc 收起，按当前输入做子串过滤；无候选时弹层渲染 `role="status"` 提示，而不是静默隐藏按钮。 交互层为独立组件 `ui/features/preset-form/ModelComboBox.tsx`：输入框 + 常驻 ▼ 按钮，弹层经 `createPortal` + fixed 定位渲染到 `body`（不被弹窗滚动区裁切、不随内容滚动错位），点外部 / Esc 收起，按当前输入做子串过滤；无候选时弹层渲染 `role="status"` 提示，而不是静默隐藏按钮。**「点外部」判定必须同时包含弹层自身**：弹层不在输入框容器的 DOM 子树内，若只判断容器，`mousedown` 会先卸载弹层、随后的 `click` 落不到候选项上（表现为「点了没反应」）。 过滤规则：空输入或输入与某候选**完全一致**（= 刚从列表选中）时列出全部，否则按子串匹配——否则选中后重开会只剩一条，看起来像「列表出不来了」。弹层定位由 `popupStyle()` 计算：优先向下展开，下方空间不足则翻到上方并按住得下的一侧限制 `maxHeight`（固定向下时靠近窗口底部的字段会把尾段推出可视区），打开期间监听 `resize` 与 `scroll`（capture）重算位置。 候选**按来源分组**（`groupModelOptions()`：推荐在前，目录去掉与推荐重复的条目），弹层用分组标题标注出处——模板推荐只是人工挑选子集，合并成一个列表会让用户误以为那几条就是全部；因此 `ModelFields` 在**首次打开下拉时**自动静默补拉一次目录（`ensureCatalog`，`useRef` 保证只一次，失败不弹红字），显式「获取模型」按钮仍可重拉并显示成败。
+**D13 · 官方订阅登录态（US-27）**：预设的认证方式由 `authMode`（`api-key` | `subscription`）表达，写入语义由**纯函数** `domain/rules/auth-mode.ts` 统一裁决（订阅模式丢弃 `baseUrl` / `apiKey`），Claude/Codex merge 规则据此「只删不写」密钥键；历史预设库经 Zod `.default('api-key')` 无痛迁移。登录态探测实现为 `ConfigTarget.authStatus()`（`adapters/<tool>/auth-status.ts` + `domain/rules/subscription-credentials.ts` 纯解析器），经 `SubscriptionAuthService` 暴露给 `hooks/use-subscription-auth.ts`，结果**只含 state / plan / account / expiresAt，绝不携带 token**；登录本身由 CLI 完成，AISwitch 仅展示命令与官方文档入口（`constants/subscription-login.ts`），不新增 Rust 命令、不代持凭据。
 
 ## 3. 目录结构
 
@@ -140,8 +142,8 @@ AISwitch/
 │   ├── hooks/                   # 跨功能复用的自定义 hooks
 │   ├── services/                # 应用服务：switch / detect / preset / backup / restore
 │   ├── domain/
-│   │   ├── entities/            # Preset、ToolStatus 类型与不变式
-│   │   ├── rules/               # 纯函数：merge-config / diff-config / validate / active-preset / import-preset / duplicate-preset
+│   │   ├── entities/            # Preset、ToolStatus、SubscriptionAuthStatus 类型与不变式
+│   │   ├── rules/               # 纯函数：merge-config / auth-mode / subscription-credentials / diff-config / validate / active-preset / import-preset / duplicate-preset
 │   │   └── schemas/             # Zod：claude-config / codex-config / preset
 │   ├── adapters/
 │   │   ├── updater/              # Tauri 更新适配器
@@ -218,7 +220,7 @@ sequenceDiagram
 
 ## 7. 安全模型
 
-1. **最小权限**：fs 静态读写仅限 `~/.claude`、`~/.codex`、`~/.aiswitch` 三目录；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；未使用的插件（shell / dialog 等）一律不注册。**项目目录（US-21）不占用静态 scope**：用户经目录选择器显式选择后，由自定义命令 `allow_project_dirs`（`commands/fs_scope.rs`）把所选目录以递归方式加入当次会话的 fs scope；选择器挑选瞬间与启动时（按 `project-configs.json` 记录）各授权一次，重启后静态权限仍只剩三目录；
+1. **最小权限**：fs 静态读写仅限 `~/.claude`、`~/.codex`、`~/.aiswitch` 三目录；`~/.claude.json` 仅开放 exists / read-text-file（官方订阅登录态兜底信号，US-27 只读，不含写路径）；`~/.vscode*` 目录仅开放 exists / read-dir（插件迹象探测，只读）；未使用的插件（shell / dialog 等）一律不注册。**项目目录（US-21）不占用静态 scope**：用户经目录选择器显式选择后，由自定义命令 `allow_project_dirs`（`commands/fs_scope.rs`）把所选目录以递归方式加入当次会话的 fs scope；选择器挑选瞬间与启动时（按 `project-configs.json` 记录）各授权一次，重启后静态权限仍只剩三目录；
 2. **HTTP 出口**：连通性测试经 tauri-plugin-http，scope 为 `https://**` + 本机回环 `http`（`localhost` / `127.0.0.1`，含端口通配；Tauri URL pattern 不支持 IPv6 字面量，故不含 `[::1]`）；明文 http 出口被 capability 与 domain 规则（`domain/rules/base-url.ts`，表单与探测器共用）双重拦截，防止 API Key 明文外发；
 3. **文件权限**：所有含密钥文件（presets.json、备份、基线副本、settings.json、auth.json、config.toml）落盘时经 `restrict_to_owner` 命令收紧到 0600，`~/.aiswitch` 目录 0700（见 `adapters/fs/atomic-write.ts` 与 `commands/permissions.rs`）；写路径收紧失败视为硬失败（回滚链路兜底），读路径 best-effort 收紧历史文件；
 4. **API Key**：仅本地存储（v0.1 JSON + 0600 文件权限；v0.2 评估 OS Keychain，见 PRD §7.3）；
@@ -246,7 +248,7 @@ pnpm typecheck      # TypeScript 严格检查
 ## 9. 扩展指南：新增一个目标工具（以 Gemini CLI 为例）
 
 1. `src/domain/schemas/gemini-config.ts`：定义其配置 Schema（Zod 单一事实来源）；
-2. `src/adapters/gemini/`：新建 `reader.ts` / `writer.ts` / `transformer.ts` / `index.ts`（实现 `ConfigTarget`）；
+2. `src/adapters/gemini/`：新建 `reader.ts` / `writer.ts` / `transformer.ts` / `auth-status.ts` / `index.ts`（实现 `ConfigTarget`，含官方订阅登录态探测）；
 3. `src/adapters/gemini/index.ts` 末尾调用 `registerTarget(...)` 完成注册；
 4. `src/constants/` 中扩展工具枚举与展示元数据；
 5. `tests/fixtures/gemini/` 放真实配置样本 + 完成单测；

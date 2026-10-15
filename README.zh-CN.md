@@ -46,6 +46,7 @@ AISwitch 把这一切变成一次点击——自带校验、备份与秒级回�
 - 🧩 **Codex models.json 托管** —— 支持粘贴单条条目或整份 models.json，文件原样保存、同族模型都进选单；`display_name` 缺失时自动补齐。
 - 🧩 **组合切换（全家桶）** —— 一个组合聚合 Claude Code 与 Codex CLI 的预设，一次操作顺序切换全家；逐工具独立备份 / 回滚 / 校验。
 - 🧰 **供应商模板库 + 本地模型** —— 内置 Claude 官方 / OpenAI GPT / GLM / DeepSeek / Kimi / 通义 / 豆包 / Ollama / LM Studio 模板一键填充；Ollama / LM Studio 本地模型无需 API Key。
+- 🔑 **切回官方订阅（走登录）** —— 预设可选「官方订阅（登录）」：不写入任何密钥与 Base URL，鉴权交回 CLI 自带的登录态（Claude Code `/login`、Codex `codex login`）；切换面板展示登录态探测结果并可一键复制登录命令，登录凭据始终由 CLI 自己持有。
 - ⌨️ **全局快捷键** —— `Cmd/Ctrl+Shift+A` 呼出主窗口；`Cmd/Ctrl+Shift+S` 循环切换当前工具的下一个预设。
 - 🖥 **托盘菜单** —— 在系统托盘直接切换预设，当前生效的预设带勾选标识。
 - 🌐 **中英双语界面** —— 默认跟随系统语言，顶栏一键切换。

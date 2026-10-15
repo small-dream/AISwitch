@@ -46,6 +46,7 @@ AISwitch turns that into a single click — with validation, backups, and instan
 - 🧩 **Codex `models.json` hosting** — paste a single entry or a whole `models.json`; the file is stored verbatim and family models all appear in the picker. `display_name` is auto-filled when missing.
 - 🧩 **Bundle switch** — a bundle combines presets for Claude Code and Codex CLI; one action switches them all in order, each tool with its own backup / rollback / verification.
 - 🧰 **Provider templates + local models** — built-in templates for Claude official / OpenAI GPT / GLM / DeepSeek / Kimi / Qwen / Doubao / Ollama / LM Studio; Ollama and LM Studio need no API key.
+- 🔑 **Switch back to an official subscription (via login)** — a preset can use "official subscription (login)": no key and no base URL is written, auth goes back to the CLI login state (`/login` for Claude Code, `codex login` for Codex). The panel shows the detected login state and copies the login command; credentials always stay with the CLI.
 - ⌨️ **Global shortcuts** — `Cmd/Ctrl+Shift+A` brings the main window to front; `Cmd/Ctrl+Shift+S` cycles to the next preset of the current tool.
 - 🖥 **Tray menu** — switch presets straight from the system tray; the active preset is check-marked.
 - 🌐 **Bilingual UI** — Chinese & English, following your system language by default with a one-click toggle.
