@@ -201,8 +201,10 @@ body::before {
     animation: toast-in 0.22s cubic-bezier(0.21, 1.02, 0.73, 1);
   }
 
+  /* 不带 forwards/both：动画结束后残留的 transform 会让列表行变成层叠上下文，
+     行内的悬停气泡（z-20）会被后面的兄弟行盖住（见 SubscriptionLoginPopover）。 */
   .animate-fade-in {
-    animation: fade-in 0.25s ease-out both;
+    animation: fade-in 0.25s ease-out;
   }
 
   .animate-pulse-dot {
