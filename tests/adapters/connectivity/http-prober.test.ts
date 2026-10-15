@@ -61,3 +61,18 @@ describe('ConnectivityProber 本地模型（无 Key）', () => {
     expect(headers['anthropic-version']).toBe('2023-06-01')
   })
 })
+
+describe('ConnectivityProber 官方订阅', () => {
+  it('订阅预设不发出探测请求，直接按不支持处理', async () => {
+    const { http, calls } = trackingHttp()
+    const prober = new ConnectivityProber(http)
+
+    const result = await prober.probe(
+      makePreset({ authMode: 'subscription', baseUrl: undefined, apiKey: undefined })
+    )
+
+    expect(result.status).toBe('unsupported')
+    expect(result.message).toContain('登录态')
+    expect(calls).toEqual([])
+  })
+})

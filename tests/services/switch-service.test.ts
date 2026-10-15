@@ -26,6 +26,7 @@ function setup() {
     },
     verify: () => Promise.resolve(true),
     rollback: () => Promise.resolve(true),
+    authStatus: () => Promise.resolve({ tool: 'claude-code', state: 'logged-out' }),
   }
   registerTarget(target)
   return { fs, repo, baselines, service: new SwitchService(repo, baselines), applied }
@@ -116,6 +117,7 @@ function targetWith(apply: ConfigTarget['apply'], tool: 'claude-code' | 'codex' 
     apply,
     verify: () => Promise.resolve(true),
     rollback: () => Promise.resolve(true),
+    authStatus: () => Promise.resolve({ tool, state: 'logged-out' }),
   }
 }
 

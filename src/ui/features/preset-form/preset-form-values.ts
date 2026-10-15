@@ -1,10 +1,12 @@
 import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
+import { withoutKeyFields } from '@/domain/rules/auth-mode'
 import { metadataToFieldText, parseModelMetadataField } from './model-metadata'
 import type { PresetFormValues } from './preset-form-schema'
 
 const EMPTY_VALUES: Omit<PresetFormValues, 'tool'> = {
   name: '',
   providerName: '',
+  authMode: 'api-key',
   baseUrl: '',
   apiKey: '',
   model: '',
@@ -26,6 +28,7 @@ export function toFormValues(
     tool: source.tool,
     name: source.name,
     providerName: source.providerName,
+    authMode: source.authMode,
     baseUrl: source.baseUrl ?? '',
     apiKey: source.apiKey,
     model: source.model,
@@ -34,7 +37,10 @@ export function toFormValues(
   }
 }
 
-/** 表单值 → 领域输入：空串归一化为 undefined，smallFastModel 仅 Claude 使用，元数据 JSON 仅 Codex 使用 */
+/**
+ * 表单值 → 领域输入：空串归一化为 undefined，smallFastModel 仅 Claude 使用，
+ * 元数据 JSON 仅 Codex 使用；订阅模式丢弃 Base URL 与密钥（PRD §5.14）。
+ */
 export function toPresetInput(values: PresetFormValues): PresetInput {
   const smallFastModel =
     values.tool === 'claude-code' && values.smallFastModel ? values.smallFastModel : undefined
@@ -43,11 +49,11 @@ export function toPresetInput(values: PresetFormValues): PresetInput {
     values.tool === 'codex'
       ? parseModelMetadataField(modelMetadataJson ?? '', values.model).entry
       : undefined
-  return {
+  return withoutKeyFields({
     ...rest,
     apiKey: apiKey === '' ? undefined : apiKey,
     baseUrl: values.baseUrl === '' ? undefined : values.baseUrl,
     smallFastModel,
     modelMetadata,
-  }
+  })
 }

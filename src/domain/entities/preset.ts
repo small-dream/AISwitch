@@ -1,5 +1,6 @@
 import type { z } from 'zod'
 import type {
+  authModeSchema,
   presetCollectionSchema,
   presetInputSchema,
   presetSchema,
@@ -7,6 +8,7 @@ import type {
 } from '@/domain/schemas/preset'
 
 export type TargetTool = z.infer<typeof targetToolSchema>
+export type AuthMode = z.infer<typeof authModeSchema>
 export type Preset = z.infer<typeof presetSchema>
 export type PresetInput = z.infer<typeof presetInputSchema>
 export type PresetCollection = z.infer<typeof presetCollectionSchema>

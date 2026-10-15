@@ -185,3 +185,28 @@ describe('codexPresetInputFrom · 模型目录捕获', () => {
     expect(codexPresetInputFrom(deepseekConfig, null, null)?.modelMetadata).toBeUndefined()
   })
 })
+
+describe('导入时的默认认证方式（PRD §5.14）', () => {
+  it('Claude 无 Base URL / 无密钥的官方配置 → 订阅模式草稿', () => {
+    const input = claudePresetInputFrom({ env: { [CLAUDE_ENV_KEYS.model]: 'claude-sonnet-5' } })
+
+    expect(input?.authMode).toBe('subscription')
+  })
+
+  it('Claude 携带密钥的中转配置 → API Key 模式草稿', () => {
+    const input = claudePresetInputFrom({
+      env: { [CLAUDE_ENV_KEYS.authToken]: 'sk-tok', [CLAUDE_ENV_KEYS.model]: 'glm-4.6' },
+    })
+
+    expect(input?.authMode).toBe('api-key')
+  })
+
+  it('Codex 官方 provider 且 auth.json 无 Key → 订阅模式草稿', () => {
+    const input = codexPresetInputFrom(
+      { model: 'gpt-5.6', model_provider: CODEX_CONFIG_KEYS.officialProvider },
+      {}
+    )
+
+    expect(input?.authMode).toBe('subscription')
+  })
+})

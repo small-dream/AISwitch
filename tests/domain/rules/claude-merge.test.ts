@@ -132,3 +132,49 @@ describe('stripManagedClaudeKeys', () => {
     })
   })
 })
+
+describe('mergeClaudeSettings · 官方订阅（登录态，不写密钥）', () => {
+  const SUBSCRIPTION = makePreset({
+    authMode: 'subscription',
+    baseUrl: undefined,
+    apiKey: undefined,
+    model: 'claude-sonnet-5',
+  })
+
+  it('清除既有中转地址与密钥，仅写模型键并保留用户自有键', () => {
+    const merged = mergeClaudeSettings(CURRENT, SUBSCRIPTION)
+
+    expect(merged.env?.[CLAUDE_ENV_KEYS.model]).toBe('claude-sonnet-5')
+    expect(CLAUDE_ENV_KEYS.authToken in (merged.env ?? {})).toBe(false)
+    expect(CLAUDE_ENV_KEYS.baseUrl in (merged.env ?? {})).toBe(false)
+    expect(merged.env?.OTHER_KEY).toBe('keep-me')
+    expect(merged.permissions).toEqual({ allow: ['Bash'] })
+  })
+
+  it('槽位映射模式下同步覆盖槽位键，仍不写密钥', () => {
+    const merged = mergeClaudeSettings(SLOT_CURRENT, { ...SUBSCRIPTION, smallFastModel: 'claude-haiku-4-5' })
+
+    expect(merged.env?.[CLAUDE_SLOT_KEYS.sonnet]).toBe('claude-sonnet-5')
+    expect(merged.env?.[CLAUDE_SLOT_KEYS.opus]).toBe('claude-sonnet-5')
+    expect(merged.env?.[CLAUDE_SLOT_KEYS.haiku]).toBe('claude-haiku-4-5')
+    expect(CLAUDE_ENV_KEYS.authToken in (merged.env ?? {})).toBe(false)
+  })
+
+  it('防御式：订阅预设即便携带 baseUrl/apiKey 也不写入', () => {
+    const merged = mergeClaudeSettings(
+      CURRENT,
+      makePreset({ authMode: 'subscription', baseUrl: 'https://relay.example.com', apiKey: 'sk-x' })
+    )
+
+    expect(CLAUDE_ENV_KEYS.authToken in (merged.env ?? {})).toBe(false)
+    expect(CLAUDE_ENV_KEYS.baseUrl in (merged.env ?? {})).toBe(false)
+  })
+
+  it('expectedClaudeEnv 与合并结果同源（verify 对比依据）', () => {
+    const expected = expectedClaudeEnv(SUBSCRIPTION, false)
+
+    expect(expected[CLAUDE_ENV_KEYS.model]).toBe('claude-sonnet-5')
+    expect(CLAUDE_ENV_KEYS.authToken in expected).toBe(false)
+    expect(CLAUDE_ENV_KEYS.baseUrl in expected).toBe(false)
+  })
+})

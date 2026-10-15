@@ -24,6 +24,24 @@ export const zhCN = {
   'template.placeholder': '选择模板…',
   'template.local': '本地模型',
   'presetRow.localModel': '本地模型 · 无需 Key',
+  'presetRow.subscription': '官方订阅 · 无需 Key（走 CLI 登录态）',
+
+  // 官方订阅（PRD §5.14）
+  'subscription.badge': '订阅登录',
+  'subscription.title': '官方订阅登录',
+  'subscription.checking': '正在检测登录状态…',
+  'subscription.loggedIn': '已检测到官方订阅登录态，可直接使用订阅预设。',
+  'subscription.loggedInAs': '已检测到官方订阅登录态（{detail}），可直接使用订阅预设。',
+  'subscription.loggedOut':
+    '未检测到登录凭据：请先在终端完成官方登录，再切换到订阅预设（macOS 凭据存于系统钥匙串，若已登录可忽略本提示）。',
+  'subscription.unknown': '配置存在但无法解析，请在 CLI 内确认登录状态后再切换。',
+  'subscription.copy': '复制命令',
+  'subscription.copied': '已复制',
+  'subscription.doc': '官方登录说明',
+  'subscription.hintClaudeCode':
+    '在终端执行 claude，进入后输入 /login 完成浏览器登录；/status 可查看当前账号与订阅类型。',
+  'subscription.hintCodex':
+    '在终端执行 codex login 完成浏览器登录；codex login status 可查看当前账号。',
   'update.check': '检查更新',
   'update.checking': '检查更新中…',
   'update.checkHint': '检查并下载最新版本',
@@ -130,6 +148,11 @@ export const zhCN = {
   'presetForm.title.duplicate': '复制预设',
   'presetForm.title.create': '新建预设',
   'presetForm.targetTool': '目标工具',
+  'presetForm.authMode': '认证方式',
+  'presetForm.authModeApiKey': 'API Key / 中转站',
+  'presetForm.authModeSubscription': '官方订阅（登录）',
+  'presetForm.subscriptionHint':
+    '官方订阅不写入任何密钥与 Base URL：切换后由 CLI 自带的登录态（Claude Code 的 /login、Codex 的 codex login）鉴权，请先在本机完成登录。',
   'presetForm.name': '预设名称',
   'presetForm.namePlaceholder': '如：GLM-4.6',
   'presetForm.provider': '供应商名称',

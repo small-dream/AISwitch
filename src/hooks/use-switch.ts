@@ -12,6 +12,8 @@ export function useSwitchPreset() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
       void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.backups })
+      // 订阅预设切换后登录态提示需重新探测（可能刚在终端完成登录）
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.subscriptionAuthRoot })
     },
   })
 }

@@ -190,3 +190,51 @@ describe('codexProviderLabel', () => {
     expect(codexProviderLabel({})).toBe('未设置')
   })
 })
+
+describe('官方订阅（走登录，PRD §5.14）', () => {
+  const SUBSCRIPTION = makePreset({
+    tool: 'codex',
+    authMode: 'subscription',
+    baseUrl: undefined,
+    apiKey: undefined,
+    model: 'gpt-5.6',
+  })
+
+  it('mergeCodexConfig：切回官方 provider 并移除注入块', () => {
+    const current: CodexConfig = {
+      model: 'glm-4.6',
+      model_provider: 'jake_current',
+      model_providers: {
+        jake_current: { base_url: 'https://open.bigmodel.cn/api', name: 'GLM' },
+        deepseek: { base_url: 'https://api.deepseek.com/' },
+      },
+    }
+
+    const merged = mergeCodexConfig(current, SUBSCRIPTION)
+
+    expect(merged.model).toBe('gpt-5.6')
+    expect(merged.model_provider).toBe('openai')
+    expect(merged.model_providers?.jake_current).toBeUndefined()
+    expect(merged.model_providers?.deepseek).toBeDefined()
+  })
+
+  it('mergeCodexConfig：订阅预设即便携带 baseUrl 也不注入第三方块', () => {
+    const merged = mergeCodexConfig({}, {
+      ...SUBSCRIPTION,
+      baseUrl: 'https://relay.example.com',
+    })
+
+    expect(merged.model_provider).toBe('openai')
+    expect(merged.model_providers?.jake_current).toBeUndefined()
+  })
+
+  it('mergeCodexAuth：删除 OPENAI_API_KEY 但保留 ChatGPT tokens', () => {
+    const merged = mergeCodexAuth(
+      { OPENAI_API_KEY: 'sk-old', tokens: { access_token: 'a' } },
+      { ...SUBSCRIPTION, apiKey: 'sk-typed' }
+    )
+
+    expect('OPENAI_API_KEY' in merged).toBe(false)
+    expect(merged.tokens).toEqual({ access_token: 'a' })
+  })
+})

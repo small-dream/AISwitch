@@ -5,6 +5,7 @@ import {
   CODEX_CONFIG_KEYS,
 } from '@/constants/config-keys'
 import type { PresetInput } from '@/domain/entities/preset'
+import { defaultAuthMode } from '@/domain/rules/auth-mode'
 import { findCatalogEntry } from '@/domain/rules/codex-catalog'
 import type { ClaudeSettings } from '@/domain/schemas/claude-config'
 import type { CodexConfig, CodexProviderBlock } from '@/domain/schemas/codex-config'
@@ -55,13 +56,15 @@ export function claudePresetInputFrom(settings: ClaudeSettings): PresetInput | n
   }
   const env = settings.env ?? {}
   const baseUrl = env[CLAUDE_ENV_KEYS.baseUrl]
+  const apiKey = env[CLAUDE_ENV_KEYS.authToken]
   const model = claudeActiveModel(settings)
   return {
     tool: 'claude-code',
     name: model || (baseUrl ? hostOf(baseUrl) : '官方配置'),
     providerName: baseUrl ? hostOf(baseUrl) : '官方 API',
+    authMode: defaultAuthMode(baseUrl, apiKey),
     baseUrl,
-    apiKey: env[CLAUDE_ENV_KEYS.authToken] ?? '',
+    apiKey: apiKey ?? '',
     model,
     smallFastModel: env[CLAUDE_ENV_KEYS.smallFastModel],
   }
@@ -130,6 +133,7 @@ export function codexPresetInputFrom(
     tool: 'codex',
     name: importDisplayName(model, baseUrl),
     providerName: importProviderName(providerName, baseUrl),
+    authMode: defaultAuthMode(baseUrl, apiKey),
     baseUrl,
     apiKey,
     model,

@@ -29,6 +29,7 @@ import { ModelCatalogService } from '@/services/model-catalog-service'
 import { PresetService } from '@/services/preset-service'
 import { RestoreService } from '@/services/restore-service'
 import { SwitchService } from '@/services/switch-service'
+import { SubscriptionAuthService } from '@/services/subscription-auth-service'
 import { UpdateService } from '@/services/update-service'
 import { ProjectConfigService } from '@/services/project-config-service'
 import { ProjectDirectoryService } from '@/services/project-directory-service'
@@ -72,6 +73,7 @@ export const presetService = new PresetService(presetRepository)
 export const backupManager = new BackupManager(tauriFs)
 export const baselineManager = new BaselineManager(tauriFs, backupManager)
 export const switchService = new SwitchService(presetRepository, baselineManager)
+export const subscriptionAuthService = new SubscriptionAuthService()
 export const bundleRepository = new BundleRepository(tauriFs)
 export const bundleService = new BundleService(bundleRepository, presetRepository, switchService)
 export const connectivityService = new ConnectivityService(new ConnectivityProber(tauriHttp))

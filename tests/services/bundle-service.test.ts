@@ -26,6 +26,7 @@ function makeTarget(tool: 'claude-code' | 'codex', failingIds: Set<string>): Con
     },
     verify: () => Promise.resolve(true),
     rollback: () => Promise.resolve(true),
+    authStatus: () => Promise.resolve({ tool, state: 'logged-out' }),
   }
 }
 

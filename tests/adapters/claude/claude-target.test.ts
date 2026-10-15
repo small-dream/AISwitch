@@ -176,3 +176,45 @@ describe('ClaudeConfigTarget · apply 失败回滚（写阶段与回滚失败）
     expect(fs.files().get('.claude/settings.json')).toBe(SETTINGS_FIXTURE)
   })
 })
+
+describe('ClaudeConfigTarget · 官方订阅（走登录）', () => {
+  const SUBSCRIPTION = makePreset({
+    authMode: 'subscription',
+    baseUrl: undefined,
+    apiKey: undefined,
+    model: 'claude-sonnet-5',
+  })
+
+  it('apply：清除密钥与中转地址、写模型键，保留用户字段并校验通过', async () => {
+    const fs = createMemoryFs({ '.claude/settings.json': SETTINGS_FIXTURE })
+    const target = createClaudeTarget(fs)
+
+    const result = await target.apply(SUBSCRIPTION)
+
+    expect(result.backupPath).toMatch(/--settings\.json$/)
+    const written = parseSettings(fs.files().get('.claude/settings.json')) as {
+      env: Record<string, string>
+      permissions: unknown
+    }
+    expect(written.env[CLAUDE_ENV_KEYS.authToken]).toBeUndefined()
+    expect(written.env[CLAUDE_ENV_KEYS.baseUrl]).toBeUndefined()
+    expect(written.env[CLAUDE_ENV_KEYS.model]).toBe('claude-sonnet-5')
+    expect(written.env.OTHER_KEY).toBe('keep-me')
+    expect(written.permissions).toEqual({ allow: ['Bash'] })
+    expect(await target.verify(SUBSCRIPTION)).toBe(true)
+  })
+
+  it('apply：首次（无既有配置）写入订阅预设也不产生密钥键', async () => {
+    const fs = createMemoryFs()
+    const target = createClaudeTarget(fs)
+
+    const result = await target.apply(SUBSCRIPTION)
+
+    expect(result.backupPath).toBeUndefined()
+    const written = parseSettings(fs.files().get('.claude/settings.json')) as {
+      env: Record<string, string>
+    }
+    expect(Object.keys(written.env)).toEqual([CLAUDE_ENV_KEYS.model])
+    expect(await target.verify(SUBSCRIPTION)).toBe(true)
+  })
+})

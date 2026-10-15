@@ -9,6 +9,7 @@ import type { CodexConfig } from '@/domain/schemas/codex-config'
 import type { ApplyResult, ConfigTarget } from '@/types/config-target'
 import type { FileSystemPort } from '@/types/fs-port'
 import { syncCodexCatalog, verifyCodexCatalog } from './catalog-sync'
+import { detectCodexAuth } from './auth-status'
 import { readCodexAuth, readCodexConfig } from './reader'
 import { writeCodexAuth, writeCodexConfig } from './writer'
 import { isRecord } from '@/utils/guards'
@@ -195,6 +196,10 @@ export function createCodexTarget(fs: FileSystemPort): ConfigTarget {
       await backups.restoreLatest('codex', PATHS.codexAuth)
       await backups.restoreLatest('codex', PATHS.codexModels)
       return restoredConfig
+    },
+
+    authStatus() {
+      return detectCodexAuth(fs)
     },
   }
 }

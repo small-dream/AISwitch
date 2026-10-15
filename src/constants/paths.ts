@@ -4,6 +4,10 @@
  */
 export const PATHS = {
   claudeDir: '.claude',
+  /** macOS 上凭据存于系统钥匙串，该文件仅记录账号信息（登录态兜底信号） */
+  claudeUserConfig: '.claude.json',
+  /** Linux / Windows 的 Claude Code OAuth 凭据文件 */
+  claudeCredentials: '.claude/.credentials.json',
   claudeSettings: '.claude/settings.json',
   codexDir: '.codex',
   codexConfig: '.codex/config.toml',

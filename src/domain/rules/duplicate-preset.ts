@@ -9,6 +9,7 @@ export function presetInputFromPreset(preset: Preset): PresetInput {
     tool: preset.tool,
     name: `${preset.name}${DUPLICATE_NAME_SUFFIX}`,
     providerName: preset.providerName,
+    authMode: preset.authMode,
     baseUrl: preset.baseUrl,
     apiKey: preset.apiKey,
     model: preset.model,

@@ -7,6 +7,7 @@ export function makePreset(overrides: Partial<Preset> = {}): Preset {
     name: 'GLM-4.6',
     tool: 'claude-code',
     providerName: '智谱 GLM',
+    authMode: 'api-key',
     baseUrl: 'https://open.bigmodel.cn/api/anthropic',
     apiKey: 'sk-test-key',
     model: 'glm-4.6',

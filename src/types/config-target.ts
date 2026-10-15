@@ -1,4 +1,5 @@
 import type { Preset, TargetTool, ToolStatus } from '@/domain/entities/preset'
+import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
 
 export interface ApplyResult {
   tool: TargetTool
@@ -20,4 +21,6 @@ export interface ConfigTarget {
   verify(preset: Preset): Promise<boolean>
   /** 从最近一份备份恢复；无可用备份返回 false */
   rollback(): Promise<boolean>
+  /** 官方订阅登录态探测（PRD §5.14）：只读，不修改任何配置 */
+  authStatus(): Promise<SubscriptionAuthStatus>
 }

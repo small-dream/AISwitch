@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 
 import type { ConnectivityResult, ConnectivityStatus } from '@/domain/entities/connectivity'
 import type { Preset } from '@/domain/entities/preset'
+import { isSubscriptionAuth } from '@/domain/rules/auth-mode'
 import { useT, type TFn } from '@/i18n/index'
 import { useIsPresetActive } from '@/hooks/use-active-preset'
 import { useConnectivityTest } from '@/hooks/use-connectivity-test'
@@ -35,11 +36,13 @@ function PresetRowInfo({
   result: ConnectivityResult | undefined
 }) {
   const t = useT()
+  const keyless = isSubscriptionAuth(preset)
   return (
     <div className="min-w-0">
       <div className="flex items-center gap-2">
         <span className="truncate font-medium">{preset.name}</span>
         <Badge>{preset.providerName}</Badge>
+        {keyless ? <Badge>{t('subscription.badge')}</Badge> : null}
         {isActive ? (
           <Badge tone="success">
             <CheckCircle2 className="h-3 w-3" aria-hidden />
@@ -48,7 +51,9 @@ function PresetRowInfo({
         ) : null}
       </div>
       <p className="mt-1 truncate font-mono text-xs text-app-muted">{preset.model}</p>
-      {preset.apiKey ? (
+      {keyless ? (
+        <p className="mt-0.5 text-[11px] text-app-faint">{t('presetRow.subscription')}</p>
+      ) : preset.apiKey ? (
         <p className="mt-0.5 font-mono text-[11px] text-app-faint">{maskApiKey(preset.apiKey)}</p>
       ) : (
         <p className="mt-0.5 text-[11px] text-app-faint">{t('presetRow.localModel')}</p>

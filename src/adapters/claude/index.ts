@@ -13,6 +13,7 @@ import type { ApplyResult, ConfigTarget } from '@/types/config-target'
 import type { FileSystemPort } from '@/types/fs-port'
 import { readClaudeSettings } from './reader'
 import { writeClaudeSettings } from './writer'
+import { detectClaudeAuth } from './auth-status'
 
 /** 托管键清单唯一事实来源见 constants/config-keys.ts（与一键还原剥离共用） */
 const MANAGED_ENV_KEYS = CLAUDE_MANAGED_ENV_KEYS
@@ -186,6 +187,10 @@ export function createClaudeTarget(fs: FileSystemPort): ConfigTarget {
 
     rollback() {
       return backups.restoreLatest('claude-code', PATHS.claudeSettings)
+    },
+
+    authStatus() {
+      return detectClaudeAuth(fs)
     },
   }
 }

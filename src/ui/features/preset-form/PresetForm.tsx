@@ -5,10 +5,11 @@ import { useT } from '@/i18n/index'
 import { Button } from '@/ui/components/Button'
 import { FormField } from '@/ui/components/FormField'
 import { Input } from '@/ui/components/Input'
-import { PasswordInput } from '@/ui/components/PasswordInput'
 import { Select } from '@/ui/components/Select'
+import { AuthModeField } from './AuthModeField'
 import { CodexMetadataSection } from './CodexMetadataSection'
 import { ModelFields } from './ModelFields'
+import { ProviderFields } from './ProviderFields'
 import { ProviderTemplatePicker } from './ProviderTemplatePicker'
 import type { PresetFormValues } from './preset-form-schema'
 import { usePresetForm } from './use-preset-form'
@@ -25,6 +26,9 @@ function PresetFormFields({
   tool: TargetTool
 }) {
   const t = useT()
+  const authMode = form.watch('authMode')
+  // 订阅模式禁用密钥字段：写入 Base URL / Key 会顶掉 CLI 的登录态（PRD §5.14）
+  const keyless = authMode === 'subscription'
   return (
     <>
       <FormField label={t('presetForm.targetTool')} error={errors.tool?.message}>
@@ -33,18 +37,14 @@ function PresetFormFields({
           <option value="codex">Codex CLI</option>
         </Select>
       </FormField>
+      <AuthModeField register={register} errors={errors} authMode={authMode} />
       <FormField label={t('presetForm.name')} error={errors.name?.message}>
         <Input {...register('name')} placeholder={t('presetForm.namePlaceholder')} />
       </FormField>
       <FormField label={t('presetForm.provider')} error={errors.providerName?.message}>
         <Input {...register('providerName')} placeholder={t('presetForm.providerPlaceholder')} />
       </FormField>
-      <FormField label={t('presetForm.baseUrl')} error={errors.baseUrl?.message}>
-        <Input {...register('baseUrl')} placeholder="https://open.bigmodel.cn/api/anthropic" />
-      </FormField>
-      <FormField label="API Key" error={errors.apiKey?.message}>
-        <PasswordInput {...register('apiKey')} placeholder="sk-…" />
-      </FormField>
+      <ProviderFields register={register} errors={errors} keyless={keyless} />
       <ModelFields form={form} errors={errors} tool={tool} />
       {tool === 'codex' ? <CodexMetadataSection register={register} errors={errors} /> : null}
     </>

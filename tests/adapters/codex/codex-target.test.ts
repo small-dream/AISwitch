@@ -235,3 +235,36 @@ describe('CodexConfigTarget · 整份文件元数据（同族模型）', () => {
     expect(await target.verify(preset)).toBe(true)
   })
 })
+
+describe('CodexConfigTarget · 官方订阅（走登录）', () => {
+  const SUBSCRIPTION = makePreset({
+    tool: 'codex',
+    authMode: 'subscription',
+    baseUrl: undefined,
+    apiKey: undefined,
+    model: 'gpt-5.6',
+  })
+
+  it('apply：切回官方 provider、移除注入块，auth.json 丢弃 API Key 保留既有字段', async () => {
+    const fs = seededFs({
+      '.codex/config.toml': configWithCatalogKey(MANAGED_CATALOG),
+      '.codex/auth.json': JSON.stringify({ OPENAI_API_KEY: 'sk-old', extra: 'keep-me' }),
+    })
+    const target = createCodexTarget(fs)
+
+    await target.apply(SUBSCRIPTION)
+
+    const config = readToml(fs)
+    expect(config.model).toBe('gpt-5.6')
+    expect(config.model_provider).toBe(CODEX_CONFIG_KEYS.officialProvider)
+    expect(config.model_catalog_json).toBeUndefined()
+    const providers = config.model_providers as Record<string, unknown>
+    expect(providers[INJECTED]).toBeUndefined()
+    expect(providers.deepseek).toBeDefined()
+
+    const auth = JSON.parse(fs.files().get('.codex/auth.json') ?? '{}') as Record<string, unknown>
+    expect('OPENAI_API_KEY' in auth).toBe(false)
+    expect(auth.extra).toBe('keep-me')
+    expect(await target.verify(SUBSCRIPTION)).toBe(true)
+  })
+})

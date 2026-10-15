@@ -27,6 +27,26 @@ export const en: Record<TranslationKey, string> = {
   'template.placeholder': 'Choose a template…',
   'template.local': 'Local model',
   'presetRow.localModel': 'Local model · No key required',
+
+  // Official subscription (PRD §5.14)
+  'presetRow.subscription': 'Official subscription · no key (uses CLI login)',
+  'subscription.badge': 'Subscription login',
+  'subscription.title': 'Official subscription login',
+  'subscription.checking': 'Checking login status…',
+  'subscription.loggedIn': 'Subscription login detected — subscription presets are ready to use.',
+  'subscription.loggedInAs':
+    'Subscription login detected ({detail}) — subscription presets are ready to use.',
+  'subscription.loggedOut':
+    'No login credentials found: finish the official login in your terminal before switching to a subscription preset (on macOS credentials live in the system keychain — ignore this if you are already logged in).',
+  'subscription.unknown':
+    'Config found but unreadable; confirm the login state inside the CLI before switching.',
+  'subscription.copy': 'Copy command',
+  'subscription.copied': 'Copied',
+  'subscription.doc': 'Official login docs',
+  'subscription.hintClaudeCode':
+    'Run claude in a terminal, then type /login to finish the browser login; /status shows the current account and subscription.',
+  'subscription.hintCodex':
+    'Run codex login in a terminal to finish the browser login; codex login status shows the current account.',
   'update.check': 'Check for updates',
   'update.checking': 'Checking…',
   'update.checkHint': 'Check for and download the latest version',
@@ -137,6 +157,11 @@ export const en: Record<TranslationKey, string> = {
   'presetForm.title.duplicate': 'Duplicate preset',
   'presetForm.title.create': 'New preset',
   'presetForm.targetTool': 'Target tool',
+  'presetForm.authMode': 'Auth mode',
+  'presetForm.authModeApiKey': 'API key / relay',
+  'presetForm.authModeSubscription': 'Official subscription (login)',
+  'presetForm.subscriptionHint':
+    'Official subscription writes no key and no base URL: after switching, auth is handled by the CLI login state (/login for Claude Code, codex login for Codex). Sign in on this machine first.',
   'presetForm.name': 'Preset name',
   'presetForm.namePlaceholder': 'e.g. GLM-4.6',
   'presetForm.provider': 'Provider name',

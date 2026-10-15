@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "主窗口最小权限：~/.claude、~/.codex、~/.aiswitch 三目录读写 + VS Code 目录只读探测 + 连通性测试 HTTP；项目目录不经嵌套通配符预授权，由目录选择器/历史记录经 allow_project_dirs 命令在运行时按用户手势授予（ARCHITECTURE §7）",
+  "description": "主窗口最小权限：~/.claude、~/.codex、~/.aiswitch 三目录读写 + ~/.claude.json 只读（官方订阅登录态兜底信号，PRD §5.14）+ VS Code 目录只读探测 + 连通性测试 HTTP；项目目录不经嵌套通配符预授权，由目录选择器/历史记录经 allow_project_dirs 命令在运行时按用户手势授予（ARCHITECTURE §7）",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -15,6 +15,7 @@
       "identifier": "fs:allow-exists",
       "allow": [
         { "path": "$HOME/.claude" },
+        { "path": "$HOME/.claude.json" },
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },
@@ -28,6 +29,7 @@
       "identifier": "fs:allow-read-text-file",
       "allow": [
         { "path": "$HOME/.claude" },
+        { "path": "$HOME/.claude.json" },
         { "path": "$HOME/.claude/**" },
         { "path": "$HOME/.codex" },
         { "path": "$HOME/.codex/**" },

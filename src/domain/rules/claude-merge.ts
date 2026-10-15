@@ -1,5 +1,6 @@
 import { CLAUDE_ENV_KEYS, CLAUDE_MANAGED_ENV_KEYS, CLAUDE_SLOT_KEYS } from '@/constants/config-keys'
 import type { Preset } from '@/domain/entities/preset'
+import { isSubscriptionAuth } from '@/domain/rules/auth-mode'
 import type { ClaudeSettings } from '@/domain/schemas/claude-config'
 
 type EnvMap = Record<string, string>
@@ -24,9 +25,12 @@ function setOrDelete(env: EnvMap, key: string, value: string | undefined): void 
 
 function applyPreset(env: EnvMap, preset: Preset, slotMode: boolean): EnvMap {
   const next = { ...env }
-  setOrDelete(next, CLAUDE_ENV_KEYS.authToken, preset.apiKey)
+  // 官方订阅（PRD §5.14）：绝不写入 ANTHROPIC_AUTH_TOKEN / ANTHROPIC_BASE_URL，
+  // 否则会顶掉 CLI 的 OAuth 登录态并转成按量计费；模型键照常写入。
+  const keyless = isSubscriptionAuth(preset)
+  setOrDelete(next, CLAUDE_ENV_KEYS.authToken, keyless ? undefined : preset.apiKey)
   next[CLAUDE_ENV_KEYS.model] = preset.model
-  setOrDelete(next, CLAUDE_ENV_KEYS.baseUrl, preset.baseUrl)
+  setOrDelete(next, CLAUDE_ENV_KEYS.baseUrl, keyless ? undefined : preset.baseUrl)
   setOrDelete(next, CLAUDE_ENV_KEYS.smallFastModel, preset.smallFastModel)
   if (slotMode) {
     // 槽位映射模式下三槽位必须同步覆盖，否则 Claude Code 仍按旧槽位模型运行

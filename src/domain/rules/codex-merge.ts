@@ -1,16 +1,23 @@
 import { CODEX_AUTH_KEYS, CODEX_CONFIG_KEYS } from '@/constants/config-keys'
 import type { Preset } from '@/domain/entities/preset'
+import { isSubscriptionAuth } from '@/domain/rules/auth-mode'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import { isRecord } from '@/utils/guards'
 
 export type CodexAuthFile = Record<string, unknown>
 
+/** 订阅模式不注入供应商块：鉴权交给 ChatGPT 登录态，模型仍可指定 */
+function effectiveBaseUrl(preset: Preset): string | undefined {
+  return isSubscriptionAuth(preset) ? undefined : preset.baseUrl
+}
+
 /** 合并预设到现有 config.toml 结构（PRD §5.1 表 B） */
 export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexConfig {
   const providers = { ...(current.model_providers ?? {}) }
   const injected = CODEX_CONFIG_KEYS.injectedProvider
+  const baseUrl = effectiveBaseUrl(preset)
   let modelProvider: string
-  if (preset.baseUrl) {
+  if (baseUrl) {
     const existing = providers[injected] ?? {}
     // 双通道写 Key：块内嵌 token（DeepSeek 脚本模式）+ auth.json（官方模式），两种取 key 路径都生效。
     // name 为 Codex 必填（缺失会导致整个 config.toml 加载失败、CLI/插件退回安装引导）；
@@ -20,7 +27,7 @@ export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexCon
     const block = {
       ...existing,
       name: preset.providerName,
-      base_url: preset.baseUrl,
+      base_url: baseUrl,
       wire_api: 'responses',
     }
     if (preset.apiKey) {
@@ -45,12 +52,13 @@ export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexCon
 /** 合并预设到 auth.json：覆盖 OPENAI_API_KEY，其余字段保留 */
 export function mergeCodexAuth(current: unknown, preset: Preset): CodexAuthFile {
   const base: CodexAuthFile = isRecord(current) ? current : {}
-  if (!preset.apiKey) {
+  const apiKey = isSubscriptionAuth(preset) ? undefined : preset.apiKey
+  if (!apiKey) {
     const next = { ...base }
     Reflect.deleteProperty(next, CODEX_AUTH_KEYS.apiKey)
     return next
   }
-  return { ...base, [CODEX_AUTH_KEYS.apiKey]: preset.apiKey }
+  return { ...base, [CODEX_AUTH_KEYS.apiKey]: apiKey }
 }
 
 /**
