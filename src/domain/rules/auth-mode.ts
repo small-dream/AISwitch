@@ -1,6 +1,6 @@
 import type { AuthMode, Preset, PresetInput } from '@/domain/entities/preset'
 
-/** 是否使用 CLI 自带的官方订阅登录态（PRD §5.14） */
+/** 是否使用 CLI 自带的官方订阅登录态（PRD §5.13） */
 export function isSubscriptionAuth(preset: Pick<Preset, 'authMode'>): boolean {
   return preset.authMode === 'subscription'
 }
@@ -13,7 +13,7 @@ export function defaultAuthMode(baseUrl: string | undefined, apiKey: string | un
   return baseUrl || apiKey ? 'api-key' : 'subscription'
 }
 
-/** 订阅模式一律丢弃 baseUrl / apiKey：写入它们会顶掉 CLI 的登录态（PRD §5.14） */
+/** 订阅模式一律丢弃 baseUrl / apiKey：写入它们会顶掉 CLI 的登录态（PRD §5.13） */
 export function withoutKeyFields(input: PresetInput): PresetInput {
   if (!isSubscriptionAuth(input)) {
     return input

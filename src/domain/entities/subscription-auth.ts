@@ -1,7 +1,7 @@
 import type { TargetTool } from '@/domain/entities/preset'
 
 /**
- * 官方订阅登录态（PRD §5.14）：
+ * 官方订阅登录态（PRD §5.13）：
  * logged-in  已检测到 CLI 的 OAuth 凭据；
  * logged-out 未检测到凭据（macOS 凭据存于系统钥匙串时以 ~/.claude.json 账号信息兜底）；
  * unknown    配置文件存在但无法解析，交由用户自行在 CLI 内确认。

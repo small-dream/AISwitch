@@ -24,7 +24,7 @@ export function parseCodexConfig(raw: string): CodexConfig {
   return result.data
 }
 
-/** 空串 bearer token 不落盘（PRD §5.10：空 Key 删除鉴权键），防御 merge 之外的构造路径 */
+/** 空串 bearer token 不落盘（PRD §5.9：空 Key 删除鉴权键），防御 merge 之外的构造路径 */
 function withoutEmptyTokens(config: CodexConfig): CodexConfig {
   const providers = config.model_providers
   if (!providers) {

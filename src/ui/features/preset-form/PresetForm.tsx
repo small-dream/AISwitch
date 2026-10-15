@@ -27,7 +27,7 @@ function PresetFormFields({
 }) {
   const t = useT()
   const authMode = form.watch('authMode')
-  // 订阅模式禁用密钥字段：写入 Base URL / Key 会顶掉 CLI 的登录态（PRD §5.14）
+  // 订阅模式禁用密钥字段：写入 Base URL / Key 会顶掉 CLI 的登录态（PRD §5.13）
   const keyless = authMode === 'subscription'
   return (
     <>

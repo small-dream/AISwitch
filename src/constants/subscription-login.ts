@@ -1,7 +1,7 @@
 import type { TargetTool } from '@/domain/entities/preset'
 
 /**
- * 官方订阅登录指引（PRD §5.14）：AISwitch 不代持订阅凭据，
+ * 官方订阅登录指引（PRD §5.13）：AISwitch 不代持订阅凭据，
  * 登录一律由 CLI 自己完成（浏览器 OAuth），这里只提供命令与官方文档入口。
  */
 export interface SubscriptionLoginGuide {

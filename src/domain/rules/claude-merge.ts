@@ -25,7 +25,7 @@ function setOrDelete(env: EnvMap, key: string, value: string | undefined): void 
 
 function applyPreset(env: EnvMap, preset: Preset, slotMode: boolean): EnvMap {
   const next = { ...env }
-  // 官方订阅（PRD §5.14）：绝不写入 ANTHROPIC_AUTH_TOKEN / ANTHROPIC_BASE_URL，
+  // 官方订阅（PRD §5.13）：绝不写入 ANTHROPIC_AUTH_TOKEN / ANTHROPIC_BASE_URL，
   // 否则会顶掉 CLI 的 OAuth 登录态并转成按量计费；模型键照常写入。
   const keyless = isSubscriptionAuth(preset)
   setOrDelete(next, CLAUDE_ENV_KEYS.authToken, keyless ? undefined : preset.apiKey)

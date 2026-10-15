@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Removed
+
+- The bundle switch feature (US-17): the bundle model, the `~/.aiswitch/bundles.json` store, `BundleService` / `BundleRepository` / `BundlePanel`, and their tests. Setting both Claude Code and Codex CLI at once is already covered by project-level config in the project tab, so the bundle dimension had no distinct use case. Any existing `bundles.json` is left untouched and simply ignored.
+
 ## [0.1.18] - 2026-10-15
 
 ### Added

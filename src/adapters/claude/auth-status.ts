@@ -8,7 +8,7 @@ import type { FileSystemPort } from '@/types/fs-port'
 
 /**
  * Claude Code 订阅登录态：优先读 OAuth 凭据文件；macOS 凭据在系统钥匙串、
- * 文件不存在时回落到 ~/.claude.json 记录的账号信息（PRD §5.14）。
+ * 文件不存在时回落到 ~/.claude.json 记录的账号信息（PRD §5.13）。
  * 解析失败归 unknown，宁可让用户在 CLI 内确认，也不误报「未登录」。
  */
 export async function detectClaudeAuth(fs: FileSystemPort): Promise<SubscriptionAuthStatus> {

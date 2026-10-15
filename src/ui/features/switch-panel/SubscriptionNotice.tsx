@@ -54,7 +54,7 @@ function useCopyCommand(command: string) {
   return { copied, copy }
 }
 
-/** 官方订阅登录提示（PRD §5.14）：仅当该工具存在订阅预设时出现，指引用户在 CLI 内完成登录 */
+/** 官方订阅登录提示（PRD §5.13）：仅当该工具存在订阅预设时出现，指引用户在 CLI 内完成登录 */
 export function SubscriptionNotice({ tool }: { tool: TargetTool }) {
   const t = useT()
   const { data: presets } = usePresets()

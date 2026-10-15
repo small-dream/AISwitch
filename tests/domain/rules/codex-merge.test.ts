@@ -72,7 +72,7 @@ describe('mergeCodexAuth', () => {
 })
 
 describe('mergeCodexConfig · 本地模型（无 Key）', () => {
-  it('baseUrl 存在而 Key 为空：注入块不写 experimental_bearer_token 键（PRD §5.10）', () => {
+  it('baseUrl 存在而 Key 为空：注入块不写 experimental_bearer_token 键（PRD §5.9）', () => {
     const injected = CODEX_CONFIG_KEYS.injectedProvider
     const preset = makePreset({
       tool: 'codex',
@@ -191,7 +191,7 @@ describe('codexProviderLabel', () => {
   })
 })
 
-describe('官方订阅（走登录，PRD §5.14）', () => {
+describe('官方订阅（走登录，PRD §5.13）', () => {
   const SUBSCRIPTION = makePreset({
     tool: 'codex',
     authMode: 'subscription',

@@ -77,7 +77,7 @@ features/switch-panel/
 | 全局 UI 状态（当前 Tab、主题）  | Zustand（按域切片，每片一文件） | ❌ store 里放业务函数       |
 | 局部交互/表单状态               | 组件 useState / RHF             | ❌ 局部状态全局化           |
 
-只读的系统态（如官方订阅登录态探测，PRD §5.14）与磁盘态同源：走 `Service → Query`，切换等写操作后 `invalidateQueries` 重查，**禁止把探测结果缓存进组件外的全局变量**。
+只读的系统态（如官方订阅登录态探测，PRD §5.13）与磁盘态同源：走 `Service → Query`，切换等写操作后 `invalidateQueries` 重查，**禁止把探测结果缓存进组件外的全局变量**。
 
 - 数据流向固定单向：`UI → hooks → services → domain/adapters → invalidate Query → UI`；
 - 写操作成功后必须 `invalidateQueries` 让服务端状态重新拉取，**禁止手动同步副本**。

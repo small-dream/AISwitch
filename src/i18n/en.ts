@@ -28,7 +28,7 @@ export const en: Record<TranslationKey, string> = {
   'template.local': 'Local model',
   'presetRow.localModel': 'Local model · No key required',
 
-  // Official subscription (PRD §5.14)
+  // Official subscription (PRD §5.13)
   'presetRow.subscription': 'Official subscription · no key (uses CLI login)',
   'subscription.badge': 'Subscription login',
   'subscription.title': 'Official subscription login',
@@ -194,25 +194,6 @@ export const en: Record<TranslationKey, string> = {
     'The API key was copied from the original preset. On save it will be written to ~/.aiswitch/presets.json (readable only by the current user).',
   'presetForm.updated': 'Preset updated',
   'presetForm.created': 'Preset created',
-
-  // Bundles
-  'bundle.title': 'Bundle Switch',
-  'bundle.title.create': 'New bundle',
-  'bundle.title.edit': 'Edit bundle',
-  'bundle.create': 'New bundle',
-  'bundle.empty': 'No bundles yet. Create one to switch Claude Code and Codex CLI at once',
-  'bundle.name': 'Bundle name',
-  'bundle.namePlaceholder': 'e.g. Budget GLM everywhere',
-  'bundle.noSwitch': 'No switch',
-  'bundle.apply': 'Apply',
-  'bundle.switching': 'Switching…',
-  'bundle.atLeastOne': 'Select at least one tool preset',
-  'bundle.confirmDelete': 'Delete this bundle?',
-  'bundle.deleted': 'Bundle deleted',
-  'bundle.created': 'Bundle created',
-  'bundle.updated': 'Bundle updated',
-  'bundle.switchedAll': 'Switched {name} ({count} tools)',
-  'bundle.switchFailed': '{tool} failed to switch, see details',
 
   // Form validation (Zod)
   'validation.urlInvalid': 'Enter a valid URL or leave it empty',

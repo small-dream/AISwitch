@@ -8,7 +8,7 @@ import type { PresetFormValues } from './preset-form-schema'
 
 /**
  * 供应商地址与密钥字段：官方订阅模式下禁用——
- * 写入 Base URL / Key 会顶掉 CLI 的登录态（PRD §5.14）。
+ * 写入 Base URL / Key 会顶掉 CLI 的登录态（PRD §5.13）。
  */
 export function ProviderFields({
   register,

@@ -23,7 +23,7 @@ export function mergeCodexConfig(current: CodexConfig, preset: Preset): CodexCon
     // name 为 Codex 必填（缺失会导致整个 config.toml 加载失败、CLI/插件退回安装引导）；
     // wire_api 统一 responses：Codex 已彻底移除 chat/completions 协议
     // （openai/codex discussions/7782，2026-02 起对 chat 直接报错）。
-    // 空 Key（本地模型，PRD §5.10）时删除鉴权键而非写空串，与 mergeCodexAuth 的删除语义对齐。
+    // 空 Key（本地模型，PRD §5.9）时删除鉴权键而非写空串，与 mergeCodexAuth 的删除语义对齐。
     const block = {
       ...existing,
       name: preset.providerName,

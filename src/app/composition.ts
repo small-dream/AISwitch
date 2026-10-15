@@ -7,7 +7,6 @@ import { ModelCatalogFetcher } from '@/adapters/connectivity/model-catalog-fetch
 import { tauriHttp } from '@/adapters/connectivity/tauri-http'
 import { BackupManager } from '@/adapters/backup/backup-manager'
 import { BaselineManager } from '@/adapters/baseline/baseline-manager'
-import { BundleRepository } from '@/adapters/bundles/bundle-repository'
 import { tauriFs } from '@/adapters/fs/tauri-fs-port'
 import { PresetRepository } from '@/adapters/presets/preset-repository'
 import {
@@ -22,7 +21,6 @@ import { grantProjectDirs } from '@/adapters/system/fs-scope'
 import { readClaudeSettings } from '@/adapters/claude/reader'
 import { readCodexAuth, readCodexConfig, readCodexModels } from '@/adapters/codex/reader'
 import { BackupService } from '@/services/backup-service'
-import { BundleService } from '@/services/bundle-service'
 import { ConnectivityService } from '@/services/connectivity-service'
 import { ImportService } from '@/services/import-service'
 import { ModelCatalogService } from '@/services/model-catalog-service'
@@ -74,8 +72,6 @@ export const backupManager = new BackupManager(tauriFs)
 export const baselineManager = new BaselineManager(tauriFs, backupManager)
 export const switchService = new SwitchService(presetRepository, baselineManager)
 export const subscriptionAuthService = new SubscriptionAuthService()
-export const bundleRepository = new BundleRepository(tauriFs)
-export const bundleService = new BundleService(bundleRepository, presetRepository, switchService)
 export const connectivityService = new ConnectivityService(new ConnectivityProber(tauriHttp))
 export const modelCatalogService = new ModelCatalogService(new ModelCatalogFetcher(tauriHttp))
 export const importService = new ImportService({

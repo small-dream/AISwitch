@@ -12,7 +12,7 @@ const AUTH_MODE_LABEL_KEY = {
   subscription: 'presetForm.authModeSubscription',
 } as const satisfies Record<AuthMode, TranslationKey>
 
-/** 认证方式字段：官方订阅模式不写任何密钥，切换后由 CLI 自带登录态鉴权（PRD §5.14） */
+/** 认证方式字段：官方订阅模式不写任何密钥，切换后由 CLI 自带登录态鉴权（PRD §5.13） */
 export function AuthModeField({
   register,
   errors,

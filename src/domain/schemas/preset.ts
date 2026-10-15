@@ -4,7 +4,7 @@ import { z } from 'zod'
 export const targetToolSchema = z.enum(['claude-code', 'codex'])
 
 /**
- * 认证方式（PRD §5.14）：
+ * 认证方式（PRD §5.13）：
  * api-key = 由 AISwitch 写入供应商密钥；subscription = 使用 CLI 自带的官方订阅登录态，
  * AISwitch 不写入任何密钥、不写 Base URL，鉴权完全交给 CLI 的 OAuth 凭据。
  */

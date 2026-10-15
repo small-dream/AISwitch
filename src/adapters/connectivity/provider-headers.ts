@@ -6,7 +6,7 @@ export type HeaderTarget = Pick<Preset, 'tool' | 'apiKey'>
 /**
  * 供应商请求头（探测与模型目录拉取共用）：
  * 第三方与官方统一 Bearer；Claude 侧额外携带 anthropic-version（官方必需），
- * 同时带 x-api-key 最大化中转站兼容；本地模型（空 Key）不携带任何鉴权头（PRD §5.10）。
+ * 同时带 x-api-key 最大化中转站兼容；本地模型（空 Key）不携带任何鉴权头（PRD §5.9）。
  */
 export function buildProviderHeaders(target: HeaderTarget): Record<string, string> {
   const headers: Record<string, string> = {}

@@ -186,7 +186,7 @@ describe('codexPresetInputFrom · 模型目录捕获', () => {
   })
 })
 
-describe('导入时的默认认证方式（PRD §5.14）', () => {
+describe('导入时的默认认证方式（PRD §5.13）', () => {
   it('Claude 无 Base URL / 无密钥的官方配置 → 订阅模式草稿', () => {
     const input = claudePresetInputFrom({ env: { [CLAUDE_ENV_KEYS.model]: 'claude-sonnet-5' } })
 

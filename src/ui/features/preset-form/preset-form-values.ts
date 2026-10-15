@@ -39,7 +39,7 @@ export function toFormValues(
 
 /**
  * 表单值 → 领域输入：空串归一化为 undefined，smallFastModel 仅 Claude 使用，
- * 元数据 JSON 仅 Codex 使用；订阅模式丢弃 Base URL 与密钥（PRD §5.14）。
+ * 元数据 JSON 仅 Codex 使用；订阅模式丢弃 Base URL 与密钥（PRD §5.13）。
  */
 export function toPresetInput(values: PresetFormValues): PresetInput {
   const smallFastModel =

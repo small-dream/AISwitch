@@ -21,6 +21,6 @@ export interface ConfigTarget {
   verify(preset: Preset): Promise<boolean>
   /** 从最近一份备份恢复；无可用备份返回 false */
   rollback(): Promise<boolean>
-  /** 官方订阅登录态探测（PRD §5.14）：只读，不修改任何配置 */
+  /** 官方订阅登录态探测（PRD §5.13）：只读，不修改任何配置 */
   authStatus(): Promise<SubscriptionAuthStatus>
 }
