@@ -128,7 +128,7 @@ new AppError('E_CONFIG_WRITE', '写入 Claude 配置失败', { tool: 'claude-cod
 3. **类型先行**：先定义 Zod Schema / interface，再写实现；
 4. **实现最小化**：遵守红线 R1–R7；
 5. **测试同步**（R6）；
-6. **全绿验证**：`pnpm lint && pnpm typecheck && pnpm test` 全部通过；
+6. **全绿验证**：`pnpm lint && pnpm format:check && pnpm typecheck && pnpm test` 全部通过（CI 同样校验这四项，格式漂移会被拦下）；
 7. **文档同步**：功能或结构变化必须回写三文档；
 8. **规范提交**（§8）。
 

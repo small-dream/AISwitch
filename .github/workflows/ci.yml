@@ -11,7 +11,7 @@ concurrency:
 
 jobs:
   web:
-    name: Lint / Typecheck / Test
+    name: Lint / Format / Typecheck / Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +22,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm typecheck
       - run: pnpm test
 
