@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.22] - 2026-10-15
+
+### Fixed
+
+- The subscription login popover is no longer covered by the preset row below it: the row entrance animation used `animation-fill-mode: both`, so its final `translateY(0)` stayed on every row and turned each `<li>` into a stacking context. A later row then painted over the earlier row's `z-20` popover, and since the active row's background is translucent the covered text looked like it bled through. The fill mode is gone, so rows fall back to `transform: none` once the animation ends, with no change to how the animation looks.
+
 ## [0.1.21] - 2026-10-15
 
 ### Changed
