@@ -2,6 +2,22 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.18] - 2026-10-15
+
+### Added
+
+- Official subscription auth mode for presets (`authMode = "subscription"`): switching writes no key and no base URL, so Claude Code and Codex CLI fall back to their own official login state instead of being billed through an API key. Claude Code keeps writing the model, small-fast and slot keys; Codex returns to the `openai` provider and keeps its ChatGPT tokens.
+- Read-only subscription login detection: Claude Code's credentials file with a `~/.claude.json` account fallback (macOS keeps credentials in the system keychain), and Codex `auth.json` tokens. The switch panel shows the detected plan/account, the terminal login command (`claude` with `/login`, `codex login`) with one-click copy, and the official login docs.
+
+### Changed
+
+- `ConfigTarget` gains `authStatus()`; subscription presets set it without touching tokens or any credential file.
+- Presets stored without an `authMode` field are read as API key mode, and imported configs with neither base URL nor key start as subscription drafts.
+
+### Fixed
+
+- Connectivity tests no longer report a misleading invalid-key result for subscription presets; they explain that the CLI login state owns the auth instead.
+
 ## [0.1.17] - 2026-09-26
 
 ### Added
