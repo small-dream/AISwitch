@@ -60,6 +60,31 @@ const EN_MESSAGES: Record<string, string> = {
   // 项目目录选择
   选择项目目录失败: 'Failed to choose a project directory',
   读取应用版本失败: 'Failed to read the app version',
+  // 项目级配置
+  项目预设不存在或目标工具不匹配: 'Project preset not found or it targets another tool',
+  项目配置写入失败: 'Failed to write the project config',
+  '项目配置写入失败；已自动回滚': 'Failed to write the project config; rolled back automatically',
+  '项目配置写入失败；自动回滚也失败，请按备份手动恢复项目配置':
+    'Failed to write the project config and automatic rollback also failed; restore the project config manually',
+  '项目配置记录不是合法 JSON': 'The project config index is not valid JSON',
+  项目配置记录结构校验失败: 'The project config index failed validation',
+  '项目目录必须填写 HOME 下的相对路径': 'The project directory must be a path relative to HOME',
+  '项目目录不能包含 ..': 'The project directory must not contain ".."',
+  '请选择一个具体的项目目录，而不是主目录':
+    'Choose a specific project directory, not the home directory itself',
+  项目目录目前必须位于用户主目录下: 'The project directory must live under your home directory',
+  授予项目目录文件访问权限失败: 'Failed to grant access to the project directory',
+  // 应用更新
+  没有可下载的更新: 'No update available to download',
+  没有可安装的更新: 'No update available to install',
+  下载更新失败: 'Failed to download the update',
+  安装更新失败: 'Failed to install the update',
+  检查更新失败: 'Failed to check for updates',
+  '更新尚未下载完成，请重新检查更新': 'The update is not downloaded yet; check for updates again',
+  // 状态展示（适配器给出的展示名/占位文案）
+  '官方 API': 'Official API',
+  未设置: 'Not set',
+  自定义供应商: 'Custom provider',
   // 兜底
   发生未知错误: 'An unknown error occurred',
 }

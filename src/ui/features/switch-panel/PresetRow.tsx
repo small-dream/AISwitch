@@ -3,7 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 
 import type { ConnectivityResult, ConnectivityStatus } from '@/domain/entities/connectivity'
 import type { Preset } from '@/domain/entities/preset'
-import { useT, type TFn } from '@/i18n/index'
+import { useT, type TFn, type TranslationKey } from '@/i18n/index'
 import { useIsPresetActive } from '@/hooks/use-active-preset'
 import { useConnectivityTest } from '@/hooks/use-connectivity-test'
 import { maskApiKey } from '@/utils/mask'
@@ -17,11 +17,16 @@ const STATUS_CLASS: Record<ConnectivityStatus, string> = {
   unsupported: 'text-app-faint',
 }
 
+/** 结果状态 → 本地化词条：适配器给出的 message 是中文诊断细节，直接展示在英文界面会残留中文 */
+const CONNECTIVITY_KEY: Record<ConnectivityStatus, TranslationKey> = {
+  ok: 'connectivity.ok',
+  'invalid-key': 'connectivity.invalidKey',
+  unreachable: 'connectivity.unreachable',
+  unsupported: 'connectivity.unsupported',
+}
+
 function connectivityText(result: ConnectivityResult, t: TFn): string {
-  if (result.status === 'ok') {
-    return t('connectivity.ok', { latency: String(result.latencyMs ?? '-') })
-  }
-  return result.message
+  return t(CONNECTIVITY_KEY[result.status], { latency: String(result.latencyMs ?? '-') })
 }
 
 /** 信息列：名称/供应商/生效标记 + 模型与密钥摘要 + 连通性结果 */
@@ -54,7 +59,7 @@ function PresetRowInfo({
         <p className="mt-0.5 text-[11px] text-app-faint">{t('presetRow.localModel')}</p>
       )}
       {result ? (
-        <p className={clsx('mt-1 text-[11px]', STATUS_CLASS[result.status])}>
+        <p className={clsx('mt-1 text-[11px]', STATUS_CLASS[result.status])} title={result.message}>
           {connectivityText(result, t)}
         </p>
       ) : null}

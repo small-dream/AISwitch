@@ -79,7 +79,7 @@ describe('PresetRow 连通性测试', () => {
     expect(screen.getByRole('button', { name: '测试中…' })).toBeDisabled()
   })
 
-  it('展示后端返回的详细错误信息', () => {
+  it('结果状态按当前语言展示，原始诊断信息保留在 title 里', () => {
     testState.data = {
       status: 'unreachable',
       message: '已阻止探测：明文 http 地址仅允许本机回环，请改用 https',
@@ -87,8 +87,9 @@ describe('PresetRow 连通性测试', () => {
     const preset = makePreset({ name: 'GLM-4.6' })
     render(<PresetRow preset={preset} onEdit={vi.fn()} onDuplicate={vi.fn()} />)
 
+    expect(screen.getByText('无法连通')).toBeInTheDocument()
     expect(
-      screen.getByText('已阻止探测：明文 http 地址仅允许本机回环，请改用 https')
+      screen.getByTitle('已阻止探测：明文 http 地址仅允许本机回环，请改用 https')
     ).toBeInTheDocument()
   })
 })

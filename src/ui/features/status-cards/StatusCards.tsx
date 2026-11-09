@@ -4,6 +4,7 @@ import type { ComponentType } from 'react'
 import type { TargetTool, ToolInstallStatus, ToolStatus } from '@/domain/entities/preset'
 import { TOOL_META } from '@/constants/tools'
 import { useT, type TranslationKey } from '@/i18n/index'
+import { localizeMessage } from '@/i18n/messages'
 import { useToolStatus } from '@/hooks/use-tool-status'
 import { useVscodePresence } from '@/hooks/use-vscode-presence'
 import { BackupsButton } from '@/ui/features/backups/BackupsButton'
@@ -90,7 +91,7 @@ function ToolStatusCard({
       <div className="mt-3 space-y-1">
         <p className="truncate font-mono text-xs text-app">{status.activeModel ?? '—'}</p>
         <p className="truncate text-xs text-app-muted">
-          {status.activeProviderName ?? meta.configPath}
+          {localizeMessage(status.activeProviderName ?? meta.configPath)}
         </p>
         {status.status === 'not-configured' ? (
           vscodeDetected ? (
