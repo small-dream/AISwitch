@@ -33,7 +33,9 @@ export function useAppUpdate() {
     })
   }
   return {
-    update: query.data ?? null,
+    // 后台重取失败时 React Query 仍保留旧 data；此时句柄已被适配器置空，
+    // 继续展示「更新」按钮只会让用户点出一个必然失败的安装
+    update: query.isError ? null : (query.data ?? null),
     canCheck: updateService.canCheck(),
     isChecking: query.isFetching,
     isInstalling: install.isPending,

@@ -68,3 +68,49 @@ describe('createTauriUpdater', () => {
     await expect(adapter.download()).rejects.toMatchObject({ code: 'E_UPDATE_DOWNLOAD' })
   })
 })
+
+describe('createTauriUpdater · 幂等与失败兜底', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockedRelaunch.mockResolvedValue(undefined)
+  })
+
+  it('同一版本重复 download 只下载一次（后台重取不重复下载）', async () => {
+    const { update, download } = makeUpdate()
+    mockedCheck.mockResolvedValue(update)
+    const adapter = createTauriUpdater()
+
+    await adapter.check()
+    await adapter.download()
+    await adapter.download()
+
+    expect(download).toHaveBeenCalledOnce()
+  })
+
+  it('未下载就 install：拒绝并提示尚未下载完成（不拿空句柄硬装）', async () => {
+    const { update, install } = makeUpdate()
+    mockedCheck.mockResolvedValue(update)
+    const adapter = createTauriUpdater()
+    await adapter.check()
+
+    await expect(adapter.install()).rejects.toMatchObject({
+      code: 'E_UPDATE_INSTALL',
+      message: '更新尚未下载完成，请重新检查更新',
+    })
+    expect(install).not.toHaveBeenCalled()
+  })
+
+  it('检查失败后句柄被清空：install 报「没有可安装的更新」而不是假装能装', async () => {
+    const { update } = makeUpdate()
+    mockedCheck.mockResolvedValueOnce(update).mockRejectedValueOnce(new Error('offline'))
+    const adapter = createTauriUpdater()
+    await adapter.check()
+    await adapter.download()
+
+    await expect(adapter.check()).rejects.toMatchObject({ code: 'E_UPDATE_CHECK' })
+    await expect(adapter.install()).rejects.toMatchObject({
+      code: 'E_UPDATE_INSTALL',
+      message: '没有可安装的更新',
+    })
+  })
+})
