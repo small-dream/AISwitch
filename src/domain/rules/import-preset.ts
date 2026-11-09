@@ -68,7 +68,9 @@ export function claudePresetInputFrom(settings: ClaudeSettings): PresetInput | n
     baseUrl,
     apiKey: apiKey ?? '',
     model,
-    smallFastModel: env[CLAUDE_ENV_KEYS.smallFastModel],
+    // 槽位映射模式的「小模型」在 ANTHROPIC_DEFAULT_HAIKU_MODEL 上，并非 SMALL_FAST_MODEL；
+    // 漏读会让再次切换把用户自己的 haiku 槽位覆盖成主模型
+    smallFastModel: env[CLAUDE_ENV_KEYS.smallFastModel] ?? env[CLAUDE_SLOT_KEYS.haiku],
   }
 }
 

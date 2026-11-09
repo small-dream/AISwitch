@@ -59,6 +59,21 @@ describe('claudePresetInputFrom · 无供应商信息', () => {
     expect(claudePresetInputFrom({ env: { OTHER: 'x' } })).toBeNull()
     expect(claudePresetInputFrom({})).toBeNull()
   })
+
+  it('槽位映射模式：小模型回落到 ANTHROPIC_DEFAULT_HAIKU_MODEL', () => {
+    const input = claudePresetInputFrom({
+      env: {
+        [CLAUDE_ENV_KEYS.baseUrl]: 'https://relay.example.com',
+        [CLAUDE_ENV_KEYS.authToken]: 'sk-x',
+        [CLAUDE_SLOT_KEYS.sonnet]: 'glm-4.6',
+        [CLAUDE_SLOT_KEYS.opus]: 'glm-4.6',
+        [CLAUDE_SLOT_KEYS.haiku]: 'glm-4.6-air',
+      },
+    })
+
+    expect(input?.model).toBe('glm-4.6')
+    expect(input?.smallFastModel).toBe('glm-4.6-air')
+  })
 })
 
 describe('codexPresetInputFrom', () => {
