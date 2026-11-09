@@ -33,6 +33,11 @@ function isoFrom(value: unknown): string | undefined {
   return new Date(millis).toISOString()
 }
 
+/** 空串/纯空白不算凭据：凭据文件写到一半时会留下空字段，不能被当成「已登录」 */
+function isCredential(value: unknown): value is string {
+  return typeof value === 'string' && value.trim() !== ''
+}
+
 function base64UrlDecode(segment: string): string {
   const padded = segment.replaceAll('-', '+').replaceAll('_', '/')
   return atob(padded.padEnd(Math.ceil(padded.length / 4) * 4, '='))
@@ -74,7 +79,7 @@ export function parseClaudeCredentials(raw: string): SubscriptionCredentialInfo 
     return null
   }
   const oauth = value.claudeAiOauth
-  if (typeof oauth.accessToken !== 'string' && typeof oauth.refreshToken !== 'string') {
+  if (!isCredential(oauth.accessToken) && !isCredential(oauth.refreshToken)) {
     return null
   }
   return { plan: planLabel(oauth.subscriptionType), expiresAt: isoFrom(oauth.expiresAt) }
@@ -92,7 +97,8 @@ export function parseClaudeUserAccount(raw: string): SubscriptionCredentialInfo 
     return null
   }
   const { emailAddress } = value.oauthAccount
-  return { account: typeof emailAddress === 'string' ? emailAddress : undefined }
+  // 空对象 / 空邮箱不是登录证据，否则 stale 的 ~/.claude.json 会在凭据文件消失后误报已登录
+  return isCredential(emailAddress) ? { account: emailAddress } : null
 }
 
 /**
@@ -110,7 +116,7 @@ export function parseCodexSubscription(raw: string): SubscriptionCredentialInfo 
     return null
   }
   const { tokens } = value
-  if (typeof tokens.access_token !== 'string' && typeof tokens.refresh_token !== 'string') {
+  if (!isCredential(tokens.access_token) && !isCredential(tokens.refresh_token)) {
     return null
   }
   return { plan: codexPlanFromIdToken(tokens.id_token) }

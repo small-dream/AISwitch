@@ -21,9 +21,10 @@ interface ModelFeedback {
   text: string
 }
 
-/** 表单字段可能为空串/未注册，统一按「未填写」语义交给下游（避免把空串当有效地址） */
+/** 表单字段可能为空串/未注册，统一按「未填写」语义交给下游（避免把空串或带空格的地址当有效值） */
 function optional(value: string | undefined): string | undefined {
-  return value === '' ? undefined : value
+  const trimmed = value?.trim() ?? ''
+  return trimmed === '' ? undefined : trimmed
 }
 
 /**

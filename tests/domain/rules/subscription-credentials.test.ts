@@ -93,3 +93,24 @@ describe('parseCodexSubscription', () => {
     expect(parseCodexSubscription('{oops')).toBeNull()
   })
 })
+
+describe('空凭据不算登录', () => {
+  it('空串 / 纯空白的 Claude token 判为未登录', () => {
+    const empty = JSON.stringify({ claudeAiOauth: { accessToken: '', refreshToken: '   ' } })
+
+    expect(parseClaudeCredentials(empty)).toBeNull()
+  })
+
+  it('oauthAccount 为空对象或空邮箱时不是登录信号', () => {
+    expect(parseClaudeUserAccount(JSON.stringify({ oauthAccount: {} }))).toBeNull()
+    expect(
+      parseClaudeUserAccount(JSON.stringify({ oauthAccount: { emailAddress: '  ' } }))
+    ).toBeNull()
+  })
+
+  it('Codex tokens 全为空串时不算订阅登录', () => {
+    const empty = JSON.stringify({ tokens: { access_token: '', refresh_token: '' } })
+
+    expect(parseCodexSubscription(empty)).toBeNull()
+  })
+})
