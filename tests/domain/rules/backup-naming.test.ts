@@ -99,3 +99,23 @@ describe('namesToPrune', () => {
     expect(pruned).not.toContain('.DS_Store')
   })
 })
+
+describe('latestBackupName / earliestBackupName 只认合法备份名', () => {
+  it('形如「外来文件--目标文件名」的非法条目不会被选中（选中后恢复会抛非法备份名）', () => {
+    const names = [
+      '20260813-080000--settings.json',
+      'foreign-notes--settings.json',
+      'not-a-backup--settings.json',
+    ]
+
+    expect(latestBackupName(names, 'settings.json')).toBe('20260813-080000--settings.json')
+    expect(earliestBackupName(names, 'settings.json')).toBe('20260813-080000--settings.json')
+  })
+
+  it('只有非法条目时返回 null', () => {
+    const names = ['foreign--settings.json']
+
+    expect(latestBackupName(names, 'settings.json')).toBeNull()
+    expect(earliestBackupName(names, 'settings.json')).toBeNull()
+  })
+})

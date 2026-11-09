@@ -29,10 +29,14 @@ export function parseBackupName(name: string): { timestamp: string; basename: st
   return { timestamp, basename }
 }
 
-/** 指定源文件最新一份备份的文件名；无则 null */
+/**
+ * 指定源文件最新一份备份的文件名；无则 null。
+ * 必须走 `parseBackupName` 校验：只按后缀匹配的话，目录里一个形如
+ * `foreign--config.toml` 的外来文件会排在最新，选中后恢复直接抛「非法备份名」。
+ */
 export function latestBackupName(names: readonly string[], basename: string): string | null {
   const matched = names
-    .filter((name) => name.endsWith(`${BACKUP_SEPARATOR}${basename}`))
+    .filter((name) => parseBackupName(name)?.basename === basename)
     .sort()
     .reverse()
   return matched[0] ?? null
@@ -40,7 +44,7 @@ export function latestBackupName(names: readonly string[], basename: string): st
 
 /** 指定源文件最早一份备份的文件名（一键还原的近似基线）；无则 null */
 export function earliestBackupName(names: readonly string[], basename: string): string | null {
-  const matched = names.filter((name) => name.endsWith(`${BACKUP_SEPARATOR}${basename}`)).sort()
+  const matched = names.filter((name) => parseBackupName(name)?.basename === basename).sort()
   return matched[0] ?? null
 }
 
