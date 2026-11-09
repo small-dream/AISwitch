@@ -6,6 +6,12 @@ import { useT } from '@/i18n/index'
 import { errorMessage } from '@/utils/error-message'
 import { Button } from '@/ui/components/Button'
 
+/** 相对路径的末段作为展示名（记录回填时没有绝对路径可依） */
+function nameFromPath(value: string): string {
+  const parts = value.split('/').filter(Boolean)
+  return parts[parts.length - 1] ?? value
+}
+
 /** 已选定目录：名称 + 相对路径 + 「更换目录」 */
 function PickedDirectory({
   value,
@@ -17,14 +23,16 @@ function PickedDirectory({
   onChoose: () => void
 }) {
   const t = useT()
+  // 只认与当前值一致的那次选择：从记录里切换目录时，选择器的旧状态不能冒充当前目录
+  const current = directory?.relativePath === value ? directory : null
   return (
     <div className="flex min-h-9 items-center gap-2 rounded-lg border border-app-accent/40 bg-app-accent-soft px-3">
       <Check className="h-4 w-4 shrink-0 text-app-accent" aria-hidden />
       <span
         className="min-w-0 flex-1 truncate text-sm text-app"
-        title={directory?.absolutePath ?? value}
+        title={current?.absolutePath ?? value}
       >
-        <span className="font-medium">{directory?.name ?? value}</span>
+        <span className="font-medium">{current?.name ?? nameFromPath(value)}</span>
         <span className="ml-2 text-xs text-app-muted">{value}</span>
       </span>
       <button type="button" className="text-xs text-app-muted hover:text-app" onClick={onChoose}>

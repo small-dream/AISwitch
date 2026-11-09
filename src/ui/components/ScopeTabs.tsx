@@ -1,7 +1,9 @@
 import clsx from 'clsx'
+import type { KeyboardEvent } from 'react'
 
 import type { AppScope } from '@/types/app-scope'
 import { useT } from '@/i18n/index'
+import { appScopes, nextScope } from './scope-tabs.utils'
 
 export function ScopeTabs({
   scope,
@@ -11,14 +13,24 @@ export function ScopeTabs({
   onChange: (scope: AppScope) => void
 }) {
   const t = useT()
-  const tabs: readonly AppScope[] = ['global', 'project']
+  /** 未选中页签 tabIndex=-1，键盘用户只能靠方向键在 tablist 内切换 */
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const next = nextScope(scope, event.key)
+    if (!next) {
+      return
+    }
+    event.preventDefault()
+    onChange(next)
+  }
+
   return (
     <div
       className="flex shrink-0 items-center rounded-lg border border-app-border bg-app-sunken p-0.5"
       role="tablist"
       aria-label={t('scope.label')}
+      onKeyDown={handleKeyDown}
     >
-      {tabs.map((tab) => (
+      {appScopes.map((tab) => (
         <button
           key={tab}
           type="button"

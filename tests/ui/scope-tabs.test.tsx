@@ -27,4 +27,26 @@ describe('ScopeTabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: '项目' }))
     expect(screen.getByRole('tab', { name: '项目' })).toHaveAttribute('aria-selected', 'true')
   })
+
+  it('键盘方向键可在页签间切换（未选中页签 tabIndex=-1）', () => {
+    const changes: string[] = []
+    render(
+      <ScopeTabs
+        scope="global"
+        onChange={(next) => {
+          changes.push(next)
+        }}
+      />
+    )
+    const tablist = screen.getByRole('tablist')
+
+    fireEvent.keyDown(tablist, { key: 'ArrowRight' })
+    expect(changes).toEqual(['project'])
+
+    fireEvent.keyDown(tablist, { key: 'ArrowLeft' })
+    expect(changes).toEqual(['project', 'project'])
+
+    fireEvent.keyDown(tablist, { key: 'Enter' })
+    expect(changes).toHaveLength(2)
+  })
 })

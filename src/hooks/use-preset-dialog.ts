@@ -25,6 +25,10 @@ export function usePresetDialog() {
   }
 
   const openImported = (input: PresetInput) => {
+    // 导入是异步的：若用户已经打开了别的弹窗（如新建）并开始填写，不要再覆盖他的表单
+    if (open) {
+      return
+    }
     setEditing(null)
     setDraft(input)
     setDuplicating(false)

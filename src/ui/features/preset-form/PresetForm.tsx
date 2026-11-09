@@ -19,17 +19,20 @@ function PresetFormFields({
   register,
   errors,
   tool,
+  isEdit,
 }: {
   form: UseFormReturn<PresetFormValues>
   register: UseFormRegister<PresetFormValues>
   errors: FieldErrors<PresetFormValues>
   tool: TargetTool
+  isEdit: boolean
 }) {
   const t = useT()
   return (
     <>
       <FormField label={t('presetForm.targetTool')} error={errors.tool?.message}>
-        <Select {...register('tool')} aria-label={t('presetForm.targetTool')}>
+        {/* 目标工具决定整份配置的写法，已存在的预设不允许「搬家」：换个工具请新建 */}
+        <Select {...register('tool')} aria-label={t('presetForm.targetTool')} disabled={isEdit}>
           <option value="claude-code">Claude Code</option>
           <option value="codex">Codex CLI</option>
         </Select>
@@ -100,6 +103,7 @@ function PresetFormBody({
   tool,
   draft,
   isDuplicate,
+  isEdit,
 }: {
   form: UseFormReturn<PresetFormValues>
   register: UseFormRegister<PresetFormValues>
@@ -107,6 +111,7 @@ function PresetFormBody({
   tool: TargetTool
   draft: PresetInput | null
   isDuplicate: boolean
+  isEdit: boolean
 }) {
   const t = useT()
   return (
@@ -122,7 +127,13 @@ function PresetFormBody({
           applyTemplate(form, fill)
         }}
       />
-      <PresetFormFields form={form} register={register} errors={errors} tool={tool} />
+      <PresetFormFields
+        form={form}
+        register={register}
+        errors={errors}
+        tool={tool}
+        isEdit={isEdit}
+      />
     </div>
   )
 }
@@ -166,6 +177,7 @@ export function PresetForm({
         tool={watch('tool')}
         draft={draft}
         isDuplicate={isDuplicate}
+        isEdit={preset !== null}
       />
       <PresetFormActions submitting={submitting} onCancel={onCancel} />
     </form>
