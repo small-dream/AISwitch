@@ -37,15 +37,17 @@ describe('applyProviderTemplate', () => {
     expect(fill?.model).toBe(template?.variants.codex?.suggestModels[0])
   })
 
-  it('本地模板（Ollama）：两个工具通用、带 Base URL 且不内嵌 Key', () => {
+  it('本地模板（Ollama）只在 Codex 侧提供（Claude Code 没有 Anthropic 兼容端点）', () => {
     const template = findProviderTemplate('ollama')
-
-    expect(template?.local).toBe(true)
-    for (const tool of TOOLS) {
-      const fill = template ? applyProviderTemplate(template, tool) : null
-      expect(fill?.baseUrl).toContain('127.0.0.1')
-      expect(fill?.model.length).toBeGreaterThan(0)
+    if (!template) {
+      throw new Error('缺少 ollama 模板')
     }
+
+    expect(template.local).toBe(true)
+    expect(applyProviderTemplate(template, 'claude-code')).toBeNull()
+    const fill = applyProviderTemplate(template, 'codex')
+    expect(fill?.baseUrl).toContain('127.0.0.1')
+    expect(fill?.model.length).toBeGreaterThan(0)
   })
 
   it('未知模板 id 返回 undefined', () => {
@@ -89,6 +91,39 @@ describe('applyProviderTemplate · OpenCode 套餐（工具感知）', () => {
       }
       expect(claude).not.toBe(codex)
       expect(codex).toBe(`${claude}/v1`)
+    }
+  })
+})
+
+describe('PROVIDER_TEMPLATES 协议约束（工具感知，覆盖全部模板）', () => {
+  it('Claude Code 侧基址不带版本段：CLI 会再拼 /v1/messages，否则变成 /v1/v1/messages', () => {
+    for (const template of PROVIDER_TEMPLATES) {
+      const baseUrl = template.variants['claude-code']?.baseUrl
+      if (!baseUrl) {
+        continue
+      }
+      expect(baseUrl).not.toMatch(/\/v\d+$/)
+    }
+  })
+
+  it('Codex 侧基址不含 Anthropic 端点（Codex 只请求 /responses）', () => {
+    for (const template of PROVIDER_TEMPLATES) {
+      const baseUrl = template.variants.codex?.baseUrl
+      if (!baseUrl) {
+        continue
+      }
+      expect(baseUrl.toLowerCase()).not.toContain('/anthropic')
+    }
+  })
+
+  it('同一供应商两侧基址不同（地址是协议相关的，不存在「通用」地址）', () => {
+    for (const template of PROVIDER_TEMPLATES) {
+      const claude = template.variants['claude-code']?.baseUrl
+      const codex = template.variants.codex?.baseUrl
+      if (!claude || !codex) {
+        continue
+      }
+      expect(claude).not.toBe(codex)
     }
   })
 })

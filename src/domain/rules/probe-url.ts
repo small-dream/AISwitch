@@ -9,25 +9,38 @@ const OFFICIAL_BASES = {
   codex: 'https://api.openai.com/v1',
 } as const
 
+/** 形如 `/v1`、`/v3`、`/v4` 的版本段：OpenAI 风格的基址通常已经带了它 */
+const VERSION_SUFFIX = /\/v\d+$/
+
 function trimTrailingSlash(value: string): string {
   return value.endsWith('/') ? value.slice(0, -1) : value
 }
 
-/** OpenAI 风格 models 端点：约定 base 已含 /v1，未含则补齐 */
+function trimVersionSuffix(value: string): string {
+  return value.replace(VERSION_SUFFIX, '')
+}
+
+/** Claude（Anthropic 风格）：基址只能是协议根，`/v1/models` 由这里补齐 */
+function anthropicModelsUrl(base: string): string {
+  return `${trimVersionSuffix(base)}/v1/models`
+}
+
+/** OpenAI 风格 models 端点：基址已带版本段（/v1、/v3、/v4）就直接接 /models，否则补 /v1 */
 function openAiModelsUrl(base: string): string {
   const trimmed = trimTrailingSlash(base)
-  return trimmed.endsWith('/v1') ? `${trimmed}/models` : `${trimmed}/v1/models`
+  return VERSION_SUFFIX.test(trimmed) ? `${trimmed}/models` : `${trimmed}/v1/models`
 }
 
 /**
  * 探测 / 模型目录 URL（纯函数）：
- * Claude（Anthropic 风格）：GET {base}/v1/models
- * Codex（OpenAI 风格）：GET {base}/models 或 {base}/v1/models
+ * Claude（Anthropic 风格）：GET {base}/v1/models，base 自带 `/vN` 时先去掉，
+ * 否则会拼成 `/v1/v1/models`（CLI 发请求时同样会再拼一次 `/v1/messages`）。
+ * Codex（OpenAI 风格）：GET {base}/models 或 {base}/v1/models。
  */
 export function buildProbeUrl(target: ProbeTarget): string {
   const base = trimTrailingSlash(target.baseUrl ?? OFFICIAL_BASES[target.tool])
   if (target.tool === 'claude-code') {
-    return `${base}/v1/models`
+    return anthropicModelsUrl(base)
   }
   return openAiModelsUrl(base)
 }

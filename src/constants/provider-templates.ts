@@ -3,20 +3,24 @@ import type { TargetTool } from '@/domain/entities/preset'
 /**
  * 供应商模板库：仅预填品牌名 / Base URL / 模型名，永不内嵌 API Key（US-19）。
  *
- * **工具感知**：同一供应商在 Claude Code 与 Codex 下的 Base URL 与可用模型可能不同，
- * 因此预填值按工具声明（例：OpenCode Zen 的 Claude Code 地址以 `/zen` 结尾——
- * CLI 自动补 `/v1/messages`；Codex 地址以 `/zen/v1` 结尾——CLI 自动补 `/responses`）。
- * 未声明某工具的模板不会出现在该工具的表单中。
+ * **按工具声明变体（协议感知）**：Claude Code 只会向 `<base>/v1/messages` 发请求、
+ * Codex 只会向 `<base>/responses` 发请求，因此同一个供应商在两个工具下的 Base URL
+ * 必须不同：
+ * - Claude Code 侧只能是 **Anthropic 协议基址**（如 `/api/anthropic`、`/anthropic`、
+ *   `/api/v2/apps/claude-code-proxy`），**不得以 `/v1`、`/v3` 这类版本段结尾**，
+ *   否则 CLI 会拼成 `/v1/v1/messages`；
+ * - Codex 侧只能是 **OpenAI 协议基址**（通常以 `/v1`、`/v3`、`/v4` 结尾），
+ *   且绝不能是 `/api/anthropic` 这类 Anthropic 端点。
+ * 未声明某工具的模板不会出现在该工具的表单里——从机制上杜绝「把 A 工具的地址填进 B 工具」。
  *
  * **Codex 仅支持 responses 协议**：chat/completions 已被 Codex 官方移除
- * （openai/codex discussions/7782），因此 Codex 侧模型必须是供应商 `/responses`
- * 路由上的模型；只提供 `/chat/completions` 的模型无法用于 Codex。
+ * （openai/codex discussions/7782），第三方供应商是否支持 `/responses` 取决于其网关，
+ * 这里只保证协议与地址形态正确；模型可用性以供应商最新文档为准。
  *
  * **不收录官方端点**：官方 API / 官方订阅走内建「官方订阅」条目（清空托管键，
  * 鉴权与模型都交回 CLI），模板只需覆盖第三方与本地供应商，预填模型名亦多余。
  *
- * 模型名于 2026-09 依据 OpenCode 官方 models 接口与各厂商公开文档刷新，
- * 具体可用模型以供应商最新文档为准。
+ * 模型名于 2026-09 依据 OpenCode 官方 models 接口与各厂商公开文档刷新。
  */
 export interface ProviderTemplateVariant {
   baseUrl?: string
@@ -33,13 +37,6 @@ export interface ProviderTemplate {
   local?: boolean
   /** 各工具下的预填值；未声明的工具 = 该模板不适用 */
   variants: Partial<Record<TargetTool, ProviderTemplateVariant>>
-}
-
-/** 两个工具共用同一套预填值的模板 */
-function bothTools(
-  variant: ProviderTemplateVariant
-): Partial<Record<TargetTool, ProviderTemplateVariant>> {
-  return { 'claude-code': variant, codex: variant }
 }
 
 export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
@@ -102,61 +99,106 @@ export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
   {
     id: 'glm',
     label: '智谱 GLM',
-    variants: bothTools({
-      baseUrl: 'https://open.bigmodel.cn/api/anthropic',
-      suggestModels: ['glm-5.3', 'glm-5.2', 'glm-4.7', 'glm-4.6'],
-    }),
+    variants: {
+      /** 智谱的 Claude Code 专用端点；OpenAI 兼容端点走 /api/paas/v4 */
+      'claude-code': {
+        baseUrl: 'https://open.bigmodel.cn/api/anthropic',
+        suggestModels: ['glm-5.3', 'glm-5.2', 'glm-4.7', 'glm-4.6'],
+      },
+      codex: {
+        baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+        suggestModels: ['glm-5.3', 'glm-5.2', 'glm-4.7', 'glm-4.6'],
+      },
+    },
   },
   {
     id: 'deepseek',
     label: 'DeepSeek',
-    variants: bothTools({
-      baseUrl: 'https://api.deepseek.com/v1',
-      suggestModels: ['deepseek-v4-pro', 'deepseek-v4-flash', 'deepseek-chat', 'deepseek-reasoner'],
-    }),
+    variants: {
+      /** DeepSeek 官方为 Claude Code 提供 /anthropic 端点，不能复用 /v1（会拼成 /v1/v1/messages） */
+      'claude-code': {
+        baseUrl: 'https://api.deepseek.com/anthropic',
+        suggestModels: [
+          'deepseek-v4-pro',
+          'deepseek-v4-flash',
+          'deepseek-chat',
+          'deepseek-reasoner',
+        ],
+      },
+      codex: {
+        baseUrl: 'https://api.deepseek.com/v1',
+        suggestModels: [
+          'deepseek-v4-pro',
+          'deepseek-v4-flash',
+          'deepseek-chat',
+          'deepseek-reasoner',
+        ],
+      },
+    },
   },
   {
     id: 'kimi',
     label: 'Kimi（月之暗面）',
-    variants: bothTools({
-      baseUrl: 'https://api.moonshot.cn/v1',
-      suggestModels: ['kimi-k3', 'kimi-k2.7-code', 'kimi-k2-thinking', 'kimi-k2'],
-    }),
+    variants: {
+      'claude-code': {
+        baseUrl: 'https://api.moonshot.cn/anthropic',
+        suggestModels: ['kimi-k3', 'kimi-k2.7-code', 'kimi-k2-thinking', 'kimi-k2'],
+      },
+      codex: {
+        baseUrl: 'https://api.moonshot.cn/v1',
+        suggestModels: ['kimi-k3', 'kimi-k2.7-code', 'kimi-k2-thinking', 'kimi-k2'],
+      },
+    },
   },
   {
     id: 'qwen',
     label: '通义千问',
-    variants: bothTools({
-      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-      suggestModels: ['qwen3.8-max', 'qwen3.7-plus', 'qwen3.7-flash', 'qwen3-coder-next'],
-    }),
+    variants: {
+      'claude-code': {
+        baseUrl: 'https://dashscope.aliyuncs.com/api/v2/apps/claude-code-proxy',
+        suggestModels: ['qwen3.8-max', 'qwen3.7-plus', 'qwen3.7-flash', 'qwen3-coder-next'],
+      },
+      codex: {
+        baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        suggestModels: ['qwen3.8-max', 'qwen3.7-plus', 'qwen3.7-flash', 'qwen3-coder-next'],
+      },
+    },
   },
   {
+    /** 火山方舟只有 OpenAI 兼容端点，故只出现在 Codex 侧 */
     id: 'doubao',
     label: '豆包（火山方舟）',
-    variants: bothTools({
-      baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
-      /** 火山方舟以「接入点 ID」调用模型，模板仅给示例，请以控制台实际 ID 为准 */
-      suggestModels: ['doubao-1-5-pro-32k-250115', 'doubao-1-5-lite-32k-250115'],
-    }),
+    variants: {
+      codex: {
+        baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+        /** 火山方舟以「接入点 ID」调用模型，模板仅给示例，请以控制台实际 ID 为准 */
+        suggestModels: ['doubao-1-5-pro-32k-250115', 'doubao-1-5-lite-32k-250115'],
+      },
+    },
   },
   {
+    /** Ollama 没有 Anthropic 兼容端点，只出现在 Codex 侧 */
     id: 'ollama',
     label: 'Ollama（本地）',
     local: true,
-    variants: bothTools({
-      baseUrl: 'http://127.0.0.1:11434',
-      suggestModels: ['qwen3:14b', 'deepseek-r1:14b', 'llama3.3:70b'],
-    }),
+    variants: {
+      codex: {
+        baseUrl: 'http://127.0.0.1:11434/v1',
+        suggestModels: ['qwen3:14b', 'deepseek-r1:14b', 'llama3.3:70b'],
+      },
+    },
   },
   {
+    /** LM Studio 同样只有 OpenAI 兼容端点，只出现在 Codex 侧 */
     id: 'lm-studio',
     label: 'LM Studio（本地）',
     local: true,
-    variants: bothTools({
-      baseUrl: 'http://127.0.0.1:1234/v1',
-      suggestModels: ['llama-4-maverick-instruct', 'qwen3-32b-instruct', 'deepseek-r1-70b'],
-    }),
+    variants: {
+      codex: {
+        baseUrl: 'http://127.0.0.1:1234/v1',
+        suggestModels: ['llama-4-maverick-instruct', 'qwen3-32b-instruct', 'deepseek-r1-70b'],
+      },
+    },
   },
 ]
 
