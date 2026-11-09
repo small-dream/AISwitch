@@ -152,6 +152,8 @@ describe('ProjectConfigService.apply 失败回滚', () => {
     expect(error).toBeInstanceOf(AppError)
     expect((error as AppError).code).toBe('E_FS_WRITE')
     expect((error as AppError).context.rolledBack).toBe(true)
+    // 回滚结果必须出现在消息里：用户只知道失败、不知道文件现在是什么状态
+    expect((error as AppError).message).toContain('已自动回滚')
     expect(fs.files().get('repos/demo/.codex/config.toml')).toBe('model = "old"\n')
     expect(fs.files().has('repos/demo/.codex/auth.json')).toBe(false)
   })

@@ -148,7 +148,12 @@ export class ProjectConfigService {
     } catch (error) {
       const rolledBack = await this.tryRestore(fs, snapshots)
       const original = toAppError(error, 'E_CONFIG_WRITE', '项目配置写入失败')
-      throw new AppError(original.code, original.message, { ...original.context, rolledBack })
+      // 与全局切换链路一致：把回滚结果写进消息，否则用户只知道失败、不知道文件现在是什么状态
+      const suffix = rolledBack ? '；已自动回滚' : '；自动回滚也失败，请按备份手动恢复项目配置'
+      throw new AppError(original.code, `${original.message}${suffix}`, {
+        ...original.context,
+        rolledBack,
+      })
     }
   }
 

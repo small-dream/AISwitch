@@ -24,12 +24,14 @@ function ProjectStatus({ error }: { error: unknown }) {
 export function ProjectConfigPanel() {
   const t = useT()
   const { data: presets = [] } = usePresets()
-  const { data: claudeRecords = [] } = useProjectConfigRecords('claude-code')
-  const { data: codexRecords = [] } = useProjectConfigRecords('codex')
+  const claudeRecords = useProjectConfigRecords('claude-code')
+  const codexRecords = useProjectConfigRecords('codex')
   const [projectPath, setProjectPath] = useState('')
   const [error, setError] = useState<unknown>(null)
   const remove = useRemoveProjectConfig()
-  const records = [...claudeRecords, ...codexRecords]
+  const records = [...(claudeRecords.data ?? []), ...(codexRecords.data ?? [])]
+  // 记录文件损坏时列表会「静默变空」，把查询错误一并展示，用户才知道为什么什么都看不到
+  const recordsError = claudeRecords.error ?? codexRecords.error
   const presetsFor = (tool: TargetTool) => presets.filter((preset) => preset.tool === tool)
   const handleApplied = (): void => {
     setProjectPath('')
@@ -47,7 +49,7 @@ export function ProjectConfigPanel() {
       </div>
       <p className="mb-3 text-xs text-app-muted">{t('project.priority')}</p>
       <ProjectDirectoryPicker value={projectPath} onChange={setProjectPath} />
-      <ProjectStatus error={error} />
+      <ProjectStatus error={error ?? recordsError} />
       {projectPath ? (
         <div className="mt-3 space-y-2">
           {TARGET_TOOLS.map((tool) => (
