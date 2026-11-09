@@ -20,3 +20,23 @@ export function projectConfigPath(projectPath: string, fileName: string): string
   const base = normalizeProjectPath(projectPath)
   return base ? `${base}/${fileName}` : fileName
 }
+
+/**
+ * 记录中的 HOME 相对目录 → 待授权的绝对目录。
+ * 记录文件在磁盘上可被外部改写，启动重授权前必须再过一遍规范化：
+ * 绝对路径、`..` 逃逸与空路径一律返回 null（不授权），避免一次篡改把整个磁盘
+ * 加进本次会话的 fs scope。
+ */
+export function absoluteProjectDir(home: string, relative: string): string | null {
+  let normalized: string
+  try {
+    normalized = normalizeProjectPath(relative)
+  } catch {
+    return null
+  }
+  if (!normalized) {
+    return null
+  }
+  const base = home.replaceAll('\\', '/').replace(/\/+$/, '')
+  return `${base}/${normalized}`
+}

@@ -59,4 +59,19 @@ describe('pickProjectDirectory', () => {
     await expect(pickProjectDirectory()).resolves.toBeNull()
     expect(mockedInvoke).not.toHaveBeenCalled()
   })
+
+  it('选择主目录之外的路径：先校验失败，不发起任何授权', async () => {
+    mockedOpen.mockResolvedValue('/tmp/outside')
+
+    await expect(pickProjectDirectory()).rejects.toMatchObject({ code: 'E_VALIDATION_FAILED' })
+    expect(mockedInvoke).not.toHaveBeenCalled()
+  })
+
+  it('对话框不再自带递归授权（递归范围只由校验通过后的命令授予）', async () => {
+    await pickProjectDirectory()
+
+    const options = mockedOpen.mock.calls[0]?.[0]
+    expect(options).toMatchObject({ directory: true, multiple: false })
+    expect(options).not.toHaveProperty('recursive')
+  })
 })

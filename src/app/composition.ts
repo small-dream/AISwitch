@@ -15,6 +15,7 @@ import {
 } from '@/adapters/projects/project-config-ops'
 import { restoreFileOps } from '@/adapters/restore/restore-file-ops'
 import { registerTarget } from '@/adapters/target-registry'
+import { absoluteProjectDir } from '@/domain/rules/project-path'
 import { detectVscodeExtensions } from '@/adapters/vscode/vscode-detector'
 import { createTauriUpdater, isTauriRuntime } from '@/adapters/updater/tauri-updater'
 import { grantProjectDirs } from '@/adapters/system/fs-scope'
@@ -58,11 +59,18 @@ export function bootstrapApp(): void {
  * 失败仅降级告警，不阻断启动。
  */
 async function regrantRecordedProjectDirs(): Promise<void> {
-  const home = (await homeDir()).replaceAll('\\', '/').replace(/\/+$/, '')
+  const home = await homeDir()
   const records = await projectConfigRepository.list()
-  const dirs = [...new Set(records.map((record) => `${home}/${record.projectPath}`))]
-  if (dirs.length > 0) {
-    await grantProjectDirs(dirs)
+  const dirs = new Set<string>()
+  for (const record of records) {
+    // 记录文件可被外部改写：重新规范化，越界/非法记录一律跳过而不是授权
+    const dir = absoluteProjectDir(home, record.projectPath)
+    if (dir) {
+      dirs.add(dir)
+    }
+  }
+  if (dirs.size > 0) {
+    await grantProjectDirs([...dirs])
   }
 }
 

@@ -14,33 +14,50 @@ export interface PickedProjectDirectory {
 export function relativeToHome(path: string, home: string): string {
   const normalizedPath = path.replaceAll('\\', '/').replace(/\/+$/, '')
   const normalizedHome = home.replaceAll('\\', '/').replace(/\/+$/, '')
-  if (normalizedPath === normalizedHome) {
+  if (samePath(normalizedPath, normalizedHome)) {
     throw new AppError('E_VALIDATION_FAILED', '请选择一个具体的项目目录，而不是主目录', { path })
   }
   const prefix = `${normalizedHome}/`
-  if (!normalizedPath.startsWith(prefix)) {
+  if (!hasPrefix(normalizedPath, prefix)) {
     throw new AppError('E_VALIDATION_FAILED', '项目目录目前必须位于用户主目录下', { path })
   }
   return normalizedPath.slice(prefix.length)
 }
 
+/** Windows 路径大小写不敏感：盘符/用户名大小写与 homeDir() 不一致时不能误判为「不在主目录下」 */
+function isWindowsPath(value: string): boolean {
+  return /^[A-Za-z]:\//.test(value)
+}
+
+function samePath(left: string, right: string): boolean {
+  if (isWindowsPath(left) || isWindowsPath(right)) {
+    return left.toLowerCase() === right.toLowerCase()
+  }
+  return left === right
+}
+
+function hasPrefix(path: string, prefix: string): boolean {
+  if (isWindowsPath(path)) {
+    return path.toLowerCase().startsWith(prefix.toLowerCase())
+  }
+  return path.startsWith(prefix)
+}
+
 export async function pickProjectDirectory(): Promise<PickedProjectDirectory | null> {
-  // recursive=true 会把所选目录及其配置子目录加入 Tauri fs scope；否则
-  // `.claude/settings.json` 这类嵌套写入会被 allow-exists / allow-rename 拒绝。
+  // 不开 recursive：授权必须发生在「主目录内」校验通过之后，否则被拒绝的选择
+  // 也会凭对话框自身的 scope 注入留下一个会话级目录范围。
   const selected = await open({
     directory: true,
     multiple: false,
-    recursive: true,
     title: '选择项目目录',
   })
   if (typeof selected !== 'string') {
     return null
   }
-  // 显式授权兜底：dialog 的 scope 注入不持久，授权失败直接视为选择失败，
-  // 否则后续写入才会失败且更难诊断。
-  await grantProjectDirs([selected])
   const home = await homeDir()
+  // 先校验再显式授权（递归范围由 allow_project_dirs 统一授予，失败即视为选择失败）
   const relativePath = relativeToHome(selected, home)
+  await grantProjectDirs([selected])
   const parts = relativePath.split('/').filter(Boolean)
   return { absolutePath: selected, relativePath, name: parts[parts.length - 1] ?? relativePath }
 }
