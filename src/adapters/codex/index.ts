@@ -190,6 +190,14 @@ async function clearManagedCodex(fs: FileSystemPort, backups: BackupManager): Pr
     { path: PATHS.codexConfig, backupName: configBackup },
     { path: PATHS.codexAuth, backupName: authBackup },
   ]
+  // 只把真正存在（因而真的被改写或删除）的文件记为「应用写过」，避免给未处理的文件留下假证据
+  const written: string[] = []
+  if (config) {
+    written.push(PATHS.codexConfig)
+  }
+  if (auth !== null) {
+    written.push(PATHS.codexAuth)
+  }
   try {
     if (config) {
       await writeCodexConfig(fs, stripManagedCodexConfig(config, codexCatalogAbsolutePath(home)))
@@ -206,7 +214,7 @@ async function clearManagedCodex(fs: FileSystemPort, backups: BackupManager): Pr
     tool: 'codex',
     backupPath: configBackup ?? undefined,
     appliedAt: new Date().toISOString(),
-    writtenFiles: [PATHS.codexConfig, PATHS.codexAuth],
+    writtenFiles: written,
   }
 }
 
