@@ -49,3 +49,27 @@ describe('nextPresetId', () => {
     expect(nextPresetId(presets, 'claude-code', activeStatus('glm-4.8'))).toBe('a')
   })
 })
+
+describe('nextPresetId · 同模型同供应商的多个预设', () => {
+  function sameModelPresets(): Preset[] {
+    return [
+      makePreset({ id: 'a', model: 'glm-4.6', apiKey: 'k1' }),
+      makePreset({ id: 'b', model: 'glm-4.6', apiKey: 'k2' }),
+      makePreset({ id: 'c', model: 'glm-4.6', apiKey: 'k3' }),
+    ]
+  }
+
+  it('按上次切换项继续循环，不会永远停在第二项', () => {
+    const status = activeStatus('glm-4.6')
+
+    expect(nextPresetId(sameModelPresets(), 'claude-code', status)).toBe('b')
+    expect(nextPresetId(sameModelPresets(), 'claude-code', status, 'b')).toBe('c')
+    expect(nextPresetId(sameModelPresets(), 'claude-code', status, 'c')).toBe('a')
+  })
+
+  it('上次切换项已不存在时回落到探测状态', () => {
+    expect(nextPresetId(sameModelPresets(), 'claude-code', activeStatus('glm-4.6'), 'gone')).toBe(
+      'b'
+    )
+  })
+})

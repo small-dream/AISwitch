@@ -1,6 +1,6 @@
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { useQueryClient, type QueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { tauriGlobalShortcuts } from '@/adapters/system/global-shortcuts'
 import { switchService } from '@/app/composition'
@@ -19,12 +19,17 @@ async function showMainWindow(): Promise<void> {
   await window.setFocus()
 }
 
-async function handleNextPreset(queryClient: QueryClient): Promise<void> {
+/** 上次经快捷键切到的预设：同模型同供应商的多个预设会同时判为生效，靠它继续往后循环 */
+interface LastAppliedRef {
+  current: string | null
+}
+
+async function handleNextPreset(queryClient: QueryClient, last: LastAppliedRef): Promise<void> {
   const tool = useUIStore.getState().activeTool
   const presets = queryClient.getQueryData<Preset[]>(QUERY_KEYS.presets) ?? []
   const statuses = queryClient.getQueryData<ToolStatus[]>(QUERY_KEYS.toolStatus) ?? []
   const status = statuses.find((item) => item.tool === tool)
-  const nextId = nextPresetId(presets, tool, status)
+  const nextId = nextPresetId(presets, tool, status, last.current)
   if (!nextId) {
     toastError(t('shortcut.noPresetToSwitch'))
     return
@@ -32,6 +37,7 @@ async function handleNextPreset(queryClient: QueryClient): Promise<void> {
   const preset = presets.find((item) => item.id === nextId)
   try {
     await switchService.switch(tool, nextId)
+    last.current = nextId
     toastSuccess(t('shortcut.switchedTo', { name: preset?.name ?? '' }))
     void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.toolStatus })
     void queryClient.invalidateQueries({ queryKey: QUERY_KEYS.backups })
@@ -41,13 +47,13 @@ async function handleNextPreset(queryClient: QueryClient): Promise<void> {
 }
 
 /** 注册失败不再静默：US-20 全靠这两条快捷键，静默会让「按了没反应」无从排查 */
-async function registerShortcuts(queryClient: QueryClient): Promise<void> {
+async function registerShortcuts(queryClient: QueryClient, last: LastAppliedRef): Promise<void> {
   try {
     await tauriGlobalShortcuts.register(SHORTCUTS.showWindow, () => {
       void showMainWindow().catch(() => undefined)
     })
     await tauriGlobalShortcuts.register(SHORTCUTS.nextPreset, () => {
-      void handleNextPreset(queryClient)
+      void handleNextPreset(queryClient, last)
     })
   } catch (error) {
     toastError(t('shortcut.registerFailed', { detail: errorMessage(error) }))
@@ -57,9 +63,10 @@ async function registerShortcuts(queryClient: QueryClient): Promise<void> {
 /** 全局快捷键（US-20）：呼出主窗口 + 循环切换下一预设；端口内部已处理浏览器预览与顺序问题 */
 export function useGlobalShortcuts(): void {
   const queryClient = useQueryClient()
+  const lastApplied = useRef<string | null>(null)
 
   useEffect(() => {
-    void registerShortcuts(queryClient)
+    void registerShortcuts(queryClient, lastApplied)
     return () => {
       void tauriGlobalShortcuts.unregister(SHORTCUTS.showWindow).catch(() => undefined)
       void tauriGlobalShortcuts.unregister(SHORTCUTS.nextPreset).catch(() => undefined)
