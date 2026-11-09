@@ -134,7 +134,7 @@ flowchart TD
 | `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl`       | 第三方时写入；切回官方时移除该块                                                                                                                                                       |
 | `config.toml` | `[model_providers.jake_current].name`                      | `preset.providerName`  | 第三方时必写；Codex 要求块内 `name` 非空，缺失将导致整个 config.toml 加载失败、CLI/插件退回安装引导                                                                                    |
 | `config.toml` | `[model_providers.jake_current].wire_api`                  | 固定 `"responses"`     | 第三方时必写；**Codex 已彻底移除 `chat/completions` 协议**（openai/codex discussions/7782：2025-12 弃用，2026-02 起硬报错），写入 `chat` 会使 CLI 每次提交消息报 invalid configuration |
-| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时写入（DeepSeek 官方脚本模式）；apiKey 为空写空串                                                                                                                               |
+| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时写入（DeepSeek 官方脚本模式）；apiKey 为空时**删除该键**（不写空串，与 auth.json 的删除语义一致）                                                                              |
 | `config.toml` | 顶层 `model_catalog_json`                                  | —                      | 预设携带元数据 → 指向 `~/.codex/models.json`；目录无当前模型条目 → 移除该键回落内置目录；clearManaged → 仅在指向托管 `~/.codex/models.json` 时移除（用户自维护指向不动）；其余保持现状 |
 | `models.json` | `models[]` 条目                                            | `preset.modelMetadata` | 切换时重写为**当前预设的条目集**——整份厂商文件粘贴时保留全部同族模型（选单只显示当前供应商），单条粘贴仅该条；切回其他预设时由其自带元数据重建                                         |
 | `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`        | 有 Key 时写入，无 Key 时**删除该键**（与块内 token 双通道兼容）                                                                                                                        |
@@ -167,7 +167,7 @@ flowchart TD
 
 ### 5.4 备份与回滚策略
 
-1. 每次写入前：将原文件复制至 `~/.aiswitch/backups/<tool>/<yyyyMMdd-HHmmss>.<json|toml>`；
+1. 每次写入前：将原文件复制至 `~/.aiswitch/backups/<tool>/<yyyyMMdd-HHmmss>--<原文件名>`（`--` 之后保留原文件名，恢复时据此精确匹配目标文件）；**用户手动恢复历史备份前，先为当前文件留一份快照**，因此「恢复」本身可撤销；
 2. 每个工具**保留最近 20 份**，超出滚动清理；
 3. 写入采用「临时文件 + 原子替换」，任何一步失败不得损坏原配置；
 4. 写后回读校验（verify），失败自动回滚；
@@ -211,9 +211,10 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
 - **基线捕获**：每个工具**首次切换写入前**，将受管文件的「安装前状态」记录到 `~/.aiswitch/baseline/`（manifest + 内容副本）；文件当时不存在则记 `absent`，已有历史备份（升级前旧切换）则记 `degraded`。基线独立于 backups 目录、不受滚动清理影响，一经捕获不再变化，还原后保留。**基线副本经原子写落盘**（与切换写入同等原子性），杜绝半截副本被误还原为「安装前内容」。
 - **还原策略（逐文件判定，预览如实展示）**：
   1. `captured` → 还原基线副本（精确）；
-  2. `absent` → 删除应用创建的文件；目录仅在「应用创建 + 现已为空」时移除（绝不误删用户文件如 `~/.claude/CLAUDE.md`）；
+  2. `absent` → 删除应用创建的文件；但**仅当基线记录带 `written` 证据**（该文件确由应用成功写入过）才删除——只点过「官方订阅」而一个文件都没写、或 CLI 自己后来创建的凭据文件（如 `codex login` 写入的 `auth.json`）必须保留；目录仅在「应用创建 + 现已为空」时移除（绝不误删用户文件如 `~/.claude/CLAUDE.md`）；
   3. `degraded` / 无基线（老用户）且存在备份 → 还原**最早**一份备份，标注「近似还原」（滚动 20 份后最早备份可能已含应用写入内容）；
-  4. 无基线且无备份 → **剥离托管键**（merge 的逆操作）：只删 AISwitch 注入的键，用户自有配置保留；`models.json` 无法键级剥离时保守跳过。
+  4. 有基线证据但备份已被清理 → **剥离托管键**（merge 的逆操作）：只删 AISwitch 注入的键，用户自有配置保留；`models.json` 无法键级剥离时保守跳过；
+  5. **既无基线也无备份（没有任何「应用写过」的证据）→ 跳过**：此时分不清文件是应用写的还是用户自己维护的，一律不动。
 - **交互**：顶栏入口 → 三步弹窗（预览逐文件动作 → 输入「还原」二次确认 → 逐文件成功/失败结果）；不可逆操作，确认强度高于两段式点击。预览如实标注「精确还原」与「近似还原」，并明示是否检测到安装前基线；**全部跳过（无可还原配置）时预览显示空态并禁用确认**，防空操作；结果列表中跳过项以中性状态展示原因，成功/失败以对勾/叉号区分。
 - **数据边界**：`~/.aiswitch`（预设、密钥、备份、基线）**完全不动**，弹窗中明示保留。
 - **安全**：基线副本与备份同级风险（含明文 Key），0600/0700 强制收紧；逐文件容错，单文件失败不中断且如实上报；还原重建目录时**仅对新创建目录收紧权限（0700），用户已有目录权限不被改动**；计划与执行之间的竞态（文件已被用户删除）按已达成目标跳过，不报错、不误删。
@@ -228,15 +229,16 @@ Claude Code 与 Codex 均支持 VS Code 插件形态使用（终端可能没有 
   - Claude Code 侧：`https://opencode.ai/zen`（CLI 自动补 `/v1/messages`）、`https://opencode.ai/zen/go`；可用模型为该网关 `/messages` 路由的模型（Zen → Claude 系列；Go → MiniMax / Qwen 系列），并预填 `smallFastModel`；
   - Codex 侧：`https://opencode.ai/zen/v1`、`https://opencode.ai/zen/go/v1`（CLI 自动补 `/responses`）；因 Codex **只支持 responses 协议**，两侧只预填该网关在 `/responses` 上确证可用的模型（Zen → GPT/Codex 系列，另含 DeepSeek；Go → DeepSeek 全系、Grok 4.7 / 4.6）；
   - **网关按「模型 × 协议」作答（2026-09-26 实测 `POST /zen/go/v1/responses`）**：DeepSeek 全系与 Grok 4.7 / 4.6 返回 200，**可在 Codex 中使用**；GLM / Kimi / MiniMax / Qwen / MiMo / LongCat / Hy 返回 `400 ModelProtocolUnsupported`，这些模型只能在 Claude Code 侧（`/messages`）使用；GPT Luna 系列返回 `403 unsupported_country_region_territory`（部分地区不可用），故不预填；
+  - **协议决定地址形态（2026-11）**：Claude Code 只会请求 `<base>/v1/messages`、Codex 只会请求 `<base>/responses`，因此同一供应商两侧的 Base URL 必须不同——Claude 侧只能用 Anthropic 协议端点（GLM `/api/anthropic`、DeepSeek `/anthropic`、Kimi `/anthropic`、通义 `/api/v2/apps/claude-code-proxy`），**不得以 `/v1`、`/v3` 结尾**（否则拼成 `/v1/v1/messages`）；Codex 侧只能用 OpenAI 兼容端点（`/v1`、`/v3`、`/v4`），且绝不能是 `/api/anthropic` 这类 Anthropic 端点。单测对**全部模板**做三件事：Claude 侧不带版本段、Codex 侧不含 `/anthropic`、同一模板两侧地址不相同；
 - **OpenCode 套餐说明**：Zen 为按量计费网关，Go 为 $10/月订阅；两者使用同一把 `opencode.ai/auth` API Key，官方文档将 Claude Code 与 Codex 列为已验证客户端（原生会话头已被识别，无需自定义请求头）；
-- **本地模型**：Ollama / LM Studio 无 API Key——`preset.apiKey` 改为可选；空 Key 时写入链路删除鉴权键（Claude `ANTHROPIC_AUTH_TOKEN`、Codex `auth.json OPENAI_API_KEY`），Codex provider 块 token 写空串；连通性探测无 Key 时不携带鉴权头；预设列表行显示「本地模型 · 无需 Key」标记；
+- **本地模型**：Ollama / LM Studio 无 API Key——`preset.apiKey` 改为可选；空 Key 时写入链路删除鉴权键（Claude `ANTHROPIC_AUTH_TOKEN`、Codex `auth.json OPENAI_API_KEY`），Codex provider 块 token 同样删除（不写空串）；连通性探测无 Key 时不携带鉴权头；预设列表行显示「本地模型 · 无需 Key」标记；**两者只有 OpenAI 兼容端点，因此模板只出现在 Codex 侧表单**；
 - **兼容**：预设库结构向后兼容（`apiKey` 可缺失），旧数据不受影响。
 
 ### 5.10 全局快捷键（US-20）
 
 - **默认绑定**：`CmdOrCtrl+Shift+A` 呼出并聚焦主窗口（隐藏至托盘后仍可唤起）；`CmdOrCtrl+Shift+S` 循环切换当前工具的下一个预设（需 ≥2 个预设，否则提示不动作）；
 - **实现**：Tauri `global-shortcut` 插件，业务逻辑全在前端（快捷键字符串集中于常量，便于后续加自定义绑定设置页）；
-- **权限**：capability 增加 `global-shortcut:default`、`core:window:allow-show`、`core:window:allow-set-focus`。
+- **权限**：capability 需显式授予 `global-shortcut:allow-register` / `allow-unregister`（插件的 `default` 权限集是**空集**——官方认为快捷键「本身就有风险」，因此 `global-shortcut:default` 不授予任何能力）、`core:window:allow-show`、`core:window:allow-set-focus`；注册失败必须给用户可见提示，不得静默吞掉。
 
 ### 5.11 应用内自动更新（US-24）
 

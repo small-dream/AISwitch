@@ -2,6 +2,32 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Fixed
+
+- Global shortcuts (US-20) never worked: `global-shortcut:default` expands to an empty permission set, so both `register` calls were rejected by the ACL and each rejection was swallowed by a bare `.catch`. The capability now grants `allow-register` / `allow-unregister`, registration failures surface as a toast, and the plugin calls live in `adapters/system/global-shortcuts.ts` behind a queue so StrictMode's mount/unmount/mount cannot leave a shortcut unregistered.
+- One-click restore no longer deletes or rewrites files AISwitch did not write. The baseline is captured before the first write, so `absent` alone proves nothing: entries now carry a `written` flag set from `ApplyResult.writtenFiles` after a real apply, and only those files may be deleted. A tool with neither a baseline nor a backup is skipped instead of having its managed keys stripped. The `strip-managed-keys` fallback still applies when a degraded baseline's backups were pruned.
+- Restoring a backup no longer destroys the current config irreversibly: the current file is snapshotted first (content read before snapshotting, since rotation may otherwise prune the very backup being restored), and the dialog asks for confirmation.
+- Provider templates are now protocol-correct per tool. `bothTools` had handed Codex GLM's `/api/anthropic` endpoint (Codex only requests `/responses`) and Claude Code OpenAI-style bases such as `https://api.deepseek.com/v1`, which the CLI turned into `/v1/v1/messages`. Each vendor now declares its Anthropic-endpoint on the Claude side and its OpenAI-compatible endpoint on the Codex side; Ollama, LM Studio and Doubao appear on the Codex side only. Guards cover every template, not just the OpenCode ones.
+- `buildProbeUrl` normalizes the version segment for both protocols: a Claude base ending in `/v1` no longer becomes `/v1/v1/models`, and a Codex base ending in `/v3` or `/v4` gets `/models` instead of `/v1/models`.
+- Applying a provider template no longer clears a stored API key, and it now clears `modelMetadataJson` (whose slug is bound to the model name, so a stale catalog either blocked the save or was written to `~/.codex/models.json`). The Codex metadata section opens itself and shows a hint in its summary when validation fails, instead of leaving Save looking unresponsive.
+- "Currently active" is decided from the new `ToolStatus.activeProviderUrl` instead of the display name. A user-owned Codex provider block exposes an arbitrary `name`, which made a configured relay look official: the real preset never got the badge while the built-in subscription row wrongly did.
+- Failed switches now invalidate tool status, backups and subscription auth, so a failed rollback no longer leaves the previous preset shown as current. The subscription login badge refetches when the window regains focus (the popover tells the user to log in in a terminal). Update downloads are idempotent per version, install verifies the download happened, and a failed background re-check hides the install button instead of leaving one that can only fail.
+- Baseline capture and `project-configs.json` writes are serialized per process: concurrent first switches for Claude and Codex, or applying both project configs at once, used to read-modify-write the same file and drop the other entry.
+- `allow_project_dirs` now canonicalizes its input and requires an absolute, existing directory that is a strict descendant of the canonical home; the startup regrant re-runs `normalizeProjectPath` so a tampered record cannot widen the fs scope. The picker validates before granting and the dialog no longer carries `recursive: true`.
+- `relativeToHome` compares case-insensitively on Windows, where the dialog and `homeDir()` can disagree on drive-letter or user-name casing.
+- Backup listing only accepts names that parse (`latestBackupName` / `earliestBackupName`), so a stray `foreign--config.toml` can no longer be picked and then fail with "invalid backup name".
+- The shortcut cycle keeps advancing when several presets share model and provider (e.g. key rotation): the last applied preset is remembered instead of recomputing from the same first match.
+- Blank OAuth token values are no longer treated as signed in, and an empty `oauthAccount` object is no longer a login signal.
+- English UI no longer shows Chinese for connectivity results, project-configuration errors, provider placeholders (`官方 API` / `未设置` / `自定义供应商`) or the remaining adapter messages; project record failures are shown instead of an empty list, and a failed project write reports whether the rollback succeeded.
+- Smaller UI fixes: the project directory picker no longer shows a stale directory name after picking from the records list, an import that resolves late no longer replaces an open "new preset" form, the scope tabs are reachable with arrow keys, the target tool of an existing preset is locked, and padded base URLs are trimmed before probing.
+- The error-boundary reload button uses theme tokens instead of a hard-coded indigo.
+
+### Changed
+
+- Repository text files are stored and checked out with LF (`.gitattributes`), so `pnpm format:check` passes on Windows checkouts as well.
+
 ## [0.1.22] - 2026-10-15
 
 ### Fixed
