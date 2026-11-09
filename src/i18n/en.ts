@@ -187,6 +187,7 @@ export const en: Record<TranslationKey, string> = {
   'presetForm.smallFastPlaceholder': 'e.g. glm-4.6-air',
   'presetForm.metadataSectionTitle':
     'Advanced: model catalog entry (optional; only needed for Codex third-party models)',
+  'presetForm.metadataInvalid': 'Invalid metadata',
   'presetForm.metadataHint':
     'Paste a single entry from the provider, or a whole models.json file (stored as-is; after switching, all models of the family appear in the Codex picker). Codex uses it for context window and other model metadata; leave empty to fall back to the built-in catalog. It must contain an entry matching the model name (a missing slug is filled in automatically on save).',
   'presetForm.metadataLabel': 'Model metadata JSON',

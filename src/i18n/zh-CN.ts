@@ -174,6 +174,7 @@ export const zhCN = {
   'presetForm.smallFast': '小模型 ANTHROPIC_SMALL_FAST_MODEL（可选）',
   'presetForm.smallFastPlaceholder': '如：glm-4.6-air',
   'presetForm.metadataSectionTitle': '高级：模型目录条目（可选，仅 Codex 第三方模型需要）',
+  'presetForm.metadataInvalid': '元数据有误',
   'presetForm.metadataHint':
     '粘贴厂商提供的单条条目，或整份 models.json 文件（原样保存，切换后同族模型都出现在 Codex 选单）。Codex 依靠它获取上下文窗口等模型元数据；留空则回落内置目录。需包含与模型名一致的条目（slug 缺失时保存自动补齐）。',
   'presetForm.metadataLabel': '模型元数据 JSON',

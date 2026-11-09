@@ -1,6 +1,7 @@
 import type { FieldErrors, UseFormRegister, UseFormReturn } from 'react-hook-form'
 
 import type { Preset, PresetInput, TargetTool } from '@/domain/entities/preset'
+import type { TemplateFill } from '@/domain/rules/apply-provider-template'
 import { useT } from '@/i18n/index'
 import { Button } from '@/ui/components/Button'
 import { FormField } from '@/ui/components/FormField'
@@ -76,6 +77,21 @@ function PresetFormActions({
   )
 }
 
+/**
+ * 模板填充：只覆盖模板真正提供的字段。
+ * - 不清空 API Key：模板从不携带 Key，已有 Key 是用户自己填的，静默清空会让保存后的
+ *   预设丢失鉴权（编辑既有预设时尤其致命）；
+ * - 清空模型目录元数据：元数据的 slug 与模型名强绑定，换模板必然换模型，
+ *   残留的旧目录要么卡住提交（slug 不匹配），要么把上一家的目录写进 models.json。
+ */
+function applyTemplate(form: UseFormReturn<PresetFormValues>, fill: TemplateFill): void {
+  form.setValue('providerName', fill.providerName, { shouldDirty: true })
+  form.setValue('baseUrl', fill.baseUrl ?? '', { shouldDirty: true })
+  form.setValue('model', fill.model, { shouldDirty: true })
+  form.setValue('smallFastModel', fill.smallFastModel ?? '', { shouldDirty: true })
+  form.setValue('modelMetadataJson', '', { shouldDirty: true })
+}
+
 /** 字段区：模板填充 + 密钥告知 + 表单字段（超高时弹窗内滚动） */
 function PresetFormBody({
   form,
@@ -103,11 +119,7 @@ function PresetFormBody({
       <ProviderTemplatePicker
         tool={tool}
         onApply={(fill) => {
-          form.setValue('providerName', fill.providerName, { shouldDirty: true })
-          form.setValue('baseUrl', fill.baseUrl ?? '', { shouldDirty: true })
-          form.setValue('model', fill.model, { shouldDirty: true })
-          form.setValue('smallFastModel', fill.smallFastModel ?? '', { shouldDirty: true })
-          form.setValue('apiKey', '')
+          applyTemplate(form, fill)
         }}
       />
       <PresetFormFields form={form} register={register} errors={errors} tool={tool} />
