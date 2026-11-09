@@ -23,6 +23,8 @@ export const en: Record<TranslationKey, string> = {
   'header.toggleLang': 'Switch language',
   'shortcut.noPresetToSwitch': 'No other preset is available to switch to',
   'shortcut.switchedTo': 'Switched to {name}',
+  'shortcut.registerFailed':
+    'Failed to register the global shortcut ({detail}); another app may already use it',
   'template.pickerLabel': 'Fill from provider template',
   'template.placeholder': 'Choose a template…',
   'template.local': 'Local model',

@@ -20,6 +20,7 @@ export const zhCN = {
   'header.toggleLang': '切换语言',
   'shortcut.noPresetToSwitch': '没有可切换的其他预设',
   'shortcut.switchedTo': '已切换到 {name}',
+  'shortcut.registerFailed': '全局快捷键注册失败（{detail}），可能已被其他程序占用',
   'template.pickerLabel': '从供应商模板填充',
   'template.placeholder': '选择模板…',
   'template.local': '本地模型',

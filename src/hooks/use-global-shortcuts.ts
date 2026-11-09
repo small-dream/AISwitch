@@ -1,8 +1,8 @@
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { register, unregister } from '@tauri-apps/plugin-global-shortcut'
 import { useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 
+import { tauriGlobalShortcuts } from '@/adapters/system/global-shortcuts'
 import { switchService } from '@/app/composition'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import { SHORTCUTS } from '@/constants/shortcut'
@@ -40,21 +40,29 @@ async function handleNextPreset(queryClient: QueryClient): Promise<void> {
   }
 }
 
-/** 全局快捷键（US-20）：呼出主窗口 + 循环切换下一预设；浏览器开发模式下注册失败静默忽略 */
+/** 注册失败不再静默：US-20 全靠这两条快捷键，静默会让「按了没反应」无从排查 */
+async function registerShortcuts(queryClient: QueryClient): Promise<void> {
+  try {
+    await tauriGlobalShortcuts.register(SHORTCUTS.showWindow, () => {
+      void showMainWindow().catch(() => undefined)
+    })
+    await tauriGlobalShortcuts.register(SHORTCUTS.nextPreset, () => {
+      void handleNextPreset(queryClient)
+    })
+  } catch (error) {
+    toastError(t('shortcut.registerFailed', { detail: errorMessage(error) }))
+  }
+}
+
+/** 全局快捷键（US-20）：呼出主窗口 + 循环切换下一预设；端口内部已处理浏览器预览与顺序问题 */
 export function useGlobalShortcuts(): void {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    void register(SHORTCUTS.showWindow, () => {
-      void showMainWindow().catch(() => undefined)
-    }).catch(() => undefined)
-    void register(SHORTCUTS.nextPreset, () => {
-      void handleNextPreset(queryClient)
-    }).catch(() => undefined)
-
+    void registerShortcuts(queryClient)
     return () => {
-      void unregister(SHORTCUTS.showWindow).catch(() => undefined)
-      void unregister(SHORTCUTS.nextPreset).catch(() => undefined)
+      void tauriGlobalShortcuts.unregister(SHORTCUTS.showWindow).catch(() => undefined)
+      void tauriGlobalShortcuts.unregister(SHORTCUTS.nextPreset).catch(() => undefined)
     }
   }, [queryClient])
 }
