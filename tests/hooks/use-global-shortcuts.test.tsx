@@ -37,9 +37,12 @@ describe('useGlobalShortcuts', () => {
   it('注册成功：两条快捷键都注册，且不产生失败提示', async () => {
     register.mockResolvedValue(undefined)
 
-    renderHook(() => {
-      useGlobalShortcuts()
-    }, { wrapper })
+    renderHook(
+      () => {
+        useGlobalShortcuts()
+      },
+      { wrapper }
+    )
 
     await waitFor(() => {
       expect(register).toHaveBeenCalledTimes(2)
@@ -52,9 +55,12 @@ describe('useGlobalShortcuts', () => {
   it('注册失败：给出可见提示，而不是静默丢弃', async () => {
     register.mockRejectedValue(new Error('permission denied'))
 
-    renderHook(() => {
-      useGlobalShortcuts()
-    }, { wrapper })
+    renderHook(
+      () => {
+        useGlobalShortcuts()
+      },
+      { wrapper }
+    )
 
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledTimes(1)
