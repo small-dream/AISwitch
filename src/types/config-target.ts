@@ -5,6 +5,11 @@ export interface ApplyResult {
   tool: TargetTool
   backupPath?: string
   appliedAt: string
+  /**
+   * 本次实际写入（或删除）的受管文件，相对 HOME 的正斜杠路径。
+   * 由 SwitchService 转交 BaselineManager 记为「应用写过」，是一键还原执行删除的唯一依据。
+   */
+  writtenFiles?: readonly string[]
 }
 
 /**

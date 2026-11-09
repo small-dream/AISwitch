@@ -116,3 +116,37 @@ describe('BaselineManager 健壮性', () => {
     await expect(baselines.manifest()).rejects.toMatchObject({ code: 'E_BASELINE_FAILED' })
   })
 })
+
+describe('BaselineManager 写入证据', () => {
+  it('markWritten：标记为应用写过，且重复调用幂等', async () => {
+    const { baselines } = setup()
+    await baselines.captureIfAbsent('claude-code', [PATHS.claudeSettings])
+
+    await baselines.markWritten('claude-code', [PATHS.claudeSettings])
+    const first = await baselines.manifest()
+    expect(first.tools['claude-code']?.files[PATHS.claudeSettings]?.written).toBe(true)
+
+    await baselines.markWritten('claude-code', [PATHS.claudeSettings])
+    const second = await baselines.manifest()
+    expect(second).toEqual(first)
+  })
+
+  it('markWritten：未捕获基线的工具不凭空造记录', async () => {
+    const { baselines } = setup()
+
+    await baselines.markWritten('codex', [PATHS.codexConfig])
+
+    expect((await baselines.manifest()).tools.codex).toBeUndefined()
+  })
+
+  it('markWritten：只标记本次实际改写的文件', async () => {
+    const { baselines } = setup()
+    await baselines.captureIfAbsent('codex', [PATHS.codexConfig, PATHS.codexAuth])
+
+    await baselines.markWritten('codex', [PATHS.codexConfig])
+
+    const manifest = await baselines.manifest()
+    expect(manifest.tools.codex?.files[PATHS.codexConfig]?.written).toBe(true)
+    expect(manifest.tools.codex?.files[PATHS.codexAuth]?.written).toBeUndefined()
+  })
+})

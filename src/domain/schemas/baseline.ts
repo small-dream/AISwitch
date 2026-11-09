@@ -12,6 +12,13 @@ export const baselineEntrySchema = z.object({
   status: z.enum(['captured', 'absent', 'degraded']),
   /** 捕获时间（ISO 字符串） */
   capturedAt: z.string(),
+  /**
+   * 应用是否真的写过该文件（成功 apply / clearManaged 后置位）。
+   * 仅 `absent` 需要它：只有应用写过，还原才允许删除；用户或 CLI 后来自己创建的
+   * 文件（如 `codex login` 写入的 auth.json）即便安装前不存在也必须保留。
+   * 旧清单没有该字段 = 未证实，一律按「不能删」处理。
+   */
+  written: z.boolean().optional(),
 })
 
 export type BaselineEntry = z.infer<typeof baselineEntrySchema>

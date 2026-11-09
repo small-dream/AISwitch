@@ -69,6 +69,40 @@ export class BaselineManager {
   }
 
   /**
+   * 记录「应用确实写过这些文件」：只有带过这个标记的文件，还原才允许在
+   * `absent` 语义下删除。未捕获基线的工具不凭空造记录——没有证据就保持不动。
+   * 幂等：已标记过的条目不再写盘。
+   */
+  async markWritten(tool: TargetTool, files: readonly string[]): Promise<void> {
+    if (files.length === 0) {
+      return
+    }
+    const manifest = await this.manifest()
+    const state = manifest.tools[tool]
+    if (!state) {
+      return
+    }
+    const entries: Record<string, BaselineEntry> = { ...state.files }
+    let changed = false
+    for (const file of files) {
+      const entry = entries[file]
+      if (!entry || entry.written === true) {
+        continue
+      }
+      entries[file] = { ...entry, written: true }
+      changed = true
+    }
+    if (!changed) {
+      return
+    }
+    const next: BaselineManifest = {
+      ...manifest,
+      tools: { ...manifest.tools, [tool]: { ...state, files: entries } },
+    }
+    await this.persist(tool, next)
+  }
+
+  /**
    * 首次写入前捕获基线（幂等；已捕获返回 false）：
    * - 文件不存在 → absent（应用将来会创建它，还原时删除）；
    * - 文件存在且无历史备份 → 当前内容即安装前内容，复制副本（captured）；

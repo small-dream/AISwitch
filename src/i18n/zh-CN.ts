@@ -117,6 +117,7 @@ export const zhCN = {
   'backups.manage': '备份管理',
   'backups.restoreLatest': '恢复最近一份备份',
   'backups.restoredEntry': '已恢复 {name}',
+  'backups.confirmRestore': '确认恢复？',
   'backups.restoredLatest': '已恢复最近一份备份',
   'backups.noneAvailable': '没有可用备份',
   'backups.empty': '暂无备份',

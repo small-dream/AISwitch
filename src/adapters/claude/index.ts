@@ -164,7 +164,7 @@ async function clearManagedClaude(
 ): Promise<ApplyResult> {
   const current = await readClaudeSettings(fs)
   if (!current || !MANAGED_ENV_KEYS.some((key) => key in (current.env ?? {}))) {
-    return { tool: 'claude-code', appliedAt: new Date().toISOString() }
+    return { tool: 'claude-code', appliedAt: new Date().toISOString(), writtenFiles: [] }
   }
   const backupName = await backups.backup('claude-code', PATHS.claudeSettings)
   try {
@@ -182,6 +182,7 @@ async function clearManagedClaude(
     tool: 'claude-code',
     backupPath: backupName ?? undefined,
     appliedAt: new Date().toISOString(),
+    writtenFiles: [PATHS.claudeSettings],
   }
 }
 
@@ -220,6 +221,7 @@ export function createClaudeTarget(fs: FileSystemPort): ConfigTarget {
         tool: 'claude-code',
         backupPath: backupName ?? undefined,
         appliedAt: new Date().toISOString(),
+        writtenFiles: [PATHS.claudeSettings],
       }
     },
 

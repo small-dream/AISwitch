@@ -97,3 +97,56 @@ describe('BackupManager 原子写与滚动清理', () => {
     expect(fs.files().has(`${dir}/20260101-000000--settings.json`)).toBe(false)
   })
 })
+
+describe('BackupManager 恢复', () => {
+  it('snapshot：覆盖前先为当前文件留一份备份，恢复因此可撤销', async () => {
+    const dir = `${PATHS.backupsDir}/claude-code`
+    const oldName = '20260101-000000--settings.json'
+    const fs = createMemoryFs({
+      [PATHS.claudeSettings]: 'current',
+      [`${dir}/${oldName}`]: 'restored',
+    })
+    const backups = new BackupManager(fs)
+
+    await backups.restore('claude-code', oldName, PATHS.claudeSettings, { snapshot: true })
+
+    expect(fs.files().get(PATHS.claudeSettings)).toBe('restored')
+    const names = await backups.list('claude-code')
+    expect(names).toHaveLength(2)
+    const newest = names[0] ?? ''
+    expect(fs.files().get(`${dir}/${newest}`)).toBe('current')
+  })
+
+  it('默认不快照：apply 失败回滚不往历史里塞半截状态', async () => {
+    const dir = `${PATHS.backupsDir}/claude-code`
+    const oldName = '20260101-000000--settings.json'
+    const fs = createMemoryFs({
+      [PATHS.claudeSettings]: 'current',
+      [`${dir}/${oldName}`]: 'restored',
+    })
+    const backups = new BackupManager(fs)
+
+    await backups.restore('claude-code', oldName, PATHS.claudeSettings)
+
+    expect(fs.files().get(PATHS.claudeSettings)).toBe('restored')
+    expect(await backups.list('claude-code')).toHaveLength(1)
+  })
+
+  it('容量已满时先读内容再快照：恢复源不会被轮转清理掉', async () => {
+    const dir = `${PATHS.backupsDir}/claude-code`
+    const seeded: Record<string, string> = { [PATHS.claudeSettings]: 'current' }
+    for (let i = 0; i < 20; i += 1) {
+      const name = `20260101-0000${String(i).padStart(2, '0')}--settings.json`
+      seeded[`${dir}/${name}`] = `v${String(i)}`
+    }
+    const fs = createMemoryFs(seeded)
+    const backups = new BackupManager(fs)
+    const oldest = '20260101-000000--settings.json'
+
+    await backups.restore('claude-code', oldest, PATHS.claudeSettings, { snapshot: true })
+
+    expect(fs.files().get(PATHS.claudeSettings)).toBe('v0')
+    // 快照触发轮转，恢复源随之出列——但内容已在内存里，恢复仍然成功
+    expect(fs.files().has(`${dir}/${oldest}`)).toBe(false)
+  })
+})

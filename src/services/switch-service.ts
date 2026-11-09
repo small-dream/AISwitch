@@ -24,7 +24,9 @@ export class SwitchService {
   async clearManaged(tool: TargetTool): Promise<ApplyResult> {
     return this.enqueue(tool, async () => {
       await this.captureBaseline(tool)
-      return getTarget(tool).clearManaged()
+      const result = await getTarget(tool).clearManaged()
+      await this.markWritten(tool, result)
+      return result
     })
   }
 
@@ -52,7 +54,21 @@ export class SwitchService {
   private async applySwitch(tool: TargetTool, presetId: string): Promise<ApplyResult> {
     const preset = await this.findPreset(tool, presetId)
     await this.captureBaseline(tool)
-    return getTarget(tool).apply(preset)
+    const result = await getTarget(tool).apply(preset)
+    await this.markWritten(tool, result)
+    return result
+  }
+
+  /**
+   * 记录「应用确实写过这些文件」，作为一键还原删除 `absent` 文件的唯一依据。
+   * 与基线捕获同理：证据落盘失败只降级告警，绝不把一次成功的切换改成失败。
+   */
+  private async markWritten(tool: TargetTool, result: ApplyResult): Promise<void> {
+    try {
+      await this.baselines.markWritten(tool, result.writtenFiles ?? [])
+    } catch (error) {
+      console.warn('记录写入证据失败，一键还原将保守跳过相关文件', error)
+    }
   }
 
   /**

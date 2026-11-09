@@ -84,14 +84,27 @@ export class BackupManager {
       .reverse()
   }
 
-  /** 按备份名恢复到指定路径 */
-  async restore(tool: TargetTool, name: string, targetPath: string): Promise<void> {
+  /**
+   * 按备份名恢复到指定路径。
+   * `snapshot` = 覆盖前先为当前文件留一份备份（用户手动恢复历史备份时用），
+   * 使这次覆盖本身可撤销；apply 失败回滚走默认值，避免把半截坏状态写进历史。
+   */
+  async restore(
+    tool: TargetTool,
+    name: string,
+    targetPath: string,
+    options: { snapshot?: boolean } = {}
+  ): Promise<void> {
     const parsed = parseBackupName(name)
     if (parsed?.basename !== basenameOf(targetPath)) {
       throw new Error(`非法备份名: ${name}`)
     }
     const dir = this.dirFor(tool)
+    // 先读内容再快照：快照会触发滚动清理，容量满时可能把「正要恢复的这一份」清掉
     const content = await this.fs.readTextFile(`${dir}/${name}`)
+    if (options.snapshot === true) {
+      await this.backup(tool, targetPath)
+    }
     await writeTextAtomic(this.fs, targetPath, content)
   }
 

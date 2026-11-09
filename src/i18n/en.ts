@@ -127,6 +127,7 @@ export const en: Record<TranslationKey, string> = {
   'backups.manage': 'Backups',
   'backups.restoreLatest': 'Restore latest backup',
   'backups.restoredEntry': 'Restored {name}',
+  'backups.confirmRestore': 'Confirm restore?',
   'backups.restoredLatest': 'Restored the latest backup',
   'backups.noneAvailable': 'No backup available',
   'backups.empty': 'No backups yet',

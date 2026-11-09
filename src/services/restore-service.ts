@@ -3,6 +3,7 @@ import type { BackupService, BackupEntry } from '@/services/backup-service'
 import { PATHS } from '@/constants/paths'
 import { AppError, toAppError } from '@/domain/errors'
 import type { TargetTool } from '@/domain/entities/preset'
+import type { BaselineEntry } from '@/domain/schemas/baseline'
 import { stripManagedClaudeKeys } from '@/domain/rules/claude-merge'
 import { stripManagedCodexAuth, stripManagedCodexConfig } from '@/domain/rules/codex-merge'
 import { codexCatalogAbsolutePath } from '@/domain/rules/codex-catalog'
@@ -80,8 +81,7 @@ export class RestoreService {
     for (const tool of Object.keys(MANAGED_FILES) as TargetTool[]) {
       const toolState = manifest.tools[tool]
       for (const file of MANAGED_FILES[tool]) {
-        const entry = toolState?.files[file]
-        files.push(await this.planFile(tool, file, entry?.status))
+        files.push(await this.planFile(tool, file, toolState?.files[file], toolState !== undefined))
       }
     }
     return { hasBaseline: Object.keys(manifest.tools).length > 0, files }
@@ -90,20 +90,30 @@ export class RestoreService {
   private async planFile(
     tool: TargetTool,
     file: string,
-    status: 'captured' | 'absent' | 'degraded' | undefined
+    entry: BaselineEntry | undefined,
+    hasToolBaseline: boolean
   ): Promise<RestoreFilePlan> {
     if (!(await this.deps.fs.exists(file))) {
       return { tool, file, action: 'keep', approximate: false }
     }
-    if (status === 'captured') {
+    if (entry?.status === 'captured') {
       return { tool, file, action: 'restore-baseline', approximate: false }
     }
-    if (status === 'absent') {
-      return { tool, file, action: 'delete', approximate: false }
+    if (entry?.status === 'absent') {
+      // 只有应用真写过才删：安装前不存在、但由 CLI 后来自己创建的文件（如 codex login
+      // 写入的 auth.json）必须保留，否则「一键还原」会删掉用户刚建立好的登录态
+      return entry.written === true
+        ? { tool, file, action: 'delete', approximate: false }
+        : { tool, file, action: 'keep', approximate: false }
     }
     // degraded / 无基线（老用户）：原始内容只可能在备份链里
     if (await this.earliestBackup(tool, file)) {
       return { tool, file, action: 'restore-earliest-backup', approximate: true }
+    }
+    // 连备份都没有且该工具从未捕获过基线 = 没有任何「应用写过」的证据：
+    // 此时剥离托管键等于无差别改写用户自己维护的配置，保守跳过
+    if (!hasToolBaseline) {
+      return { tool, file, action: 'keep', approximate: false }
     }
     if (this.canStrip(file)) {
       return { tool, file, action: 'strip-managed-keys', approximate: true }

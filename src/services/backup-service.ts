@@ -27,7 +27,8 @@ export class BackupService {
   }
 
   async restore(entry: BackupEntry): Promise<void> {
-    await this.manager.restore(entry.tool, entry.name, entry.targetPath)
+    // 覆盖当前配置前先留快照：历史备份的恢复因此本身可撤销（US-10）
+    await this.manager.restore(entry.tool, entry.name, entry.targetPath, { snapshot: true })
   }
 
   async remove(tool: TargetTool, name: string): Promise<void> {

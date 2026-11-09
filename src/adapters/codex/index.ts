@@ -179,7 +179,7 @@ async function clearManagedCodex(fs: FileSystemPort, backups: BackupManager): Pr
   const config = await readCodexConfig(fs)
   const auth = await readCodexAuth(fs)
   if (!config && !isRecord(auth)) {
-    return { tool: 'codex', appliedAt: new Date().toISOString() }
+    return { tool: 'codex', appliedAt: new Date().toISOString(), writtenFiles: [] }
   }
   const home = await fs.homeDir()
   const configBackup = await backups.backup('codex', PATHS.codexConfig)
@@ -204,6 +204,7 @@ async function clearManagedCodex(fs: FileSystemPort, backups: BackupManager): Pr
     tool: 'codex',
     backupPath: configBackup ?? undefined,
     appliedAt: new Date().toISOString(),
+    writtenFiles: [PATHS.codexConfig, PATHS.codexAuth],
   }
 }
 
@@ -226,11 +227,14 @@ async function applyCodex(
     { path: PATHS.codexConfig, backupName: configBackup },
     { path: PATHS.codexAuth, backupName: authBackup },
   ]
+  // 本次实际改写的文件：models.json 仅在目录同步真的落盘时才计入
+  const written: string[] = [PATHS.codexConfig, PATHS.codexAuth]
   // 写 + 校验整体进 try：任何一步失败仅回滚本次实际改写的文件（models.json 未改写则不触碰）
   try {
     const sync = await syncCodexCatalog(fs, backups, preset)
     if (sync.modelsTouched) {
       managed.push({ path: PATHS.codexModels, backupName: sync.modelsBackupName })
+      written.push(PATHS.codexModels)
     }
     const merged = withCatalogKey(mergeCodexConfig(config ?? {}, preset), sync.keyAction)
     await writeCodexConfig(fs, merged)
@@ -246,6 +250,7 @@ async function applyCodex(
     tool: 'codex',
     backupPath: configBackup ?? undefined,
     appliedAt: new Date().toISOString(),
+    writtenFiles: written,
   }
 }
 

@@ -11,7 +11,7 @@ import type { ApplyResult, ConfigTarget } from '@/types/config-target'
 import { makePreset } from '../helpers/make-preset'
 import { createMemoryFs } from '../helpers/memory-fs'
 
-function setup() {
+function setup(writtenFiles: readonly string[] = []) {
   const fs = createMemoryFs()
   const repo = new PresetRepository(fs)
   const baselines = new BaselineManager(fs, new BackupManager(fs))
@@ -22,13 +22,21 @@ function setup() {
     detect: () => Promise.resolve({ tool: 'claude-code', status: 'installed' }),
     apply: (preset) => {
       applied.push(preset.id)
-      const result: ApplyResult = { tool: 'claude-code', appliedAt: new Date().toISOString() }
+      const result: ApplyResult = {
+        tool: 'claude-code',
+        appliedAt: new Date().toISOString(),
+        writtenFiles,
+      }
       return Promise.resolve(result)
     },
     verify: () => Promise.resolve(true),
     clearManaged: () => {
       cleared += 1
-      const result: ApplyResult = { tool: 'claude-code', appliedAt: new Date().toISOString() }
+      const result: ApplyResult = {
+        tool: 'claude-code',
+        appliedAt: new Date().toISOString(),
+        writtenFiles,
+      }
       return Promise.resolve(result)
     },
     rollback: () => Promise.resolve(true),
@@ -249,5 +257,42 @@ describe('SwitchService 并发串行化：不同工具', () => {
     await Promise.all([service.switch('claude-code', 'p1'), service.switch('codex', 'p2')])
 
     expect(entered).toHaveLength(2)
+  })
+})
+
+describe('SwitchService 写入证据', () => {
+  it('切换成功后把目标实际改写的文件记为「应用写过」', async () => {
+    const { repo, service, baselines } = setup([PATHS.claudeSettings])
+    const preset = makePreset()
+    await repo.save({ version: 1, presets: [preset] })
+
+    await service.switch('claude-code', preset.id)
+
+    const manifest = await baselines.manifest()
+    expect(manifest.tools['claude-code']?.files[PATHS.claudeSettings]?.written).toBe(true)
+  })
+
+  it('切到官方订阅同样记证据（清空托管键也是一次真实写入）', async () => {
+    const { service, baselines } = setup([PATHS.claudeSettings])
+
+    await service.clearManaged('claude-code')
+
+    const manifest = await baselines.manifest()
+    expect(manifest.tools['claude-code']?.files[PATHS.claudeSettings]?.written).toBe(true)
+  })
+
+  it('证据落盘失败只告警，不影响切换结果', async () => {
+    const { repo } = setup()
+    const preset = makePreset()
+    await repo.save({ version: 1, presets: [preset] })
+    const partial = {
+      captureIfAbsent: () => Promise.resolve(true),
+      markWritten: () => Promise.reject(new Error('disk full')),
+    }
+    const service = new SwitchService(repo, partial as unknown as BaselineManager)
+
+    const result = await service.switch('claude-code', preset.id)
+
+    expect(result.tool).toBe('claude-code')
   })
 })

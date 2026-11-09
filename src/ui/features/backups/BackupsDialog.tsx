@@ -2,6 +2,7 @@ import { History } from 'lucide-react'
 
 import type { TargetTool } from '@/domain/entities/preset'
 import { useBackups, useRemoveBackup, useRestoreBackup } from '@/hooks/use-backups'
+import { useConfirmAction } from '@/hooks/use-confirm-action'
 import { useRollback } from '@/hooks/use-switch'
 import { TOOL_META } from '@/constants/tools'
 import { useT } from '@/i18n/index'
@@ -14,8 +15,25 @@ function formatTimestamp(timestamp: string): string {
   return `${timestamp.slice(0, 4)}-${timestamp.slice(4, 6)}-${timestamp.slice(6, 8)} ${timestamp.slice(9, 11)}:${timestamp.slice(11, 13)}:${timestamp.slice(13, 15)}`
 }
 
-function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
+/** 恢复历史备份 = 覆盖当前配置：两段式确认后才执行（快照由 BackupService 负责） */
+function useRestoreBackupAction(entry: BackupEntry, tool: TargetTool) {
   const restore = useRestoreBackup(tool)
+  const t = useT()
+  const action = useConfirmAction(() => {
+    restore.mutate(entry, {
+      onSuccess: () => {
+        toastSuccess(t('backups.restoredEntry', { name: entry.basename }))
+      },
+      onError: (error) => {
+        toastError(errorMessage(error))
+      },
+    })
+  })
+  return { action, pending: restore.isPending }
+}
+
+function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
+  const { action, pending } = useRestoreBackupAction(entry, tool)
   const remove = useRemoveBackup(tool)
   const t = useT()
   return (
@@ -25,22 +43,8 @@ function BackupRow({ entry, tool }: { entry: BackupEntry; tool: TargetTool }) {
         <p className="text-[11px] text-app-muted">{formatTimestamp(entry.timestamp)}</p>
       </div>
       <div className="flex shrink-0 gap-1.5">
-        <Button
-          size="sm"
-          variant="secondary"
-          disabled={restore.isPending}
-          onClick={() => {
-            restore.mutate(entry, {
-              onSuccess: () => {
-                toastSuccess(t('backups.restoredEntry', { name: entry.basename }))
-              },
-              onError: (error) => {
-                toastError(errorMessage(error))
-              },
-            })
-          }}
-        >
-          {t('common.restore')}
+        <Button size="sm" variant="secondary" disabled={pending} onClick={action.trigger}>
+          {action.confirming ? t('backups.confirmRestore') : t('common.restore')}
         </Button>
         <Button
           size="sm"
