@@ -299,3 +299,28 @@ describe('CodexConfigTarget · clearManaged（官方订阅，交回 CLI）', () 
     expect(fs.files().has('.codex/auth.json')).toBe(false)
   })
 })
+
+describe('CodexConfigTarget · clearManaged 短路', () => {
+  it('没有任何托管键时不改写文件（用户自建 provider 块 + 只带 tokens 的 auth.json）', async () => {
+    const ownConfig = [
+      'model = "deepseek-v4-pro"',
+      'model_provider = "deepseek"',
+      '',
+      '[model_providers.deepseek]',
+      'name = "DeepSeek"',
+      'base_url = "https://api.deepseek.com/v1"',
+      'wire_api = "responses"',
+      '',
+    ].join('\n')
+    const fs = seededFs({
+      '.codex/config.toml': ownConfig,
+      '.codex/auth.json': JSON.stringify({ tokens: { access_token: 'chatgpt' } }),
+    })
+    const target = createCodexTarget(fs)
+
+    const result = await target.clearManaged()
+
+    expect(fs.files().get('.codex/config.toml')).toBe(ownConfig)
+    expect(result.writtenFiles).toEqual([])
+  })
+})

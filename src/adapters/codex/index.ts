@@ -7,6 +7,7 @@ import { codexCatalogAbsolutePath, withCatalogKey } from '@/domain/rules/codex-c
 import {
   codexProviderLabel,
   codexProviderUrl,
+  hasManagedCodexKeys,
   mergeCodexAuth,
   mergeCodexConfig,
   stripManagedCodexAuth,
@@ -180,10 +181,13 @@ async function writeClearedAuth(fs: FileSystemPort, auth: unknown): Promise<void
 async function clearManagedCodex(fs: FileSystemPort, backups: BackupManager): Promise<ApplyResult> {
   const config = await readCodexConfig(fs)
   const auth = await readCodexAuth(fs)
-  if (!config && !isRecord(auth)) {
+  const home = await fs.homeDir()
+  const catalogPath = codexCatalogAbsolutePath(home)
+  // 没有托管键就不写任何文件（与 Claude 侧一致）：用户自建 provider 块与只带 tokens 的
+  // auth.json 不属于我们托管的内容，一次「切到官方订阅」不该改写它们
+  if (!hasManagedCodexKeys(config, auth, catalogPath)) {
     return { tool: 'codex', appliedAt: new Date().toISOString(), writtenFiles: [] }
   }
-  const home = await fs.homeDir()
   const configBackup = await backups.backup('codex', PATHS.codexConfig)
   const authBackup = await backups.backup('codex', PATHS.codexAuth)
   const managed: ManagedFile[] = [

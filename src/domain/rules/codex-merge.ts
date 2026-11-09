@@ -126,3 +126,33 @@ export function codexProviderUrl(config: CodexConfig): string | undefined {
   }
   return config.model_providers?.[provider]?.base_url
 }
+
+/**
+ * 配置里是否还有 AISwitch 写入的托管键（官方订阅切换的短路条件）。
+ * 只看「我们写过的值」：`model_provider` 等于注入 id 或 `openai`、注入块存在、
+ * 目录键指向托管 models.json、auth.json 带 OPENAI_API_KEY。
+ * 用户自己把 `model_provider` 指向自建块（如 `deepseek`）时不算托管——否则一次
+ * 「切到官方订阅」就会删掉用户手工维护的模型与供应商指向。
+ */
+export function hasManagedCodexKeys(
+  config: CodexConfig | null,
+  auth: unknown,
+  managedCatalogPath: string
+): boolean {
+  if (config) {
+    const provider = config.model_provider
+    if (
+      provider === CODEX_CONFIG_KEYS.injectedProvider ||
+      provider === CODEX_CONFIG_KEYS.officialProvider
+    ) {
+      return true
+    }
+    if (config.model_providers && CODEX_CONFIG_KEYS.injectedProvider in config.model_providers) {
+      return true
+    }
+    if (config.model_catalog_json === managedCatalogPath) {
+      return true
+    }
+  }
+  return isRecord(auth) && CODEX_AUTH_KEYS.apiKey in auth
+}
