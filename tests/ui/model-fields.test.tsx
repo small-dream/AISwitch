@@ -133,3 +133,54 @@ describe('ModelFields · 候选来源与自动补全', () => {
     expect(screen.getByText('模板推荐（子集）')).toBeInTheDocument()
   })
 })
+
+describe('ModelFields · 换供应商后候选失效', () => {
+  it('Base URL 改变后重新打开下拉会按新地址重拉，上一家的目录不再残留', async () => {
+    listMock
+      .mockResolvedValueOnce({ status: 'ok', models: ['vendor-a-model'] })
+      .mockResolvedValueOnce({ status: 'ok', models: ['vendor-b-model'] })
+
+    function Harness() {
+      const form = useForm<PresetFormValues>({
+        defaultValues: { tool: 'codex' as TargetTool, baseUrl: 'https://vendor-a.example.com/v1' },
+      })
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              form.setValue('baseUrl', 'https://vendor-b.example.com/v1')
+            }}
+          >
+            换供应商
+          </button>
+          <ModelFields form={form} errors={{}} tool="codex" />
+        </>
+      )
+    }
+    render(<Harness />)
+
+    openList()
+    await waitFor(() => {
+      expect(listMock).toHaveBeenCalledTimes(1)
+    })
+    expect(screen.getByText('vendor-a-model')).toBeInTheDocument()
+
+    // 收起重开：换地址后「已补拉」标记必须失效
+    openList()
+    fireEvent.click(screen.getByRole('button', { name: '换供应商' }))
+    openList()
+
+    await waitFor(() => {
+      expect(listMock).toHaveBeenCalledTimes(2)
+    })
+    expect(listMock.mock.calls[1]?.[0]).toMatchObject({
+      tool: 'codex',
+      baseUrl: 'https://vendor-b.example.com/v1',
+    })
+    await waitFor(() => {
+      expect(screen.getByText('vendor-b-model')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('vendor-a-model')).toBeNull()
+  })
+})

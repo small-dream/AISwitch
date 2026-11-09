@@ -1,8 +1,9 @@
 import { RefreshCw } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FieldErrors, UseFormReturn } from 'react-hook-form'
 
 import type { TargetTool } from '@/domain/entities/preset'
+import type { ModelCatalogQuery } from '@/domain/entities/model-catalog'
 import {
   groupModelOptions,
   templateModelOptions,
@@ -51,43 +52,68 @@ function modelGroups(
   return groups
 }
 
+/** 目录拉取结果（与请求身份无关的部分）：错误只带文案，成功带模型列表 */
+type CatalogOutcome = { kind: 'ok'; models: readonly string[] } | { kind: 'error'; message: string }
+
+type Catalog = ReturnType<typeof useModelCatalog>
+
+async function requestCatalog(catalog: Catalog, query: ModelCatalogQuery): Promise<CatalogOutcome> {
+  try {
+    const result = await catalog.list(query)
+    return result.status === 'ok'
+      ? { kind: 'ok', models: result.models }
+      : { kind: 'error', message: result.message }
+  } catch (error) {
+    return { kind: 'error', message: errorMessage(error) }
+  }
+}
+
 /** 候选模型 = 模板推荐（离线，按 baseUrl 反查）+ 本次拉取的供应商目录 */
 function useModelCandidates(tool: TargetTool, form: UseFormReturn<PresetFormValues>, t: TFn) {
   const [fetched, setFetched] = useState<readonly string[]>([])
   const [feedback, setFeedback] = useState<ModelFeedback | null>(null)
   const requested = useRef(false)
+  const requestId = useRef(0)
   const catalog = useModelCatalog()
   const baseUrl = form.watch('baseUrl')
   const apiKey = form.watch('apiKey')
   const groups = useMemo(() => modelGroups(t, tool, baseUrl, fetched), [t, tool, baseUrl, fetched])
+  const target = `${tool}|${baseUrl}|${apiKey ?? ''}`
+
+  // 换工具或换供应商（含模板填充）后，上一家的目录与「已补拉」标记必须作废：
+  // 否则旧模型会挂着新供应商的分组标题，而自动补拉再也不触发
+  useEffect(() => {
+    setFetched([])
+    setFeedback(null)
+    requested.current = false
+  }, [target])
 
   /** silent = 打开下拉时的自动补全：失败只保留模板推荐，不弹红字吓人 */
   const load = async (silent = false) => {
-    try {
-      const result = await catalog.list({
-        tool,
-        baseUrl: optional(baseUrl),
-        apiKey: optional(apiKey),
-      })
-      if (result.status === 'error') {
-        if (!silent) {
-          setFeedback({ kind: 'error', text: result.message })
-        }
-        return
-      }
-      setFetched(result.models)
-      if (result.models.length > 0) {
-        setFeedback({
-          kind: 'ok',
-          text: t('presetForm.modelFetched', { count: String(result.models.length) }),
-        })
-      } else if (!silent) {
-        setFeedback({ kind: 'error', text: t('presetForm.modelFetchEmpty') })
-      }
-    } catch (error) {
+    const current = ++requestId.current
+    const outcome = await requestCatalog(catalog, {
+      tool,
+      baseUrl: optional(baseUrl),
+      apiKey: optional(apiKey),
+    })
+    // 旧请求晚到：结果属于上一个地址，不能覆盖新状态
+    if (current !== requestId.current) {
+      return
+    }
+    if (outcome.kind === 'error') {
       if (!silent) {
-        setFeedback({ kind: 'error', text: errorMessage(error) })
+        setFeedback({ kind: 'error', text: outcome.message })
       }
+      return
+    }
+    setFetched(outcome.models)
+    if (outcome.models.length > 0) {
+      setFeedback({
+        kind: 'ok',
+        text: t('presetForm.modelFetched', { count: String(outcome.models.length) }),
+      })
+    } else if (!silent) {
+      setFeedback({ kind: 'error', text: t('presetForm.modelFetchEmpty') })
     }
   }
 
