@@ -117,6 +117,24 @@ describe('BaselineManager 健壮性', () => {
   })
 })
 
+describe('BaselineManager 并发', () => {
+  it('并发首次捕获两个工具：两边条目都保留（manifest 读-改-写串行）', async () => {
+    const { baselines } = setup({
+      [PATHS.claudeSettings]: ORIGINAL,
+      [PATHS.codexConfig]: 'model = "gpt-5"\n',
+    })
+
+    await Promise.all([
+      baselines.captureIfAbsent('claude-code', [PATHS.claudeSettings]),
+      baselines.captureIfAbsent('codex', [PATHS.codexConfig]),
+    ])
+
+    const manifest = await baselines.manifest()
+    expect(manifest.tools['claude-code']).toBeDefined()
+    expect(manifest.tools.codex).toBeDefined()
+  })
+})
+
 describe('BaselineManager 写入证据', () => {
   it('markWritten：标记为应用写过，且重复调用幂等', async () => {
     const { baselines } = setup()

@@ -8,9 +8,13 @@ import type {
 import { projectConfigRecordCollectionSchema } from '@/domain/schemas/project-config-record'
 import type { TargetTool } from '@/domain/entities/preset'
 import type { FileSystemPort } from '@/types/fs-port'
+import { createSerialQueue } from '@/utils/serial-queue'
 
 /** 已写入项目配置的索引仓库，保存于 ~/.aiswitch。 */
 export class ProjectConfigRepository {
+  /** 记录是整体回写：读-改-写必须串行，否则两个工具同时写入会丢记录 */
+  private readonly enqueue = createSerialQueue()
+
   constructor(private readonly fs: FileSystemPort) {}
 
   async list(): Promise<ProjectConfigRecord[]> {
@@ -21,19 +25,23 @@ export class ProjectConfigRepository {
     return raw.records
   }
 
-  async upsert(record: ProjectConfigRecord): Promise<void> {
-    const records = await this.list()
-    const next = records.filter(
-      (item) => item.projectPath !== record.projectPath || item.tool !== record.tool
-    )
-    await this.save({ version: 1, records: [...next, record] })
+  upsert(record: ProjectConfigRecord): Promise<void> {
+    return this.enqueue(async () => {
+      const records = await this.list()
+      const next = records.filter(
+        (item) => item.projectPath !== record.projectPath || item.tool !== record.tool
+      )
+      await this.save({ version: 1, records: [...next, record] })
+    })
   }
 
-  async remove(projectPath: string, tool: TargetTool): Promise<void> {
-    const records = await this.list()
-    await this.save({
-      version: 1,
-      records: records.filter((item) => item.projectPath !== projectPath || item.tool !== tool),
+  remove(projectPath: string, tool: TargetTool): Promise<void> {
+    return this.enqueue(async () => {
+      const records = await this.list()
+      await this.save({
+        version: 1,
+        records: records.filter((item) => item.projectPath !== projectPath || item.tool !== tool),
+      })
     })
   }
 

@@ -10,6 +10,7 @@ import {
   type BaselineManifest,
 } from '@/domain/schemas/baseline'
 import type { FileSystemPort } from '@/types/fs-port'
+import { createSerialQueue } from '@/utils/serial-queue'
 
 function basenameOf(path: string): string {
   const parts = path.split('/')
@@ -35,6 +36,9 @@ function dirnameOf(path: string): string {
  * 基线副本与备份同级风险（含明文密钥）：目录 0700 + 文件 0600 逐层收紧。
  */
 export class BaselineManager {
+  /** manifest 是整体回写：读-改-写必须串行，否则并发捕获会互相覆盖（如同时切两个工具） */
+  private readonly enqueue = createSerialQueue()
+
   constructor(
     private readonly fs: FileSystemPort,
     private readonly backups: BackupManager
@@ -77,6 +81,10 @@ export class BaselineManager {
     if (files.length === 0) {
       return
     }
+    await this.enqueue(() => this.markWrittenNow(tool, files))
+  }
+
+  private async markWrittenNow(tool: TargetTool, files: readonly string[]): Promise<void> {
     const manifest = await this.manifest()
     const state = manifest.tools[tool]
     if (!state) {
@@ -113,6 +121,10 @@ export class BaselineManager {
     if (files.length === 0) {
       throw new AppError('E_BASELINE_FAILED', '受管文件清单为空，无法捕获基线', { tool })
     }
+    return this.enqueue(() => this.captureNow(tool, files))
+  }
+
+  private async captureNow(tool: TargetTool, files: readonly string[]): Promise<boolean> {
     const manifest = await this.manifest()
     if (manifest.tools[tool] !== undefined) {
       return false
