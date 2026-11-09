@@ -82,4 +82,19 @@ describe('SubscriptionPresetRow', () => {
 
     expect(screen.queryByText('当前')).toBeNull()
   })
+
+  it('自建 provider 块（展示名不是 URL）仍在自定义供应商上 → 不标记为当前', () => {
+    state.statuses = [
+      {
+        tool: 'codex',
+        status: 'installed',
+        activeModel: 'deepseek-v4-pro',
+        activeProviderName: 'DeepSeek',
+        activeProviderUrl: 'https://api.deepseek.com/v1',
+      },
+    ]
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    expect(screen.queryByText('当前')).toBeNull()
+  })
 })

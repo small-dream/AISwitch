@@ -66,6 +66,28 @@ describe('CodexConfigTarget · detect', () => {
       activeProviderName: 'OpenAI',
     })
   })
+
+  it('用户自建 provider 块：展示名是 name，但生效判定要能拿到 base_url', async () => {
+    const config = [
+      'model = "deepseek-v4-pro"',
+      'model_provider = "deepseek"',
+      '',
+      '[model_providers.deepseek]',
+      'name = "DeepSeek"',
+      'base_url = "https://api.deepseek.com/v1"',
+      'wire_api = "responses"',
+      '',
+    ].join('\n')
+    const target = createCodexTarget(seededFs({ '.codex/config.toml': config }))
+
+    expect(await target.detect()).toEqual({
+      tool: 'codex',
+      status: 'installed',
+      activeModel: 'deepseek-v4-pro',
+      activeProviderName: 'DeepSeek',
+      activeProviderUrl: 'https://api.deepseek.com/v1',
+    })
+  })
 })
 
 describe('CodexConfigTarget · apply / rollback', () => {

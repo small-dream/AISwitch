@@ -6,6 +6,7 @@ import {
   stripManagedCodexAuth,
   stripManagedCodexConfig,
 } from '@/domain/rules/codex-merge'
+import { claudeProjectStatus, codexProjectStatus } from '@/domain/rules/project-tool-status'
 import { normalizeProjectPath, projectConfigPath } from '@/domain/rules/project-path'
 import { AppError, toAppError } from '@/domain/errors'
 import type { Preset, TargetTool, ToolStatus } from '@/domain/entities/preset'
@@ -251,24 +252,10 @@ export class ProjectConfigService {
     try {
       if (tool === 'claude-code') {
         const config = await this.ops.readClaudeSettings(scoped)
-        return config
-          ? {
-              tool,
-              status: 'installed',
-              activeModel: config.env?.ANTHROPIC_MODEL ?? config.model,
-              activeProviderName: config.env?.ANTHROPIC_BASE_URL ?? '官方 API',
-            }
-          : { tool, status: 'not-configured' }
+        return config ? claudeProjectStatus(tool, config) : { tool, status: 'not-configured' }
       }
       const config = await this.ops.readCodexConfig(scoped)
-      return config?.model
-        ? {
-            tool,
-            status: 'installed',
-            activeModel: config.model,
-            activeProviderName: config.model_provider,
-          }
-        : { tool, status: 'not-configured' }
+      return config?.model ? codexProjectStatus(tool, config) : { tool, status: 'not-configured' }
     } catch {
       return { tool, status: 'unknown' }
     }

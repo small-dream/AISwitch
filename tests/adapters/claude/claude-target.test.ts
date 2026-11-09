@@ -32,6 +32,7 @@ describe('ClaudeConfigTarget · detect', () => {
       status: 'installed',
       activeModel: 'old-sonnet',
       activeProviderName: 'https://old-relay.example.com',
+      activeProviderUrl: 'https://old-relay.example.com',
     })
   })
 

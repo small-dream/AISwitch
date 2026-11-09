@@ -9,7 +9,8 @@ function activeStatus(model: string): ToolStatus {
     tool: 'claude-code',
     status: 'installed',
     activeModel: model,
-    activeProviderName: 'https://open.bigmodel.cn/api/anthropic',
+    activeProviderName: '智谱 GLM',
+    activeProviderUrl: 'https://open.bigmodel.cn/api/anthropic',
   }
 }
 

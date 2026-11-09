@@ -9,7 +9,8 @@ function makeStatus(overrides: Partial<ToolStatus> = {}): ToolStatus {
     tool: 'claude-code',
     status: 'installed',
     activeModel: 'glm-4.6',
-    activeProviderName: 'https://open.bigmodel.cn/api/anthropic',
+    activeProviderName: '智谱 GLM',
+    activeProviderUrl: 'https://open.bigmodel.cn/api/anthropic',
     ...overrides,
   }
 }

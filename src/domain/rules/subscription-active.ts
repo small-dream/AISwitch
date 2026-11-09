@@ -4,6 +4,7 @@ import { isActivePreset } from '@/domain/rules/active-preset'
 /**
  * 内建订阅条目是否生效（PRD §5.13）：工具已配置 + 不在自定义中转上 + 该工具没有任何预设生效。
  * 订阅态不写模型（也不写密钥/Base URL），因此不能像普通预设那样按模型名比对，只能按「无托管覆盖」判定。
+ * 「在自定义中转上」只看 `activeProviderUrl`：展示名不可靠（用户自建 provider 块会给任意名字）。
  */
 export function isSubscriptionActive(
   status: ToolStatus | undefined,
@@ -12,7 +13,7 @@ export function isSubscriptionActive(
   if (status?.status !== 'installed') {
     return false
   }
-  if (status.activeProviderName?.startsWith('http')) {
+  if (status.activeProviderUrl) {
     return false
   }
   return !toolPresets.some((preset) => isActivePreset(preset, status))

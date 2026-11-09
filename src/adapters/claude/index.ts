@@ -59,6 +59,7 @@ async function detectClaude(fs: FileSystemPort): Promise<ToolStatus> {
       status: 'installed' as const,
       activeModel: activeClaudeModel(settings),
       activeProviderName: env[CLAUDE_ENV_KEYS.baseUrl] ?? '官方 API',
+      activeProviderUrl: env[CLAUDE_ENV_KEYS.baseUrl],
     }
   } catch {
     // 解析失败按 PRD §5.5 归为 unknown，由 UI 提示

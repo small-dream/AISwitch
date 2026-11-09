@@ -113,3 +113,16 @@ export function codexProviderLabel(config: CodexConfig): string {
   const injected = config.model_providers?.[CODEX_CONFIG_KEYS.injectedProvider]
   return injected?.base_url ?? '自定义供应商'
 }
+
+/**
+ * 当前生效供应商的 Base URL：仅「自定义供应商」有值，官方（openai / 未设置）为 undefined。
+ * 「当前生效」判定只看它——展示名可以是块内任意 `name`，拿展示名做 URL 判断会把
+ * 用户自建的 provider 块误判成官方。
+ */
+export function codexProviderUrl(config: CodexConfig): string | undefined {
+  const provider = config.model_provider
+  if (!provider || provider === CODEX_CONFIG_KEYS.officialProvider) {
+    return undefined
+  }
+  return config.model_providers?.[provider]?.base_url
+}

@@ -5,7 +5,13 @@ import { isSubscriptionActive } from '@/domain/rules/subscription-active'
 import { makePreset } from '../../helpers/make-preset'
 
 function makeStatus(overrides: Partial<ToolStatus> = {}): ToolStatus {
-  return { tool: 'claude-code', status: 'installed', activeProviderName: '官方 API', ...overrides }
+  return {
+    tool: 'claude-code',
+    status: 'installed',
+    activeProviderName: '官方 API',
+    activeProviderUrl: undefined,
+    ...overrides,
+  }
 }
 
 describe('isSubscriptionActive', () => {
@@ -15,7 +21,7 @@ describe('isSubscriptionActive', () => {
   })
 
   it('当前在自定义中转上时不生效', () => {
-    const status = makeStatus({ activeProviderName: 'https://relay.example.com/api' })
+    const status = makeStatus({ activeProviderUrl: 'https://relay.example.com/api' })
     expect(isSubscriptionActive(status, [])).toBe(false)
   })
 
@@ -28,5 +34,16 @@ describe('isSubscriptionActive', () => {
     const preset = makePreset({ baseUrl: undefined })
     const status = makeStatus({ activeModel: 'glm-4.6' })
     expect(isSubscriptionActive(status, [preset])).toBe(false)
+  })
+
+  it('展示名是任意文案（如 DeepSeek）但确在自定义供应商上 → 不判为订阅态', () => {
+    const status = makeStatus({
+      tool: 'codex',
+      activeModel: 'deepseek-v4-pro',
+      activeProviderName: 'DeepSeek',
+      activeProviderUrl: 'https://api.deepseek.com/v1',
+    })
+
+    expect(isSubscriptionActive(status, [])).toBe(false)
   })
 })

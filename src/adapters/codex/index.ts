@@ -6,6 +6,7 @@ import type { Preset, ToolStatus } from '@/domain/entities/preset'
 import { codexCatalogAbsolutePath, withCatalogKey } from '@/domain/rules/codex-catalog'
 import {
   codexProviderLabel,
+  codexProviderUrl,
   mergeCodexAuth,
   mergeCodexConfig,
   stripManagedCodexAuth,
@@ -49,6 +50,7 @@ async function detectCodex(fs: FileSystemPort): Promise<ToolStatus> {
       status: 'installed' as const,
       activeModel: config.model,
       activeProviderName: codexProviderLabel(config),
+      activeProviderUrl: codexProviderUrl(config),
     }
   } catch {
     return { ...base, status: 'unknown' as const }
