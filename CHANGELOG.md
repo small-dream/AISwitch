@@ -2,7 +2,7 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
-## [Unreleased]
+## [0.1.24] - 2026-11-13
 
 ### Fixed
 
