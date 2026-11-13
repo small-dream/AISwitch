@@ -1,4 +1,4 @@
-import { AlertTriangle, Copy, X } from 'lucide-react'
+import { AlertTriangle, Copy, ExternalLink, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 import { SUBSCRIPTION_LOGIN } from '@/constants/subscription-login'
@@ -53,40 +53,54 @@ function LoginCommand({ command }: { command: string }) {
 
 function GuardActions({
   pending,
+  startingLogin,
   onRetry,
+  onStartLogin,
   onClose,
 }: {
   pending: boolean
+  startingLogin?: boolean
   onRetry: () => void
+  onStartLogin?: () => void
   onClose: () => void
 }) {
   const t = useT()
   return (
-    <div className="mt-5 flex justify-end gap-2">
+    <div className="mt-5 flex flex-wrap justify-end gap-2">
       <Button variant="secondary" onClick={onClose}>
         {t('common.cancel')}
       </Button>
-      <Button disabled={pending} onClick={onRetry}>
+      <Button variant={onStartLogin ? 'secondary' : 'primary'} disabled={pending} onClick={onRetry}>
         {pending ? t('presetRow.applying') : t('subscription.guardRetry')}
       </Button>
+      {onStartLogin ? (
+        <Button disabled={startingLogin} onClick={onStartLogin}>
+          <ExternalLink className="h-4 w-4" aria-hidden />
+          {t(startingLogin ? 'subscription.startingLogin' : 'subscription.startLogin')}
+        </Button>
+      ) : null}
     </div>
   )
 }
 
-/** 未登录时切换 Codex 官方订阅的阻断弹窗：给出原因、登录命令与原地重试入口 */
+/** 未登录时切换 Codex 官方订阅的阻断弹窗：给出原因、直接登录、命令与原地重试入口 */
 export function SubscriptionLoginRequiredDialog({
   tool,
   state,
   pending,
+  startingLogin,
   command,
   onRetry,
+  onStartLogin,
   onClose,
 }: {
   tool: TargetTool
   state: SubscriptionSwitchBlockState
   pending: boolean
+  startingLogin?: boolean
   command?: string
   onRetry: () => void
+  onStartLogin?: () => void
   onClose: () => void
 }) {
   const t = useT()
@@ -106,7 +120,13 @@ export function SubscriptionLoginRequiredDialog({
           {t(state === 'unknown' ? 'subscription.guardUnknown' : 'subscription.guardLoggedOut')}
         </p>
         <LoginCommand command={resolved} />
-        <GuardActions pending={pending} onRetry={onRetry} onClose={onClose} />
+        <GuardActions
+          pending={pending}
+          startingLogin={startingLogin}
+          onRetry={onRetry}
+          onStartLogin={onStartLogin}
+          onClose={onClose}
+        />
       </div>
     </div>,
     document.body

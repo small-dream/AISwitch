@@ -1,4 +1,4 @@
-import { CheckCircle2, Copy, X } from 'lucide-react'
+import { CheckCircle2, Copy, ExternalLink, X } from 'lucide-react'
 import { createPortal } from 'react-dom'
 
 import { buildCodexLoginCommand } from '@/domain/rules/subscription-login-command'
@@ -29,12 +29,41 @@ function SuccessHeader({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** 切换成功后的可操作引导：仅 Codex 展示，避免瞬时 Toast 来不及复制命令（PRD §5.13） */
+function SuccessActions({
+  startingLogin,
+  onStartLogin,
+  onClose,
+}: {
+  startingLogin?: boolean
+  onStartLogin?: () => void
+  onClose: () => void
+}) {
+  const t = useT()
+  return (
+    <div className="mt-5 flex flex-wrap justify-end gap-2">
+      <Button variant={onStartLogin ? 'secondary' : 'primary'} onClick={onClose}>
+        {t('common.close')}
+      </Button>
+      {onStartLogin ? (
+        <Button disabled={startingLogin} onClick={onStartLogin}>
+          <ExternalLink className="h-4 w-4" aria-hidden />
+          {t(startingLogin ? 'subscription.startingLogin' : 'subscription.startLogin')}
+        </Button>
+      ) : null}
+    </div>
+  )
+}
+
+/** 切换成功后的可操作引导：仅 Codex 展示，避免瞬时 Toast 来不及登录或复制命令（PRD §5.13） */
 export function SubscriptionSuccessGuideDialog({
   command,
+  startingLogin,
+  onStartLogin,
   onClose,
 }: {
   command?: string
+  startingLogin?: boolean
+  onStartLogin?: () => void
   onClose: () => void
 }) {
   const t = useT()
@@ -66,9 +95,11 @@ export function SubscriptionSuccessGuideDialog({
             {t(copied ? 'subscription.copied' : 'subscription.copy')}
           </button>
         </div>
-        <div className="mt-5 flex justify-end">
-          <Button onClick={onClose}>{t('common.close')}</Button>
-        </div>
+        <SuccessActions
+          startingLogin={startingLogin}
+          onStartLogin={onStartLogin}
+          onClose={onClose}
+        />
       </div>
     </div>,
     document.body

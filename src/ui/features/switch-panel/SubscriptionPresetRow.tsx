@@ -7,6 +7,7 @@ import { buildCodexLoginCommand } from '@/domain/rules/subscription-login-comman
 import { isSubscriptionActive } from '@/domain/rules/subscription-active'
 import { useT } from '@/i18n/index'
 import { useSubscriptionAuth } from '@/hooks/use-subscription-auth'
+import { useStartSubscriptionLogin } from '@/hooks/use-start-subscription-login'
 import { useSubscriptionSwitchGuard } from '@/hooks/use-subscription-switch-guard'
 import { useToolStatus } from '@/hooks/use-tool-status'
 import { Badge } from '@/ui/components/Badge'
@@ -77,6 +78,7 @@ export function SubscriptionPresetRow({
   presets: readonly Preset[]
 }) {
   const { data: auth } = useSubscriptionAuth(tool)
+  const startLogin = useStartSubscriptionLogin(tool)
   const { data: statuses } = useToolStatus()
   const { gate, successGuide, pending, apply, retry, confirmConflict, close, closeSuccessGuide } =
     useSubscriptionSwitchGuard(tool)
@@ -104,8 +106,10 @@ export function SubscriptionPresetRow({
         gate={gate}
         successGuide={successGuide}
         pending={pending}
+        startingLogin={startLogin.isPending}
         loginCommand={loginCommand}
         onRetry={retry}
+        onStartLogin={tool === 'codex' ? startLogin.startLogin : undefined}
         onConfirmConflict={confirmConflict}
         onClose={close}
         onCloseSuccess={closeSuccessGuide}

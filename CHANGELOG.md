@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Added
+
+- Codex login guidance can now start `codex login` directly instead of requiring users to copy the command into a terminal. A fixed-argument narrow Tauri command launches the CLI and returns immediately; the CLI opens the browser and waits for its own callback, while the app keeps the copyable command as a fallback.
+
 ## [0.1.26] - 2026-11-13
 
 ### Fixed

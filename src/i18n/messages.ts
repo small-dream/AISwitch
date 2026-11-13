@@ -28,6 +28,9 @@ const EN_MESSAGES: Record<string, string> = {
     'No Codex subscription login detected. Run codex login before switching to the official subscription',
   '无法确认 Codex 官方登录态，请先执行 codex login status 确认后再切换到官方订阅':
     'Codex subscription login could not be confirmed. Run codex login status before switching to the official subscription',
+  '无法启动 Codex 登录，请确认 Codex CLI 可用':
+    'Could not start Codex login. Make sure the Codex CLI is available',
+  该工具暂不支持直接启动登录: 'This tool does not support launching login directly',
   '切换后回读校验失败；已自动回滚': 'Post-switch verification failed; rolled back automatically',
   '切换后回读校验失败；已清理本次新建的配置文件':
     'Post-switch verification failed; the newly created config file was removed',

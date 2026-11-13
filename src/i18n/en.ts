@@ -44,21 +44,25 @@ export const en: Record<TranslationKey, string> = {
   'subscription.loggedInAs':
     'Subscription login detected ({detail}) — you can switch to the official subscription right away.',
   'subscription.loggedOut':
-    'No login credentials found: finish the official login in your terminal before switching to the official subscription (on macOS credentials live in the system keychain — ignore this if you are already logged in).',
+    'No login credentials found: finish the official login before switching to the official subscription (on macOS credentials live in the system keychain — ignore this if you are already logged in).',
   'subscription.unknown':
     'Config found but unreadable; confirm the login state inside the CLI before switching.',
   'subscription.copy': 'Copy command',
   'subscription.copied': 'Copied',
+  'subscription.startLogin': 'Open browser to sign in',
+  'subscription.startingLogin': 'Opening…',
+  'subscription.loginStarted':
+    'Codex login started. Finish signing in in your browser; if it did not open, copy the command above into a terminal.',
   'subscription.doc': 'Official login docs',
   'subscription.hintClaudeCode':
     'Run claude in a terminal, then type /login to finish the browser login; /status shows the current account and subscription.',
   'subscription.hintCodex':
-    'Copy the login command above into a terminal to finish the browser login; the status command shows the current account.',
+    'Click "Open browser to sign in" to start Codex login directly, or copy the command above into a terminal. The status command shows the current account.',
   'subscription.guardTitle': 'Sign in to Codex first',
   'subscription.guardLoggedOut':
-    'The official subscription removes the third-party API key. No ChatGPT login was detected, so switching now would leave Codex unable to load your account. Run the command above in a terminal, then retry.',
+    'The official subscription removes the third-party API key. No ChatGPT login was detected, so switching now would leave Codex unable to load your account. Click "Open browser to sign in" (or run the command above in a terminal), then retry.',
   'subscription.guardUnknown':
-    'Codex login state could not be read. Confirm it in the terminal first, then retry; otherwise clearing the config can leave Codex unable to load your account.',
+    'Codex login state could not be read. Click "Open browser to sign in" or run the status command in a terminal first, then retry; otherwise clearing the config can leave Codex unable to load your account.',
   'subscription.guardRetry': 'I signed in — retry',
   'subscription.conflictTitle': 'Codex login method conflict detected',
   'subscription.conflictBody':
@@ -66,7 +70,7 @@ export const en: Record<TranslationKey, string> = {
   'subscription.conflictRemove': 'Remove and switch',
   'subscription.successTitle': 'Switched to the official Codex subscription',
   'subscription.successBody':
-    "If Codex shows couldn't load your account, copy the command above into a terminal to sign in.",
+    'If Codex shows couldn\'t load your account, click "Open browser to sign in" or copy the command above into a terminal.',
   'update.check': 'Check for updates',
   'update.checking': 'Checking…',
   'update.checkHint': 'Check for and download the latest version',

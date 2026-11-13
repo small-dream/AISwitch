@@ -5,9 +5,15 @@ import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth
 import { SubscriptionStatusBadge } from '@/ui/features/switch-panel/SubscriptionStatusBadge'
 
 const writeText = vi.fn(() => Promise.resolve())
+const startLogin = vi.fn()
+
+vi.mock('@/hooks/use-start-subscription-login', () => ({
+  useStartSubscriptionLogin: () => ({ isPending: false, startLogin }),
+}))
 
 beforeEach(() => {
   writeText.mockClear()
+  startLogin.mockClear()
   Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
 })
 
@@ -101,5 +107,27 @@ describe('SubscriptionStatusBadge · 登录命令', () => {
 
     expect(screen.getByText(`${executable} login`)).toBeInTheDocument()
     expect(screen.getByText(`${executable} login status`)).toBeInTheDocument()
+  })
+
+  it('Codex 气泡可直接启动浏览器登录', () => {
+    renderBadge({ tool: 'codex', state: 'logged-out' }, 'codex')
+    fireEvent.mouseEnter(badge('未登录'))
+    fireEvent.click(screen.getByRole('button', { name: '打开浏览器登录' }))
+
+    expect(startLogin).toHaveBeenCalledOnce()
+  })
+
+  it('Claude Code 不展示直接登录按钮（登录需在 CLI 内完成）', () => {
+    renderBadge({ tool: 'claude-code', state: 'logged-out' })
+    fireEvent.mouseEnter(badge('未登录'))
+
+    expect(screen.queryByRole('button', { name: '打开浏览器登录' })).toBeNull()
+  })
+
+  it('已登录时不在气泡内重复展示直接登录按钮', () => {
+    renderBadge({ tool: 'codex', state: 'logged-in' }, 'codex')
+    fireEvent.mouseEnter(badge('已登录'))
+
+    expect(screen.queryByRole('button', { name: '打开浏览器登录' })).toBeNull()
   })
 })

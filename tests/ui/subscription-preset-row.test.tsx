@@ -18,6 +18,7 @@ interface ClearManagedArgs {
 }
 
 const mutate = vi.fn<(args: ClearManagedArgs, options: MutationOptions) => void>()
+const startLogin = vi.fn()
 const writeText = vi.fn(() => Promise.resolve())
 const state = vi.hoisted(() => ({
   auth: undefined as SubscriptionAuthStatus | undefined,
@@ -36,6 +37,10 @@ vi.mock('@/hooks/use-switch', () => ({
   useClearManaged: () => ({ isPending: false, mutate }),
 }))
 
+vi.mock('@/hooks/use-start-subscription-login', () => ({
+  useStartSubscriptionLogin: () => ({ isPending: false, startLogin }),
+}))
+
 vi.mock('@/stores/toast-store', () => ({
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
@@ -47,6 +52,7 @@ function makeStatus(overrides: Partial<ToolStatus> = {}): ToolStatus {
 
 beforeEach(() => {
   mutate.mockReset()
+  startLogin.mockReset()
   state.auth = { tool: 'claude-code', state: 'logged-in' }
   state.statuses = []
   writeText.mockClear()
@@ -162,6 +168,28 @@ describe('SubscriptionPresetRow · Codex 登录守卫弹窗', () => {
     expect(screen.getByText('请先登录 Codex 官方账号')).toBeInTheDocument()
     expect(screen.getByText('codex login')).toBeInTheDocument()
   })
+})
+
+describe('SubscriptionPresetRow · Codex 登录守卫弹窗操作', () => {
+  beforeEach(() => {
+    mutate.mockReset()
+    state.auth = { tool: 'codex', state: 'logged-out' }
+    state.statuses = []
+  })
+
+  it('登录引导可直接启动 Codex 登录，不再要求先复制命令', () => {
+    mutate.mockImplementation((_tool, options) => {
+      options.onError(
+        new AppError('E_SUBSCRIPTION_LOGIN_REQUIRED', '需要先登录', { state: 'logged-out' })
+      )
+    })
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
+    fireEvent.click(screen.getByRole('button', { name: '打开浏览器登录' }))
+
+    expect(startLogin).toHaveBeenCalledOnce()
+  })
 
   it('探测到 CLI 路径时，登录引导给出可直接执行的绝对路径命令', () => {
     state.auth = {
@@ -249,6 +277,18 @@ describe('SubscriptionPresetRow · Codex 成功引导', () => {
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith('codex login')
     })
+  })
+
+  it('成功引导同样可直接启动 Codex 登录', () => {
+    mutate.mockImplementation((_args, options) => {
+      options.onSuccess()
+    })
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
+    fireEvent.click(screen.getByRole('button', { name: '打开浏览器登录' }))
+
+    expect(startLogin).toHaveBeenCalledOnce()
   })
 
   it('探测到 CLI 路径时，成功引导复制绝对路径命令', async () => {

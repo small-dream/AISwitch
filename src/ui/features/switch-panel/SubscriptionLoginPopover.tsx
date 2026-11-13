@@ -1,4 +1,4 @@
-import { CheckCircle2, Copy, KeyRound } from 'lucide-react'
+import { CheckCircle2, Copy, ExternalLink, KeyRound } from 'lucide-react'
 
 import { SUBSCRIPTION_LOGIN } from '@/constants/subscription-login'
 import type { SubscriptionLoginGuide } from '@/constants/subscription-login'
@@ -9,7 +9,9 @@ import {
   buildCodexLoginStatusCommand,
 } from '@/domain/rules/subscription-login-command'
 import { useCopyCommand } from '@/hooks/use-copy-command'
+import { useStartSubscriptionLogin } from '@/hooks/use-start-subscription-login'
 import { useT, type TFn, type TranslationKey } from '@/i18n/index'
+import { Button } from '@/ui/components/Button'
 
 /** 各工具的登录步骤说明词条（UI 文案归属 i18n，常量表只放命令与文档地址） */
 const HINT_KEY = {
@@ -60,6 +62,33 @@ function CommandRow({ command, accountCommand, docUrl }: SubscriptionLoginGuide)
   )
 }
 
+function DirectLoginButton({
+  tool,
+  state,
+}: {
+  tool: TargetTool
+  state: SubscriptionAuthStatus['state']
+}) {
+  const t = useT()
+  const startLogin = useStartSubscriptionLogin(tool)
+  if (tool !== 'codex' || state === 'logged-in') {
+    return null
+  }
+  return (
+    <Button
+      size="sm"
+      className="mt-2"
+      disabled={startLogin.isPending}
+      onClick={() => {
+        startLogin.startLogin()
+      }}
+    >
+      <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+      {t(startLogin.isPending ? 'subscription.startingLogin' : 'subscription.startLogin')}
+    </Button>
+  )
+}
+
 /** 登录引导气泡（PRD §5.13）：常态隐藏，悬停 / 聚焦登录态徽标时展开，标题、状态、命令与文档一处给全 */
 export function SubscriptionLoginPopover({
   id,
@@ -98,6 +127,7 @@ export function SubscriptionLoginPopover({
         </div>
         <p className="mt-1 text-app-muted">{statusText(status, t)}</p>
         <CommandRow {...resolved} />
+        <DirectLoginButton tool={tool} state={status.state} />
         <p className="mt-1.5 text-app-faint">{t(HINT_KEY[tool])}</p>
       </div>
     </div>

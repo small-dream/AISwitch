@@ -168,5 +168,9 @@ export function createCodexTarget(
     authStatus() {
       return detectCodexAuth(fs, cli)
     },
+
+    startSubscriptionLogin() {
+      return cli.startLogin()
+    },
   }
 }

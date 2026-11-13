@@ -5,7 +5,7 @@ import type { CodexCliPort, CodexCliResult } from '@/types/codex-cli-port'
 import { createMemoryFs, type MemoryFs } from '../../helpers/memory-fs'
 
 function cli(result: CodexCliResult): CodexCliPort {
-  return { loginStatus: () => Promise.resolve(result) }
+  return { loginStatus: () => Promise.resolve(result), startLogin: () => Promise.resolve() }
 }
 
 const CHATGPT: CodexCliResult = {

@@ -18,6 +18,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             commands::fs_scope::allow_project_dirs,
+            commands::codex_cli::codex_login,
             commands::codex_cli::codex_login_status,
             commands::permissions::restrict_to_owner,
             commands::system::ping,

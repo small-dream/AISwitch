@@ -38,19 +38,24 @@ export const zhCN = {
   'subscription.loggedIn': '已检测到官方订阅登录态，可直接切换到「官方订阅」。',
   'subscription.loggedInAs': '已检测到官方订阅登录态（{detail}），可直接切换到「官方订阅」。',
   'subscription.loggedOut':
-    '未检测到登录凭据：请先在终端完成官方登录，再切换到「官方订阅」（macOS 凭据存于系统钥匙串，若已登录可忽略本提示）。',
+    '未检测到登录凭据：请先完成官方登录，再切换到「官方订阅」（macOS 凭据存于系统钥匙串，若已登录可忽略本提示）。',
   'subscription.unknown': '配置存在但无法解析，请在 CLI 内确认登录状态后再切换。',
   'subscription.copy': '复制命令',
   'subscription.copied': '已复制',
+  'subscription.startLogin': '打开浏览器登录',
+  'subscription.startingLogin': '正在打开…',
+  'subscription.loginStarted':
+    '已启动 Codex 登录，请在浏览器完成授权；若浏览器未打开，请复制上方命令到终端。',
   'subscription.doc': '官方登录说明',
   'subscription.hintClaudeCode':
     '在终端执行 claude，进入后输入 /login 完成浏览器登录；/status 可查看当前账号与订阅类型。',
-  'subscription.hintCodex': '复制上方登录命令到终端完成浏览器登录；状态命令可查看当前账号。',
+  'subscription.hintCodex':
+    '点击「打开浏览器登录」可直接启动 Codex 登录；也可复制上方命令到终端。状态命令可查看当前账号。',
   'subscription.guardTitle': '请先登录 Codex 官方账号',
   'subscription.guardLoggedOut':
-    '官方订阅会移除第三方 API Key。当前没有检测到 ChatGPT 登录态，直接切换会让 Codex 无法加载账号。请先在终端运行上方命令完成登录，再重试切换。',
+    '官方订阅会移除第三方 API Key。当前没有检测到 ChatGPT 登录态，直接切换会让 Codex 无法加载账号。请先点击「打开浏览器登录」完成登录（或复制上方命令到终端），再重试切换。',
   'subscription.guardUnknown':
-    '无法读取 Codex 的登录态。请先在终端确认登录状态，再重试切换，避免清空配置后 Codex 无法加载账号。',
+    '无法读取 Codex 的登录态。请先点击「打开浏览器登录」，或复制状态命令到终端确认，再重试切换，避免清空配置后 Codex 无法加载账号。',
   'subscription.guardRetry': '我已登录，重试',
   'subscription.conflictTitle': '检测到 Codex 登录方式冲突',
   'subscription.conflictBody':
@@ -58,7 +63,7 @@ export const zhCN = {
   'subscription.conflictRemove': '移除并切换',
   'subscription.successTitle': '已切换到 Codex 官方订阅',
   'subscription.successBody':
-    "如 Codex 提示 couldn't load your account，请把上方命令复制到终端完成登录。",
+    "如 Codex 提示 couldn't load your account，请点击「打开浏览器登录」完成登录，或复制上方命令到终端。",
   'update.check': '检查更新',
   'update.checking': '检查更新中…',
   'update.checkHint': '检查并下载最新版本',

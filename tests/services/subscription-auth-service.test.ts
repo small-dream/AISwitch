@@ -29,4 +29,23 @@ describe('SubscriptionAuthService', () => {
     })
     expect(resolve).toHaveBeenCalledWith('codex')
   })
+
+  it('支持直接登录的工具把请求委派给适配器', async () => {
+    const startSubscriptionLogin = vi.fn(() => Promise.resolve())
+    const target: ConfigTarget = { ...stubTarget('codex'), startSubscriptionLogin }
+    const service = new SubscriptionAuthService(() => target)
+
+    await service.startLogin('codex')
+
+    expect(startSubscriptionLogin).toHaveBeenCalledOnce()
+  })
+
+  it('不支持直接登录的工具抛出明确错误', async () => {
+    const service = new SubscriptionAuthService(() => stubTarget('claude-code'))
+
+    await expect(service.startLogin('claude-code')).rejects.toMatchObject({
+      code: 'E_TARGET_NOT_SUPPORTED',
+      message: '该工具暂不支持直接启动登录',
+    })
+  })
 })

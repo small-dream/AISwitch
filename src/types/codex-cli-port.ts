@@ -12,4 +12,6 @@ export type CodexCliResult =
 
 export interface CodexCliPort {
   loginStatus(): Promise<CodexCliResult>
+  /** 启动 CLI 自带的浏览器登录流程；成功只代表进程已启动，不代表已完成授权 */
+  startLogin(): Promise<void>
 }

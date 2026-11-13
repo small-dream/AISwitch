@@ -43,4 +43,6 @@ export interface ConfigTarget {
   removeSubscriptionConflicts?(): Promise<ApplyResult>
   /** 官方订阅登录态探测（PRD §5.13）：只读，不修改任何配置 */
   authStatus(): Promise<SubscriptionAuthStatus>
+  /** 启动 CLI 自带的浏览器登录流程；不支持的工具省略此能力 */
+  startSubscriptionLogin?(): Promise<void>
 }

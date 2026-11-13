@@ -9,6 +9,7 @@ use serde::Serialize;
 
 const STATUS_TIMEOUT: Duration = Duration::from_secs(5);
 const STATUS_POLL: Duration = Duration::from_millis(25);
+const LOGIN_START_GRACE: Duration = Duration::from_millis(250);
 
 /// `codex login status` 的原始输出；状态解析留在 TS 纯函数，Rust 不代持任何凭据（PRD §5.13）。
 #[derive(Serialize)]
@@ -127,10 +128,62 @@ fn run_status() -> Result<CodexCliOutput, String> {
     ))
 }
 
+/// `codex login` 会自己打开浏览器并等待本地回调；这里只负责启动，
+/// 等待结束会挂住 IPC 请求，因此交给后台线程回收子进程。
+fn start_candidate(executable: &Path) -> io::Result<()> {
+    let mut child = Command::new(executable)
+        .arg("login")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()?;
+    // 给 CLI 一个很短的启动窗口：立即非零退出说明启动失败，避免 UI 误报成功
+    thread::sleep(LOGIN_START_GRACE);
+    if let Some(status) = child.try_wait()? {
+        if status.success() {
+            return Ok(());
+        }
+        return Err(io::Error::new(
+            io::ErrorKind::Other,
+            format!("codex login exited early with {status}"),
+        ));
+    }
+    thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(())
+}
+
+fn run_login() -> Result<(), String> {
+    let candidates = candidates();
+    if candidates.is_empty() {
+        return Err("Codex CLI not found in PATH or the ChatGPT app bundle".to_string());
+    }
+    let mut last_error = None;
+    for executable in candidates {
+        match start_candidate(&executable) {
+            Ok(()) => return Ok(()),
+            Err(error) => last_error = Some(format!("{}: {error}", executable.display())),
+        }
+    }
+    Err(format!(
+        "Codex CLI could not be started: {}",
+        last_error.unwrap_or_else(|| "unknown error".to_string())
+    ))
+}
+
 /// 固定执行 `codex login status`，不接受前端传入命令或参数，避免扩大命令执行面。
 #[tauri::command]
 pub async fn codex_login_status() -> Result<CodexCliOutput, String> {
     tauri::async_runtime::spawn_blocking(run_status)
         .await
         .map_err(|error| format!("Codex login status task failed: {error}"))?
+}
+
+/// 固定启动 `codex login`，不接受前端传入命令或参数；登录流程与凭据都由 CLI 自己处理。
+#[tauri::command]
+pub async fn codex_login() -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(run_login)
+        .await
+        .map_err(|error| format!("Codex login task failed: {error}"))?
 }
