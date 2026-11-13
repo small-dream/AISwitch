@@ -2,6 +2,18 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Fixed
+
+- Switching to the Codex official subscription now checks `forced_login_method = "api"` before touching any file and asks before removing it. A confirmed removal is backed up first and deletes only that field; the obsolete `preferred_auth_method` no longer blocks the switch or gets removed silently.
+- Codex login detection now follows `codex login status` and reports three states instead of guessing from `auth.json`. If the CLI is unavailable it falls back to the CLI bundled with the macOS ChatGPT app; missing tokens produce `unknown`, never `logged-out`, while tokens are used only as supporting evidence of a subscription login.
+- Confirmed conflict removal runs before the login check, so a forced API login can no longer leave Retry stuck on the same error. A button click is no longer mistaken for conflict confirmation, and an API-key login with stored ChatGPT tokens is allowed to switch because clearing the key leaves those tokens intact.
+
+### Added
+
+- After a successful Codex subscription switch, a persistent guide explains what to do if the desktop app still shows `couldn't load your account` and offers a one-click copy of `codex login`.
+
 ## [0.1.24] - 2026-11-13
 
 ### Fixed

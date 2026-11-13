@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { switchService } from '@/app/composition'
 import { QUERY_KEYS } from '@/constants/query-keys'
 import type { TargetTool } from '@/domain/entities/preset'
+import type { ClearManagedOptions } from '@/types/config-target'
 
 /**
  * 切换类写操作的统一失效：探测状态、备份列表、订阅登录态。
@@ -33,7 +34,8 @@ export function useSwitchPreset() {
 export function useClearManaged() {
   const invalidate = useToolStateInvalidation()
   return useMutation({
-    mutationFn: (tool: TargetTool) => switchService.clearManaged(tool),
+    mutationFn: (args: { tool: TargetTool; options?: ClearManagedOptions }) =>
+      switchService.clearManaged(args.tool, args.options),
     onSuccess: invalidate,
     onError: invalidate,
   })

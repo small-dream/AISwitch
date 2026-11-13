@@ -79,7 +79,7 @@ describe('use-switch · 订阅与回滚', () => {
     const undo = renderHook(() => useRollback(), { wrapper: makeWrapper(client) })
 
     act(() => {
-      clear.result.current.mutate('codex')
+      clear.result.current.mutate({ tool: 'codex' })
     })
     await waitFor(() => {
       expect(clear.result.current.isError).toBe(true)

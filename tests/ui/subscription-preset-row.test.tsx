@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ToolStatus } from '@/domain/entities/preset'
@@ -12,7 +12,13 @@ interface MutationOptions {
   onError: (error: unknown) => void
 }
 
-const mutate = vi.fn<(tool: string, options: MutationOptions) => void>()
+interface ClearManagedArgs {
+  tool: string
+  options?: { removeConflicts?: boolean }
+}
+
+const mutate = vi.fn<(args: ClearManagedArgs, options: MutationOptions) => void>()
+const writeText = vi.fn(() => Promise.resolve())
 const state = vi.hoisted(() => ({
   auth: undefined as SubscriptionAuthStatus | undefined,
   statuses: [] as ToolStatus[],
@@ -43,6 +49,11 @@ beforeEach(() => {
   mutate.mockReset()
   state.auth = { tool: 'claude-code', state: 'logged-in' }
   state.statuses = []
+  writeText.mockClear()
+  Object.defineProperty(navigator, 'clipboard', {
+    value: { writeText },
+    configurable: true,
+  })
 })
 
 describe('SubscriptionPresetRow', () => {
@@ -69,7 +80,7 @@ describe('SubscriptionPresetRow', () => {
     fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
 
     const call = mutate.mock.calls[0]
-    expect(call?.[0]).toBe('claude-code')
+    expect(call?.[0]).toEqual({ tool: 'claude-code', options: undefined })
     expect(typeof call?.[1].onSuccess).toBe('function')
   })
 
@@ -120,6 +131,15 @@ describe('SubscriptionPresetRow · Codex 登录守卫', () => {
     ).toBeInTheDocument()
   })
 
+  it('登录态未知时提示先运行 codex login status，而不是断言未登录', () => {
+    state.auth = { tool: 'codex', state: 'unknown' }
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    expect(
+      screen.getByText('无法确认 Codex 登录态，请先在终端运行 codex login status 确认。')
+    ).toBeInTheDocument()
+  })
+
   it('点击切换 → 弹出登录引导而不是静默清空', () => {
     mutate.mockImplementation((_tool, options) => {
       options.onError(
@@ -147,5 +167,51 @@ describe('SubscriptionPresetRow · Codex 登录守卫', () => {
     fireEvent.click(screen.getByRole('button', { name: '我已登录，重试' }))
 
     expect(mutate).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('SubscriptionPresetRow · Codex 冲突与成功引导', () => {
+  beforeEach(() => {
+    mutate.mockReset()
+    state.auth = { tool: 'codex', state: 'logged-in' }
+    state.statuses = []
+  })
+
+  it('检测到 forced_login_method 冲突 → 确认后才带 removeConflicts 重试', () => {
+    mutate.mockImplementation((_args, options) => {
+      options.onError(
+        new AppError('E_SUBSCRIPTION_CONFLICT_REQUIRED', '检测到冲突', {
+          conflicts: [{ key: 'forced_login_method', value: 'api' }],
+        })
+      )
+    })
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
+
+    expect(screen.getByText('检测到 Codex 登录方式冲突')).toBeInTheDocument()
+    expect(screen.getByText(/强制使用 API Key 登录/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '移除并切换' }))
+
+    expect(mutate).toHaveBeenLastCalledWith(
+      { tool: 'codex', options: { removeConflicts: true } },
+      expect.any(Object)
+    )
+  })
+
+  it('切换成功后展示可复制的 codex login 引导', async () => {
+    mutate.mockImplementation((_args, options) => {
+      options.onSuccess()
+    })
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
+
+    expect(screen.getByText('已切换到 Codex 官方订阅')).toBeInTheDocument()
+    expect(screen.getByText(/couldn't load your account/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /复制命令/ }))
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith('codex login')
+    })
   })
 })

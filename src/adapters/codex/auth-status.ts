@@ -1,21 +1,32 @@
 import { PATHS } from '@/constants/paths'
 import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
+import { resolveCodexLoginState } from '@/domain/rules/codex-login-status'
 import { parseCodexSubscription } from '@/domain/rules/subscription-credentials'
+import type { CodexCliPort } from '@/types/codex-cli-port'
 import type { FileSystemPort } from '@/types/fs-port'
+import { tauriCodexCli } from './cli-status'
 
 /**
- * Codex 订阅登录态：~/.codex/auth.json 带 tokens（ChatGPT 登录写入）即已订阅登录；
- * 仅 OPENAI_API_KEY 属于 API Key 登录，不算订阅（PRD §5.13）。
+ * Codex 订阅登录态以 `codex login status` 为准；auth.json 的 tokens 只在 CLI
+ * 不可读时作为已登录的辅助证据，绝不因缺少 tokens 推断未登录（PRD §5.13）。
  */
-export async function detectCodexAuth(fs: FileSystemPort): Promise<SubscriptionAuthStatus> {
-  const base = { tool: 'codex' as const }
+async function readSubscriptionInfo(fs: FileSystemPort) {
   try {
     if (!(await fs.exists(PATHS.codexAuth))) {
-      return { ...base, state: 'logged-out' }
+      return null
     }
-    const info = parseCodexSubscription(await fs.readTextFile(PATHS.codexAuth))
-    return info ? { ...base, state: 'logged-in', ...info } : { ...base, state: 'logged-out' }
+    return parseCodexSubscription(await fs.readTextFile(PATHS.codexAuth))
   } catch {
-    return { ...base, state: 'unknown' }
+    return null
   }
+}
+
+export async function detectCodexAuth(
+  fs: FileSystemPort,
+  cli: CodexCliPort = tauriCodexCli
+): Promise<SubscriptionAuthStatus> {
+  const base = { tool: 'codex' as const }
+  const info = await readSubscriptionInfo(fs)
+  const state = resolveCodexLoginState(await cli.loginStatus(), info !== null)
+  return info ? { ...base, state, ...info, hasSubscriptionCredentials: true } : { ...base, state }
 }

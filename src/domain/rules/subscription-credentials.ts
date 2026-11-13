@@ -102,7 +102,8 @@ export function parseClaudeUserAccount(raw: string): SubscriptionCredentialInfo 
 }
 
 /**
- * ~/.codex/auth.json：存在 tokens（ChatGPT 订阅登录写入）即视为已订阅登录；
+ * ~/.codex/auth.json：存在 tokens（ChatGPT 订阅登录写入）才提供订阅凭据；
+ * 该结果在 CLI 不可读时只是「已登录」的辅助证据，不能反过来推断未登录。
  * 仅有 OPENAI_API_KEY 属于 API Key 登录，不算订阅登录。
  */
 export function parseCodexSubscription(raw: string): SubscriptionCredentialInfo | null {

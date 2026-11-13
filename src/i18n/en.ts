@@ -36,6 +36,8 @@ export const en: Record<TranslationKey, string> = {
   'subscriptionPreset.unknown': 'Login state unknown',
   'subscriptionPreset.loginRequired':
     'Sign in to the official account before switching; otherwise Codex cannot load your account.',
+  'subscriptionPreset.loginUnknown':
+    'Codex login state could not be confirmed. Run codex login status in a terminal first.',
   'subscription.title': 'Official subscription login',
   'subscription.loggedIn':
     'Subscription login detected — you can switch to the official subscription right away.',
@@ -58,6 +60,13 @@ export const en: Record<TranslationKey, string> = {
   'subscription.guardUnknown':
     'Codex login state could not be read. Confirm it in the terminal first, then retry; otherwise clearing the config can leave Codex unable to load your account.',
   'subscription.guardRetry': 'I signed in — retry',
+  'subscription.conflictTitle': 'Codex login method conflict detected',
+  'subscription.conflictBody':
+    'Your config forces API key login, so Codex will not be able to use your subscription account after switching. Remove it as well?',
+  'subscription.conflictRemove': 'Remove and switch',
+  'subscription.successTitle': 'Switched to the official Codex subscription',
+  'subscription.successBody':
+    "If Codex shows couldn't load your account, run codex login in a terminal to sign in.",
   'update.check': 'Check for updates',
   'update.checking': 'Checking…',
   'update.checkHint': 'Check for and download the latest version',

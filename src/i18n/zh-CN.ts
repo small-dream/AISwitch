@@ -32,6 +32,8 @@ export const zhCN = {
   'subscriptionPreset.loggedOut': '未登录',
   'subscriptionPreset.unknown': '登录态未知',
   'subscriptionPreset.loginRequired': '切换前请先登录官方账号，否则 Codex 会无法加载账号。',
+  'subscriptionPreset.loginUnknown':
+    '无法确认 Codex 登录态，请先在终端运行 codex login status 确认。',
   'subscription.title': '官方订阅登录',
   'subscription.loggedIn': '已检测到官方订阅登录态，可直接切换到「官方订阅」。',
   'subscription.loggedInAs': '已检测到官方订阅登录态（{detail}），可直接切换到「官方订阅」。',
@@ -51,6 +53,13 @@ export const zhCN = {
   'subscription.guardUnknown':
     '无法读取 Codex 的登录态。请先在终端确认登录状态，再重试切换，避免清空配置后 Codex 无法加载账号。',
   'subscription.guardRetry': '我已登录，重试',
+  'subscription.conflictTitle': '检测到 Codex 登录方式冲突',
+  'subscription.conflictBody':
+    '检测到你的配置强制使用 API Key 登录，切换后 Codex 将无法使用订阅账号。是否一并移除？',
+  'subscription.conflictRemove': '移除并切换',
+  'subscription.successTitle': '已切换到 Codex 官方订阅',
+  'subscription.successBody':
+    "如 Codex 提示 couldn't load your account，请在终端运行 codex login 完成登录。",
   'update.check': '检查更新',
   'update.checking': '检查更新中…',
   'update.checkHint': '检查并下载最新版本',

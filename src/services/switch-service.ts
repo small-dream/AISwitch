@@ -6,7 +6,7 @@ import { AppError } from '@/domain/errors'
 import type { Preset, TargetTool } from '@/domain/entities/preset'
 import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
 import { subscriptionSwitchBlock } from '@/domain/rules/subscription-switch-guard'
-import type { ApplyResult } from '@/types/config-target'
+import type { ApplyResult, ClearManagedOptions } from '@/types/config-target'
 
 function readAuthStatus(tool: TargetTool): Promise<SubscriptionAuthStatus> {
   return getTarget(tool).authStatus()
@@ -30,14 +30,44 @@ export class SwitchService {
   }
 
   /** 官方订阅条目（PRD §5.13）：清空该工具的全部托管键，把鉴权与模型都交回 CLI */
-  async clearManaged(tool: TargetTool): Promise<ApplyResult> {
+  async clearManaged(tool: TargetTool, options: ClearManagedOptions = {}): Promise<ApplyResult> {
     return this.enqueue(tool, async () => {
+      const conflicts = (await getTarget(tool).subscriptionConflicts?.()) ?? []
+      this.assertNoSubscriptionConflicts(tool, conflicts, options)
+      if (conflicts.length > 0 && options.removeConflicts) {
+        await this.captureBaseline(tool)
+        await this.removeConfirmedConflicts(tool)
+      }
       await this.assertSubscriptionLogin(tool)
       await this.captureBaseline(tool)
-      const result = await getTarget(tool).clearManaged()
+      const result = await getTarget(tool).clearManaged(options)
       await this.markWritten(tool, result)
       return result
     })
+  }
+
+  /** 冲突必须先于登录检查：强制 API 登录时，CLI 登录态本身也可能无法确认 */
+  private assertNoSubscriptionConflicts(
+    tool: TargetTool,
+    conflicts: readonly { key: string; value: string }[],
+    options: ClearManagedOptions
+  ): void {
+    if (conflicts.length === 0 || options.removeConflicts) {
+      return
+    }
+    throw new AppError(
+      'E_SUBSCRIPTION_CONFLICT_REQUIRED',
+      '检测到 Codex 登录方式冲突，需要用户确认后移除',
+      { tool, conflicts }
+    )
+  }
+
+  private async removeConfirmedConflicts(tool: TargetTool): Promise<void> {
+    const target = getTarget(tool)
+    const result = await target.removeSubscriptionConflicts?.()
+    if (result) {
+      await this.markWritten(tool, result)
+    }
   }
 
   /**

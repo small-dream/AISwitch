@@ -17,6 +17,23 @@ describe('subscriptionSwitchBlock', () => {
     expect(subscriptionSwitchBlock('codex', { tool: 'codex', state: 'logged-in' })).toBeNull()
   })
 
+  it('CLI 显示 API Key / 未登录，但磁盘仍有订阅 tokens 时放行（清 API Key 后可回落）', () => {
+    expect(
+      subscriptionSwitchBlock('codex', {
+        tool: 'codex',
+        state: 'logged-out',
+        hasSubscriptionCredentials: true,
+      })
+    ).toBeNull()
+    expect(
+      subscriptionSwitchBlock('codex', {
+        tool: 'codex',
+        state: 'unknown',
+        hasSubscriptionCredentials: true,
+      })
+    ).toBeNull()
+  })
+
   it('Claude Code 不硬拦截（钥匙串探测可能假阴性）', () => {
     expect(
       subscriptionSwitchBlock('claude-code', { tool: 'claude-code', state: 'logged-out' })

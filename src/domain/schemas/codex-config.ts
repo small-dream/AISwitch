@@ -14,6 +14,10 @@ export type CodexProviderBlock = z.infer<typeof providerBlockSchema>
 export const codexConfigSchema = z.looseObject({
   model: z.string().optional(),
   model_provider: z.string().optional(),
+  /** 官方登录方式限制：api 会强制 API Key，导致订阅账号不可用 */
+  forced_login_method: z.string().optional(),
+  /** 历史字段；当前 Codex 已忽略，仅保留宽松解析 */
+  preferred_auth_method: z.string().optional(),
   /** 自定义模型目录指针：整体替换 Codex 内置目录（非叠加） */
   model_catalog_json: z.string().optional(),
   model_providers: z.record(z.string(), providerBlockSchema).optional(),

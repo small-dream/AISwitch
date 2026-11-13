@@ -10,7 +10,7 @@ import { useSubscriptionSwitchGuard } from '@/hooks/use-subscription-switch-guar
 import { useToolStatus } from '@/hooks/use-tool-status'
 import { Badge } from '@/ui/components/Badge'
 import { Button } from '@/ui/components/Button'
-import { SubscriptionLoginRequiredDialog } from './SubscriptionLoginRequiredDialog'
+import { SubscriptionGuides } from './SubscriptionGuides'
 import { SubscriptionStatusBadge } from './SubscriptionStatusBadge'
 
 /**
@@ -41,8 +41,25 @@ function SubscriptionRowInfo({
       </div>
       <p className="mt-1 text-xs text-app-muted">{t('subscriptionPreset.description')}</p>
       {tool === 'codex' && auth && auth.state !== 'logged-in' ? (
-        <p className="mt-1 text-xs text-app-warn-text">{t('subscriptionPreset.loginRequired')}</p>
+        <p className="mt-1 text-xs text-app-warn-text">
+          {t(
+            auth.state === 'unknown'
+              ? 'subscriptionPreset.loginUnknown'
+              : 'subscriptionPreset.loginRequired'
+          )}
+        </p>
       ) : null}
+    </div>
+  )
+}
+
+function SubscriptionRowAction({ pending, onApply }: { pending: boolean; onApply: () => void }) {
+  const t = useT()
+  return (
+    <div className="flex shrink-0 items-center gap-2">
+      <Button size="sm" disabled={pending} onClick={onApply}>
+        {pending ? t('presetRow.applying') : t('subscriptionPreset.switch')}
+      </Button>
     </div>
   )
 }
@@ -58,10 +75,10 @@ export function SubscriptionPresetRow({
   tool: TargetTool
   presets: readonly Preset[]
 }) {
-  const t = useT()
   const { data: auth } = useSubscriptionAuth(tool)
   const { data: statuses } = useToolStatus()
-  const { gate, pending, apply, retry, close } = useSubscriptionSwitchGuard(tool)
+  const { gate, successGuide, pending, apply, retry, confirmConflict, close, closeSuccessGuide } =
+    useSubscriptionSwitchGuard(tool)
   const status = (statuses ?? []).find((item) => item.tool === tool)
   const isActive = isSubscriptionActive(status, presets)
 
@@ -77,22 +94,19 @@ export function SubscriptionPresetRow({
       >
         <div className="flex items-start justify-between gap-3">
           <SubscriptionRowInfo tool={tool} auth={auth} isActive={isActive} />
-          <div className="flex shrink-0 items-center gap-2">
-            <Button size="sm" disabled={pending} onClick={apply}>
-              {pending ? t('presetRow.applying') : t('subscriptionPreset.switch')}
-            </Button>
-          </div>
+          <SubscriptionRowAction pending={pending} onApply={apply} />
         </div>
       </li>
-      {gate ? (
-        <SubscriptionLoginRequiredDialog
-          tool={tool}
-          state={gate}
-          pending={pending}
-          onRetry={retry}
-          onClose={close}
-        />
-      ) : null}
+      <SubscriptionGuides
+        tool={tool}
+        gate={gate}
+        successGuide={successGuide}
+        pending={pending}
+        onRetry={retry}
+        onConfirmConflict={confirmConflict}
+        onClose={close}
+        onCloseSuccess={closeSuccessGuide}
+      />
     </>
   )
 }

@@ -23,6 +23,7 @@ export const ERROR_CODES = [
   'E_TARGET_NOT_SUPPORTED',
   // 官方订阅域
   'E_SUBSCRIPTION_LOGIN_REQUIRED',
+  'E_SUBSCRIPTION_CONFLICT_REQUIRED',
   // 连通性测试域
   'E_NETWORK_TEST_FAILED',
   // 应用更新域

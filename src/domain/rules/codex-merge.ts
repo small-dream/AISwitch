@@ -5,14 +5,20 @@ import { isRecord } from '@/utils/guards'
 
 export type CodexAuthFile = Record<string, unknown>
 
-/** 删除全部托管供应商标识：model / model_provider / 注入块（目录键由 catalog 计划单独处理） */
+/**
+ * 删除托管供应商标识：只有顶层 provider 指向注入块 / 官方时删除 model 与 model_provider；
+ * 注入块本身只要存在就删除。用户自建 provider 与其模型选择原样保留。
+ */
 function withoutProviderKeys(config: CodexConfig): CodexConfig {
   const next = { ...config }
-  Reflect.deleteProperty(next, 'model')
-  Reflect.deleteProperty(next, 'model_provider')
-  if (!next.model_providers) {
-    return next
+  const topLevelManaged =
+    next.model_provider === CODEX_CONFIG_KEYS.injectedProvider ||
+    next.model_provider === CODEX_CONFIG_KEYS.officialProvider
+  if (topLevelManaged) {
+    Reflect.deleteProperty(next, 'model')
+    Reflect.deleteProperty(next, 'model_provider')
   }
+  if (!next.model_providers) return next
   const providers = { ...next.model_providers }
   Reflect.deleteProperty(providers, CODEX_CONFIG_KEYS.injectedProvider)
   if (Object.keys(providers).length === 0) {

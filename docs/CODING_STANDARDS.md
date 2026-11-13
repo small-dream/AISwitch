@@ -92,17 +92,17 @@ new AppError('E_CONFIG_WRITE', '写入 Claude 配置失败', { tool: 'claude-cod
 
 **错误码分域**（与 `src/constants/error-codes.ts` 保持一致）：
 
-| 前缀                           | 域             | 示例                                                    |
-| ------------------------------ | -------------- | ------------------------------------------------------- |
-| `E_FS_*`                       | 文件系统       | `E_FS_READ` / `E_FS_WRITE`                              |
-| `E_CONFIG_*`                   | 配置解析与写入 | `E_CONFIG_PARSE` / `E_CONFIG_WRITE` / `E_CONFIG_VERIFY` |
-| `E_PRESET_*`                   | 预设库         | `E_PRESET_NOT_FOUND` / `E_PRESET_DUPLICATE_NAME`        |
-| `E_BACKUP_*` / `E_ROLLBACK_*`  | 备份回滚       | `E_BACKUP_FAILED` / `E_ROLLBACK_FAILED`                 |
-| `E_BASELINE_*` / `E_RESTORE_*` | 基线与一键还原 | `E_BASELINE_FAILED` / `E_RESTORE_FAILED`                |
-| `E_TARGET_*`                   | 目标工具       | `E_TARGET_NOT_SUPPORTED`                                |
-| `E_SUBSCRIPTION_*`             | 官方订阅       | `E_SUBSCRIPTION_LOGIN_REQUIRED`                         |
-| `E_NETWORK_*`                  | 连通性测试     | `E_NETWORK_TEST_FAILED`                                 |
-| `E_VALIDATION_*` / `E_UNKNOWN` | 校验 / 兜底    | `E_VALIDATION_FAILED`                                   |
+| 前缀                           | 域             | 示例                                                                 |
+| ------------------------------ | -------------- | -------------------------------------------------------------------- |
+| `E_FS_*`                       | 文件系统       | `E_FS_READ` / `E_FS_WRITE`                                           |
+| `E_CONFIG_*`                   | 配置解析与写入 | `E_CONFIG_PARSE` / `E_CONFIG_WRITE` / `E_CONFIG_VERIFY`              |
+| `E_PRESET_*`                   | 预设库         | `E_PRESET_NOT_FOUND` / `E_PRESET_DUPLICATE_NAME`                     |
+| `E_BACKUP_*` / `E_ROLLBACK_*`  | 备份回滚       | `E_BACKUP_FAILED` / `E_ROLLBACK_FAILED`                              |
+| `E_BASELINE_*` / `E_RESTORE_*` | 基线与一键还原 | `E_BASELINE_FAILED` / `E_RESTORE_FAILED`                             |
+| `E_TARGET_*`                   | 目标工具       | `E_TARGET_NOT_SUPPORTED`                                             |
+| `E_SUBSCRIPTION_*`             | 官方订阅       | `E_SUBSCRIPTION_LOGIN_REQUIRED` / `E_SUBSCRIPTION_CONFLICT_REQUIRED` |
+| `E_NETWORK_*`                  | 连通性测试     | `E_NETWORK_TEST_FAILED`                                              |
+| `E_VALIDATION_*` / `E_UNKNOWN` | 校验 / 兜底    | `E_VALIDATION_FAILED`                                                |
 
 分层职责：**Adapter 抛**（携带上下文）→ **Service 包装**（决定流程：回滚/中止）→ **UI 统一拦截**（ErrorBoundary + Toast）。组件与 hooks 内禁止裸 `try-catch` 后什么都不做；异步调用必须有失败分支处理。
 

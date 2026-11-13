@@ -16,5 +16,10 @@ export function subscriptionSwitchBlock(
   if (tool !== 'codex' || status.state === 'logged-in') {
     return null
   }
+  // CLI 仍决定展示态；但只要 auth.json 还有 tokens，清掉 API Key 后账号仍可回落，
+  // 不应因为当前是 API Key 登录而阻止用户切回订阅。
+  if (status.hasSubscriptionCredentials) {
+    return null
+  }
   return status.state
 }

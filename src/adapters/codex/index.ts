@@ -1,26 +1,28 @@
 import { BackupManager } from '@/adapters/backup/backup-manager'
 import { CODEX_AUTH_KEYS, CODEX_CONFIG_KEYS } from '@/constants/config-keys'
 import { PATHS } from '@/constants/paths'
-import { AppError, toAppError, type AppErrorContext } from '@/domain/errors'
+import { AppError } from '@/domain/errors'
 import type { Preset, ToolStatus } from '@/domain/entities/preset'
-import { codexCatalogAbsolutePath, withCatalogKey } from '@/domain/rules/codex-catalog'
+import { withCatalogKey } from '@/domain/rules/codex-catalog'
 import {
   codexProviderLabel,
   codexProviderUrl,
-  hasManagedCodexKeys,
   mergeCodexAuth,
   mergeCodexConfig,
-  stripManagedCodexAuth,
-  stripManagedCodexConfig,
 } from '@/domain/rules/codex-merge'
+import { findCodexSubscriptionConflicts } from '@/domain/rules/subscription-switch-conflicts'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import type { ApplyResult, ConfigTarget } from '@/types/config-target'
+import type { CodexCliPort } from '@/types/codex-cli-port'
 import type { FileSystemPort } from '@/types/fs-port'
 import { syncCodexCatalog, verifyCodexCatalog } from './catalog-sync'
 import { detectCodexAuth } from './auth-status'
+import { tauriCodexCli } from './cli-status'
 import { readCodexAuth, readCodexConfig } from './reader'
 import { writeCodexAuth, writeCodexConfig } from './writer'
 import { isRecord } from '@/utils/guards'
+import { clearManagedCodex, removeCodexSubscriptionConflicts } from './clear-managed'
+import { applyFailure, rollbackManaged, type ManagedFile } from './file-transaction'
 
 const INJECTED = CODEX_CONFIG_KEYS.injectedProvider
 
@@ -77,151 +79,6 @@ async function verifyCodex(fs: FileSystemPort, preset: Preset): Promise<boolean>
   }
 }
 
-/** apply 本次实际改写的文件及其备份名；backupName 为 null 表示源文件此前不存在（首次写入） */
-interface ManagedFile {
-  path: string
-  backupName: string | null
-}
-
-interface RollbackOutcome {
-  /** 至少一个文件从本次备份恢复 */
-  restored: boolean
-  /** 回滚动作自身失败（文件可能仍处于坏状态，必须向调用方暴露） */
-  failed: boolean
-}
-
-/** 单文件回滚：有备份恢复本次备份；首次写入则删除本次新建的文件 */
-async function rollbackFile(
-  fs: FileSystemPort,
-  backups: BackupManager,
-  file: ManagedFile
-): Promise<void> {
-  if (file.backupName === null) {
-    if (await fs.exists(file.path)) {
-      await fs.remove(file.path)
-    }
-    return
-  }
-  await backups.restore('codex', file.backupName, file.path)
-}
-
-/** 仅回滚本次 apply 实际改写的文件；单文件失败不阻断其余文件，失败汇总进 outcome */
-async function rollbackManaged(
-  fs: FileSystemPort,
-  backups: BackupManager,
-  files: readonly ManagedFile[]
-): Promise<RollbackOutcome> {
-  let restored = false
-  let failed = false
-  for (const file of files) {
-    try {
-      await rollbackFile(fs, backups, file)
-      restored = restored || file.backupName !== null
-    } catch {
-      failed = true
-    }
-  }
-  return { restored, failed }
-}
-
-/** 保留原错误码，在消息与 context 中如实标注回滚结果（失败绝不谎称已回滚） */
-function applyFailure(error: unknown, outcome: RollbackOutcome): AppError {
-  const original = toAppError(error, 'E_CONFIG_WRITE', '应用配置失败', { tool: 'codex' })
-  const suffix = outcome.failed
-    ? '自动回滚也失败，请从备份目录手动恢复'
-    : outcome.restored
-      ? '已自动回滚'
-      : '已清理本次新建的配置文件'
-  const context: AppErrorContext = {
-    ...original.context,
-    rollbackFailed: outcome.failed,
-    rolledBack: !outcome.failed && outcome.restored,
-  }
-  return new AppError(original.code, `${original.message}；${suffix}`, context)
-}
-
-/** 清空托管键后的回读校验：托管键一律不存在（用户自有字段忽略） */
-async function verifyCodexCleared(fs: FileSystemPort): Promise<boolean> {
-  try {
-    const config = await readCodexConfig(fs)
-    if (config) {
-      if (config.model !== undefined || config.model_provider !== undefined) {
-        return false
-      }
-      if (config.model_providers && INJECTED in config.model_providers) {
-        return false
-      }
-      if (config.model_catalog_json === codexCatalogAbsolutePath(await fs.homeDir())) {
-        return false
-      }
-    }
-    const auth = await readCodexAuth(fs)
-    return !isRecord(auth) || !(CODEX_AUTH_KEYS.apiKey in auth)
-  } catch {
-    return false
-  }
-}
-
-/** auth.json 剥离托管键：剥空即删除文件（与 stripManagedCodexAuth 的语义对齐） */
-async function writeClearedAuth(fs: FileSystemPort, auth: unknown): Promise<void> {
-  const stripped = stripManagedCodexAuth(auth)
-  if (stripped) {
-    await writeCodexAuth(fs, stripped)
-    return
-  }
-  if (await fs.exists(PATHS.codexAuth)) {
-    await fs.remove(PATHS.codexAuth)
-  }
-}
-
-/**
- * 交回 CLI（官方订阅，PRD §5.13）：移除托管供应商标识、托管目录指向与 API Key，
- * 保留 ChatGPT tokens 与用户自有字段；两文件都不存在时不写入任何内容。
- */
-async function clearManagedCodex(fs: FileSystemPort, backups: BackupManager): Promise<ApplyResult> {
-  const config = await readCodexConfig(fs)
-  const auth = await readCodexAuth(fs)
-  const home = await fs.homeDir()
-  const catalogPath = codexCatalogAbsolutePath(home)
-  // 没有托管键就不写任何文件（与 Claude 侧一致）：用户自建 provider 块与只带 tokens 的
-  // auth.json 不属于我们托管的内容，一次「切到官方订阅」不该改写它们
-  if (!hasManagedCodexKeys(config, auth, catalogPath)) {
-    return { tool: 'codex', appliedAt: new Date().toISOString(), writtenFiles: [] }
-  }
-  const configBackup = await backups.backup('codex', PATHS.codexConfig)
-  const authBackup = await backups.backup('codex', PATHS.codexAuth)
-  const managed: ManagedFile[] = [
-    { path: PATHS.codexConfig, backupName: configBackup },
-    { path: PATHS.codexAuth, backupName: authBackup },
-  ]
-  // 只把真正存在（因而真的被改写或删除）的文件记为「应用写过」，避免给未处理的文件留下假证据
-  const written: string[] = []
-  if (config) {
-    written.push(PATHS.codexConfig)
-  }
-  if (auth !== null) {
-    written.push(PATHS.codexAuth)
-  }
-  try {
-    if (config) {
-      await writeCodexConfig(fs, stripManagedCodexConfig(config, codexCatalogAbsolutePath(home)))
-    }
-    await writeClearedAuth(fs, auth)
-    if (!(await verifyCodexCleared(fs))) {
-      throw new AppError('E_CONFIG_VERIFY', '切换后回读校验失败', { tool: 'codex' })
-    }
-  } catch (error) {
-    const outcome = await rollbackManaged(fs, backups, managed)
-    throw applyFailure(error, outcome)
-  }
-  return {
-    tool: 'codex',
-    backupPath: configBackup ?? undefined,
-    appliedAt: new Date().toISOString(),
-    writtenFiles: written,
-  }
-}
-
 /** 备份 → 原子写 → 校验；失败时仅回滚本次实际改写的文件，错误码原样保留 */
 async function applyCodex(
   fs: FileSystemPort,
@@ -269,7 +126,10 @@ async function applyCodex(
 }
 
 /** Codex CLI 目标工具适配器（config.toml + auth.json 双文件三段式） */
-export function createCodexTarget(fs: FileSystemPort): ConfigTarget {
+export function createCodexTarget(
+  fs: FileSystemPort,
+  cli: CodexCliPort = tauriCodexCli
+): ConfigTarget {
   const backups = new BackupManager(fs)
   return {
     tool: 'codex',
@@ -286,8 +146,16 @@ export function createCodexTarget(fs: FileSystemPort): ConfigTarget {
       return verifyCodex(fs, preset)
     },
 
-    clearManaged() {
-      return clearManagedCodex(fs, backups)
+    clearManaged(options) {
+      return clearManagedCodex(fs, backups, options ?? {})
+    },
+
+    async subscriptionConflicts() {
+      return findCodexSubscriptionConflicts(await readCodexConfig(fs))
+    },
+
+    removeSubscriptionConflicts() {
+      return removeCodexSubscriptionConflicts(fs, backups)
     },
 
     async rollback() {
@@ -298,7 +166,7 @@ export function createCodexTarget(fs: FileSystemPort): ConfigTarget {
     },
 
     authStatus() {
-      return detectCodexAuth(fs)
+      return detectCodexAuth(fs, cli)
     },
   }
 }
