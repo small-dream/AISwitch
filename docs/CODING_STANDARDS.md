@@ -100,6 +100,7 @@ new AppError('E_CONFIG_WRITE', '写入 Claude 配置失败', { tool: 'claude-cod
 | `E_BACKUP_*` / `E_ROLLBACK_*`  | 备份回滚       | `E_BACKUP_FAILED` / `E_ROLLBACK_FAILED`                 |
 | `E_BASELINE_*` / `E_RESTORE_*` | 基线与一键还原 | `E_BASELINE_FAILED` / `E_RESTORE_FAILED`                |
 | `E_TARGET_*`                   | 目标工具       | `E_TARGET_NOT_SUPPORTED`                                |
+| `E_SUBSCRIPTION_*`             | 官方订阅       | `E_SUBSCRIPTION_LOGIN_REQUIRED`                         |
 | `E_NETWORK_*`                  | 连通性测试     | `E_NETWORK_TEST_FAILED`                                 |
 | `E_VALIDATION_*` / `E_UNKNOWN` | 校验 / 兜底    | `E_VALIDATION_FAILED`                                   |
 

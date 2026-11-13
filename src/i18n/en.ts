@@ -21,10 +21,6 @@ export const en: Record<TranslationKey, string> = {
   // Header
   'header.toggleTheme': 'Toggle theme',
   'header.toggleLang': 'Switch language',
-  'shortcut.noPresetToSwitch': 'No other preset is available to switch to',
-  'shortcut.switchedTo': 'Switched to {name}',
-  'shortcut.registerFailed':
-    'Failed to register the global shortcut ({detail}); another app may already use it',
   'template.pickerLabel': 'Fill from provider template',
   'template.placeholder': 'Choose a template…',
   'template.local': 'Local model',
@@ -38,6 +34,8 @@ export const en: Record<TranslationKey, string> = {
   'subscriptionPreset.loggedIn': 'Signed in',
   'subscriptionPreset.loggedOut': 'Not signed in',
   'subscriptionPreset.unknown': 'Login state unknown',
+  'subscriptionPreset.loginRequired':
+    'Sign in to the official account before switching; otherwise Codex cannot load your account.',
   'subscription.title': 'Official subscription login',
   'subscription.loggedIn':
     'Subscription login detected — you can switch to the official subscription right away.',
@@ -54,6 +52,12 @@ export const en: Record<TranslationKey, string> = {
     'Run claude in a terminal, then type /login to finish the browser login; /status shows the current account and subscription.',
   'subscription.hintCodex':
     'Run codex login in a terminal to finish the browser login; codex login status shows the current account.',
+  'subscription.guardTitle': 'Sign in to Codex first',
+  'subscription.guardLoggedOut':
+    'The official subscription removes the third-party API key. No ChatGPT login was detected, so switching now would leave Codex unable to load your account. Finish the terminal login, then retry.',
+  'subscription.guardUnknown':
+    'Codex login state could not be read. Confirm it in the terminal first, then retry; otherwise clearing the config can leave Codex unable to load your account.',
+  'subscription.guardRetry': 'I signed in — retry',
   'update.check': 'Check for updates',
   'update.checking': 'Checking…',
   'update.checkHint': 'Check for and download the latest version',

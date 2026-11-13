@@ -2,6 +2,16 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Fixed
+
+- Switching to the Codex official subscription with only an API key now fails fast with a login guide instead of clearing `auth.json` and leaving Codex unable to load the account. The switch is blocked until `codex login` has written ChatGPT tokens; the dialog offers the command, a retry button, and an inline entry hint.
+
+### Removed
+
+- Removed all system-wide global shortcuts (`Cmd/Ctrl+Shift+A` and `Cmd/Ctrl+Shift+S`) because they conflicted with shortcuts used by other applications. The global-shortcut plugin, capability permissions, adapter, hook, `nextPresetId` rule and related tests were deleted; use the tray menu or the main window to switch presets.
+
 ## [0.1.23] - 2026-11-09
 
 ### Fixed

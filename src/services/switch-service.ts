@@ -4,7 +4,13 @@ import { getTarget } from '@/adapters/target-registry'
 import { PATHS } from '@/constants/paths'
 import { AppError } from '@/domain/errors'
 import type { Preset, TargetTool } from '@/domain/entities/preset'
+import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
+import { subscriptionSwitchBlock } from '@/domain/rules/subscription-switch-guard'
 import type { ApplyResult } from '@/types/config-target'
+
+function readAuthStatus(tool: TargetTool): Promise<SubscriptionAuthStatus> {
+  return getTarget(tool).authStatus()
+}
 
 /** 切换用例：校验预设归属后委托给目标工具适配器（PRD US-03 / US-04） */
 export class SwitchService {
@@ -13,7 +19,10 @@ export class SwitchService {
 
   constructor(
     private readonly repo: PresetRepository,
-    private readonly baselines: BaselineManager
+    private readonly baselines: BaselineManager,
+    private readonly authStatus: (
+      tool: TargetTool
+    ) => Promise<SubscriptionAuthStatus> = readAuthStatus
   ) {}
 
   async switch(tool: TargetTool, presetId: string): Promise<ApplyResult> {
@@ -23,11 +32,33 @@ export class SwitchService {
   /** 官方订阅条目（PRD §5.13）：清空该工具的全部托管键，把鉴权与模型都交回 CLI */
   async clearManaged(tool: TargetTool): Promise<ApplyResult> {
     return this.enqueue(tool, async () => {
+      await this.assertSubscriptionLogin(tool)
       await this.captureBaseline(tool)
       const result = await getTarget(tool).clearManaged()
       await this.markWritten(tool, result)
       return result
     })
+  }
+
+  /**
+   * Codex 的 API Key 与 ChatGPT tokens 共用 auth.json：没有 tokens 就清掉 API Key，
+   * Codex 桌面端会直接报「无法加载账号」。此时拒绝切换，让 UI 引导用户先完成登录。
+   */
+  private async assertSubscriptionLogin(tool: TargetTool): Promise<void> {
+    if (tool !== 'codex') {
+      return
+    }
+    const state = subscriptionSwitchBlock(tool, await this.authStatus(tool))
+    if (!state) {
+      return
+    }
+    throw new AppError(
+      'E_SUBSCRIPTION_LOGIN_REQUIRED',
+      state === 'logged-out'
+        ? '未检测到 Codex 官方登录态，请先执行 codex login 再切换到官方订阅'
+        : '无法确认 Codex 官方登录态，请先执行 codex login status 确认后再切换到官方订阅',
+      { tool, state }
+    )
   }
 
   async rollback(tool: TargetTool): Promise<boolean> {

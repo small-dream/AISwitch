@@ -6,12 +6,11 @@ import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth
 import { isSubscriptionActive } from '@/domain/rules/subscription-active'
 import { useT } from '@/i18n/index'
 import { useSubscriptionAuth } from '@/hooks/use-subscription-auth'
-import { useClearManaged } from '@/hooks/use-switch'
+import { useSubscriptionSwitchGuard } from '@/hooks/use-subscription-switch-guard'
 import { useToolStatus } from '@/hooks/use-tool-status'
-import { toastError, toastSuccess } from '@/stores/toast-store'
-import { errorMessage } from '@/utils/error-message'
 import { Badge } from '@/ui/components/Badge'
 import { Button } from '@/ui/components/Button'
+import { SubscriptionLoginRequiredDialog } from './SubscriptionLoginRequiredDialog'
 import { SubscriptionStatusBadge } from './SubscriptionStatusBadge'
 
 /**
@@ -41,6 +40,9 @@ function SubscriptionRowInfo({
         ) : null}
       </div>
       <p className="mt-1 text-xs text-app-muted">{t('subscriptionPreset.description')}</p>
+      {tool === 'codex' && auth && auth.state !== 'logged-in' ? (
+        <p className="mt-1 text-xs text-app-warn-text">{t('subscriptionPreset.loginRequired')}</p>
+      ) : null}
     </div>
   )
 }
@@ -59,38 +61,38 @@ export function SubscriptionPresetRow({
   const t = useT()
   const { data: auth } = useSubscriptionAuth(tool)
   const { data: statuses } = useToolStatus()
-  const clearMutation = useClearManaged()
+  const { gate, pending, apply, retry, close } = useSubscriptionSwitchGuard(tool)
   const status = (statuses ?? []).find((item) => item.tool === tool)
   const isActive = isSubscriptionActive(status, presets)
 
-  const apply = () => {
-    clearMutation.mutate(tool, {
-      onSuccess: () => {
-        toastSuccess(t('presetRow.switchedTo', { name: t('subscriptionPreset.name') }))
-      },
-      onError: (error) => {
-        toastError(errorMessage(error))
-      },
-    })
-  }
-
   return (
-    <li
-      className={clsx(
-        'animate-fade-in rounded-lg border border-dashed p-3 transition-colors duration-150',
-        isActive
-          ? 'border-app-accent/60 bg-app-accent-soft/60 shadow-sm shadow-app-accent/10'
-          : 'border-app-border bg-app-sunken hover:border-app-accent/40 hover:bg-app-hover'
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <SubscriptionRowInfo tool={tool} auth={auth} isActive={isActive} />
-        <div className="flex shrink-0 items-center gap-2">
-          <Button size="sm" disabled={clearMutation.isPending} onClick={apply}>
-            {clearMutation.isPending ? t('presetRow.applying') : t('subscriptionPreset.switch')}
-          </Button>
+    <>
+      <li
+        className={clsx(
+          'animate-fade-in rounded-lg border border-dashed p-3 transition-colors duration-150',
+          isActive
+            ? 'border-app-accent/60 bg-app-accent-soft/60 shadow-sm shadow-app-accent/10'
+            : 'border-app-border bg-app-sunken hover:border-app-accent/40 hover:bg-app-hover'
+        )}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <SubscriptionRowInfo tool={tool} auth={auth} isActive={isActive} />
+          <div className="flex shrink-0 items-center gap-2">
+            <Button size="sm" disabled={pending} onClick={apply}>
+              {pending ? t('presetRow.applying') : t('subscriptionPreset.switch')}
+            </Button>
+          </div>
         </div>
-      </div>
-    </li>
+      </li>
+      {gate ? (
+        <SubscriptionLoginRequiredDialog
+          tool={tool}
+          state={gate}
+          pending={pending}
+          onRetry={retry}
+          onClose={close}
+        />
+      ) : null}
+    </>
   )
 }

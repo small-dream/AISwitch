@@ -24,6 +24,10 @@ const EN_MESSAGES: Record<string, string> = {
   预设不存在: 'Preset not found',
   同一工具下已存在同名预设: 'A preset with this name already exists for this tool',
   预设与目标工具不匹配: 'Preset does not match the target tool',
+  '未检测到 Codex 官方登录态，请先执行 codex login 再切换到官方订阅':
+    'No Codex subscription login detected. Run codex login before switching to the official subscription',
+  '无法确认 Codex 官方登录态，请先执行 codex login status 确认后再切换到官方订阅':
+    'Codex subscription login could not be confirmed. Run codex login status before switching to the official subscription',
   '切换后回读校验失败；已自动回滚': 'Post-switch verification failed; rolled back automatically',
   '切换后回读校验失败；已清理本次新建的配置文件':
     'Post-switch verification failed; the newly created config file was removed',

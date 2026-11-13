@@ -3,10 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { ToolStatus } from '@/domain/entities/preset'
 import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
+import { AppError } from '@/domain/errors'
 import { SubscriptionPresetRow } from '@/ui/features/switch-panel/SubscriptionPresetRow'
 import { makePreset } from '../helpers/make-preset'
 
-const mutate = vi.fn<(tool: string, options: { onSuccess: () => void }) => void>()
+interface MutationOptions {
+  onSuccess: () => void
+  onError: (error: unknown) => void
+}
+
+const mutate = vi.fn<(tool: string, options: MutationOptions) => void>()
 const state = vi.hoisted(() => ({
   auth: undefined as SubscriptionAuthStatus | undefined,
   statuses: [] as ToolStatus[],
@@ -34,7 +40,7 @@ function makeStatus(overrides: Partial<ToolStatus> = {}): ToolStatus {
 }
 
 beforeEach(() => {
-  mutate.mockClear()
+  mutate.mockReset()
   state.auth = { tool: 'claude-code', state: 'logged-in' }
   state.statuses = []
 })
@@ -96,5 +102,50 @@ describe('SubscriptionPresetRow', () => {
     render(<SubscriptionPresetRow tool="codex" presets={[]} />)
 
     expect(screen.queryByText('当前')).toBeNull()
+  })
+})
+
+describe('SubscriptionPresetRow · Codex 登录守卫', () => {
+  beforeEach(() => {
+    mutate.mockReset()
+    state.auth = { tool: 'codex', state: 'logged-out' }
+    state.statuses = []
+  })
+
+  it('未登录时行内提示先登录，避免直接切换', () => {
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    expect(
+      screen.getByText('切换前请先登录官方账号，否则 Codex 会无法加载账号。')
+    ).toBeInTheDocument()
+  })
+
+  it('点击切换 → 弹出登录引导而不是静默清空', () => {
+    mutate.mockImplementation((_tool, options) => {
+      options.onError(
+        new AppError('E_SUBSCRIPTION_LOGIN_REQUIRED', '需要先登录', { state: 'logged-out' })
+      )
+    })
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('请先登录 Codex 官方账号')).toBeInTheDocument()
+    expect(screen.getByText('codex login')).toBeInTheDocument()
+  })
+
+  it('登录引导里的重试会再次尝试切换', () => {
+    mutate.mockImplementation((_tool, options) => {
+      options.onError(
+        new AppError('E_SUBSCRIPTION_LOGIN_REQUIRED', '需要先登录', { state: 'logged-out' })
+      )
+    })
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
+    fireEvent.click(screen.getByRole('button', { name: '我已登录，重试' }))
+
+    expect(mutate).toHaveBeenCalledTimes(2)
   })
 })

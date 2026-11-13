@@ -21,6 +21,8 @@ export const ERROR_CODES = [
   'E_RESTORE_FAILED',
   // 目标工具域
   'E_TARGET_NOT_SUPPORTED',
+  // 官方订阅域
+  'E_SUBSCRIPTION_LOGIN_REQUIRED',
   // 连通性测试域
   'E_NETWORK_TEST_FAILED',
   // 应用更新域

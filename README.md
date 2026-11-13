@@ -46,7 +46,6 @@ AISwitch turns that into a single click — with validation, backups, and instan
 - 🧩 **Codex `models.json` hosting** — paste a single entry or a whole `models.json`; the file is stored verbatim and family models all appear in the picker. `display_name` is auto-filled when missing.
 - 🧰 **Provider templates + local models** — built-in templates for OpenCode Zen/Go / GLM / DeepSeek / Kimi / Qwen / Doubao / Ollama / LM Studio; official endpoints are not templates but the built-in "official subscription" entry; Ollama and LM Studio need no API key.
 - 🔑 **Switch back to an official subscription (via login)** — the preset list ships a built-in "official subscription" entry (one per tool, nothing to create or fill in): one click hands the key, base URL and model back to the CLI, auth goes to its own login state (`/login` for Claude Code, `codex login` for Codex), and the model is picked in the CLI with `/model`. The row badges the login state and reveals the detected state plus a one-click copy of the login command on hover; credentials always stay with the CLI.
-- ⌨️ **Global shortcuts** — `Cmd/Ctrl+Shift+A` brings the main window to front; `Cmd/Ctrl+Shift+S` cycles to the next preset of the current tool.
 - 🖥 **Tray menu** — switch presets straight from the system tray; the active preset is check-marked.
 - 🌐 **Bilingual UI** — Chinese & English, following your system language by default with a one-click toggle.
 - 🌗 **Light / dark theme** — semantic token theming with a one-click toggle.

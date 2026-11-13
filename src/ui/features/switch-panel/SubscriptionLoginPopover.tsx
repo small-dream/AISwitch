@@ -1,10 +1,10 @@
 import { CheckCircle2, Copy, KeyRound } from 'lucide-react'
-import { useEffect, useState } from 'react'
 
 import { SUBSCRIPTION_LOGIN } from '@/constants/subscription-login'
 import type { SubscriptionLoginGuide } from '@/constants/subscription-login'
 import type { TargetTool } from '@/domain/entities/preset'
 import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
+import { useCopyCommand } from '@/hooks/use-copy-command'
 import { useT, type TFn, type TranslationKey } from '@/i18n/index'
 
 /** 各工具的登录步骤说明词条（UI 文案归属 i18n，常量表只放命令与文档地址） */
@@ -20,33 +20,6 @@ function statusText(status: SubscriptionAuthStatus, t: TFn): string {
     return detail ? t('subscription.loggedInAs', { detail }) : t('subscription.loggedIn')
   }
   return t(status.state === 'logged-out' ? 'subscription.loggedOut' : 'subscription.unknown')
-}
-
-/** 复制终端登录命令：仅成功时给反馈，失败时命令本身已可手动复制 */
-function useCopyCommand(command: string) {
-  const [copied, setCopied] = useState(false)
-  useEffect(() => {
-    if (!copied) {
-      return undefined
-    }
-    const timer = setTimeout(() => {
-      setCopied(false)
-    }, 2000)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [copied])
-  const copy = () => {
-    navigator.clipboard
-      .writeText(command)
-      .then(() => {
-        setCopied(true)
-      })
-      .catch(() => {
-        setCopied(false)
-      })
-  }
-  return { copied, copy }
 }
 
 /** 命令行：登录命令 + 账号查询 + 一键复制 + 官方文档入口 */
