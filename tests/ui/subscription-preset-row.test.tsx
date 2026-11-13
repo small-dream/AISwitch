@@ -116,7 +116,7 @@ describe('SubscriptionPresetRow', () => {
   })
 })
 
-describe('SubscriptionPresetRow · Codex 登录守卫', () => {
+describe('SubscriptionPresetRow · Codex 登录守卫提示', () => {
   beforeEach(() => {
     mutate.mockReset()
     state.auth = { tool: 'codex', state: 'logged-out' }
@@ -131,13 +131,21 @@ describe('SubscriptionPresetRow · Codex 登录守卫', () => {
     ).toBeInTheDocument()
   })
 
-  it('登录态未知时提示先运行 codex login status，而不是断言未登录', () => {
+  it('登录态未知时提示查看登录态徽标里的状态命令，而不是断言未登录', () => {
     state.auth = { tool: 'codex', state: 'unknown' }
     render(<SubscriptionPresetRow tool="codex" presets={[]} />)
 
     expect(
-      screen.getByText('无法确认 Codex 登录态，请先在终端运行 codex login status 确认。')
+      screen.getByText('无法确认 Codex 登录态，请先展开登录态徽标，在终端运行其中的状态命令确认。')
     ).toBeInTheDocument()
+  })
+})
+
+describe('SubscriptionPresetRow · Codex 登录守卫弹窗', () => {
+  beforeEach(() => {
+    mutate.mockReset()
+    state.auth = { tool: 'codex', state: 'logged-out' }
+    state.statuses = []
   })
 
   it('点击切换 → 弹出登录引导而不是静默清空', () => {
@@ -155,6 +163,26 @@ describe('SubscriptionPresetRow · Codex 登录守卫', () => {
     expect(screen.getByText('codex login')).toBeInTheDocument()
   })
 
+  it('探测到 CLI 路径时，登录引导给出可直接执行的绝对路径命令', () => {
+    state.auth = {
+      tool: 'codex',
+      state: 'logged-out',
+      cliExecutable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
+    }
+    mutate.mockImplementation((_tool, options) => {
+      options.onError(
+        new AppError('E_SUBSCRIPTION_LOGIN_REQUIRED', '需要先登录', { state: 'logged-out' })
+      )
+    })
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
+
+    expect(
+      screen.getByText('/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex login')
+    ).toBeInTheDocument()
+  })
+
   it('登录引导里的重试会再次尝试切换', () => {
     mutate.mockImplementation((_tool, options) => {
       options.onError(
@@ -170,7 +198,7 @@ describe('SubscriptionPresetRow · Codex 登录守卫', () => {
   })
 })
 
-describe('SubscriptionPresetRow · Codex 冲突与成功引导', () => {
+describe('SubscriptionPresetRow · Codex 登录方式冲突', () => {
   beforeEach(() => {
     mutate.mockReset()
     state.auth = { tool: 'codex', state: 'logged-in' }
@@ -198,6 +226,14 @@ describe('SubscriptionPresetRow · Codex 冲突与成功引导', () => {
       expect.any(Object)
     )
   })
+})
+
+describe('SubscriptionPresetRow · Codex 成功引导', () => {
+  beforeEach(() => {
+    mutate.mockReset()
+    state.auth = { tool: 'codex', state: 'logged-in' }
+    state.statuses = []
+  })
 
   it('切换成功后展示可复制的 codex login 引导', async () => {
     mutate.mockImplementation((_args, options) => {
@@ -212,6 +248,27 @@ describe('SubscriptionPresetRow · Codex 冲突与成功引导', () => {
     fireEvent.click(screen.getByRole('button', { name: /复制命令/ }))
     await waitFor(() => {
       expect(writeText).toHaveBeenCalledWith('codex login')
+    })
+  })
+
+  it('探测到 CLI 路径时，成功引导复制绝对路径命令', async () => {
+    state.auth = {
+      tool: 'codex',
+      state: 'logged-in',
+      cliExecutable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
+    }
+    mutate.mockImplementation((_args, options) => {
+      options.onSuccess()
+    })
+    render(<SubscriptionPresetRow tool="codex" presets={[]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: '切换到官方订阅' }))
+    fireEvent.click(screen.getByRole('button', { name: /复制命令/ }))
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex login'
+      )
     })
   })
 })

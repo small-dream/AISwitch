@@ -25,8 +25,12 @@ export async function detectCodexAuth(
   fs: FileSystemPort,
   cli: CodexCliPort = tauriCodexCli
 ): Promise<SubscriptionAuthStatus> {
-  const base = { tool: 'codex' as const }
   const info = await readSubscriptionInfo(fs)
-  const state = resolveCodexLoginState(await cli.loginStatus(), info !== null)
+  const result = await cli.loginStatus()
+  const state = resolveCodexLoginState(result, info !== null)
+  const executable = result.status === 'ran' ? result.executable : undefined
+  const base = executable
+    ? { tool: 'codex' as const, cliExecutable: executable }
+    : { tool: 'codex' as const }
   return info ? { ...base, state, ...info, hasSubscriptionCredentials: true } : { ...base, state }
 }

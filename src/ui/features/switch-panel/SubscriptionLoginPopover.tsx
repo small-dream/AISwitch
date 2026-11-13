@@ -4,6 +4,10 @@ import { SUBSCRIPTION_LOGIN } from '@/constants/subscription-login'
 import type { SubscriptionLoginGuide } from '@/constants/subscription-login'
 import type { TargetTool } from '@/domain/entities/preset'
 import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
+import {
+  buildCodexLoginCommand,
+  buildCodexLoginStatusCommand,
+} from '@/domain/rules/subscription-login-command'
 import { useCopyCommand } from '@/hooks/use-copy-command'
 import { useT, type TFn, type TranslationKey } from '@/i18n/index'
 
@@ -23,16 +27,19 @@ function statusText(status: SubscriptionAuthStatus, t: TFn): string {
 }
 
 /** 命令行：登录命令 + 账号查询 + 一键复制 + 官方文档入口 */
-function CommandRow({ guide }: { guide: SubscriptionLoginGuide }) {
+function CommandRow({ command, accountCommand, docUrl }: SubscriptionLoginGuide) {
   const t = useT()
-  const { copied, copy } = useCopyCommand(guide.command)
+  const { copied, copy } = useCopyCommand(command)
 
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      <code className="rounded bg-app-input px-1.5 py-0.5 font-mono text-[11px] text-app">
-        {guide.command}
+      <code
+        title={command}
+        className="max-w-full truncate rounded bg-app-input px-1.5 py-0.5 font-mono text-[11px] text-app"
+      >
+        {command}
       </code>
-      <span className="text-app-faint">{guide.accountCommand}</span>
+      <span className="break-all text-app-faint">{accountCommand}</span>
       <button
         type="button"
         onClick={copy}
@@ -42,7 +49,7 @@ function CommandRow({ guide }: { guide: SubscriptionLoginGuide }) {
         {t(copied ? 'subscription.copied' : 'subscription.copy')}
       </button>
       <a
-        href={guide.docUrl}
+        href={docUrl}
         target="_blank"
         rel="noreferrer"
         className="text-app-muted underline-offset-2 transition-colors hover:text-app hover:underline"
@@ -65,6 +72,14 @@ export function SubscriptionLoginPopover({
 }) {
   const t = useT()
   const guide = SUBSCRIPTION_LOGIN[tool]
+  const resolved: SubscriptionLoginGuide =
+    tool === 'codex'
+      ? {
+          ...guide,
+          command: buildCodexLoginCommand(status.cliExecutable),
+          accountCommand: buildCodexLoginStatusCommand(status.cliExecutable),
+        }
+      : guide
 
   return (
     <div
@@ -82,7 +97,7 @@ export function SubscriptionLoginPopover({
           {t('subscription.title')}
         </div>
         <p className="mt-1 text-app-muted">{statusText(status, t)}</p>
-        <CommandRow guide={guide} />
+        <CommandRow {...resolved} />
         <p className="mt-1.5 text-app-faint">{t(HINT_KEY[tool])}</p>
       </div>
     </div>

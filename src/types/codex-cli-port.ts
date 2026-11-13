@@ -5,6 +5,8 @@ export type CodexCliResult =
       stdout: string
       stderr: string
       exitCode: number | null
+      /** 实际执行的 CLI 路径（仅 macOS），用于生成不依赖 PATH 的登录命令 */
+      executable?: string
     }
   | { status: 'unavailable'; reason: string }
 

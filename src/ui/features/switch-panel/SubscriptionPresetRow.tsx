@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react'
 
 import type { Preset, TargetTool } from '@/domain/entities/preset'
 import type { SubscriptionAuthStatus } from '@/domain/entities/subscription-auth'
+import { buildCodexLoginCommand } from '@/domain/rules/subscription-login-command'
 import { isSubscriptionActive } from '@/domain/rules/subscription-active'
 import { useT } from '@/i18n/index'
 import { useSubscriptionAuth } from '@/hooks/use-subscription-auth'
@@ -81,6 +82,7 @@ export function SubscriptionPresetRow({
     useSubscriptionSwitchGuard(tool)
   const status = (statuses ?? []).find((item) => item.tool === tool)
   const isActive = isSubscriptionActive(status, presets)
+  const loginCommand = tool === 'codex' ? buildCodexLoginCommand(auth?.cliExecutable) : undefined
 
   return (
     <>
@@ -102,6 +104,7 @@ export function SubscriptionPresetRow({
         gate={gate}
         successGuide={successGuide}
         pending={pending}
+        loginCommand={loginCommand}
         onRetry={retry}
         onConfirmConflict={confirmConflict}
         onClose={close}

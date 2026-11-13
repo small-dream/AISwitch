@@ -37,7 +37,7 @@ export const en: Record<TranslationKey, string> = {
   'subscriptionPreset.loginRequired':
     'Sign in to the official account before switching; otherwise Codex cannot load your account.',
   'subscriptionPreset.loginUnknown':
-    'Codex login state could not be confirmed. Run codex login status in a terminal first.',
+    'Codex login state could not be confirmed. Open the login badge and run its status command in a terminal first.',
   'subscription.title': 'Official subscription login',
   'subscription.loggedIn':
     'Subscription login detected — you can switch to the official subscription right away.',
@@ -53,10 +53,10 @@ export const en: Record<TranslationKey, string> = {
   'subscription.hintClaudeCode':
     'Run claude in a terminal, then type /login to finish the browser login; /status shows the current account and subscription.',
   'subscription.hintCodex':
-    'Run codex login in a terminal to finish the browser login; codex login status shows the current account.',
+    'Copy the login command above into a terminal to finish the browser login; the status command shows the current account.',
   'subscription.guardTitle': 'Sign in to Codex first',
   'subscription.guardLoggedOut':
-    'The official subscription removes the third-party API key. No ChatGPT login was detected, so switching now would leave Codex unable to load your account. Finish the terminal login, then retry.',
+    'The official subscription removes the third-party API key. No ChatGPT login was detected, so switching now would leave Codex unable to load your account. Run the command above in a terminal, then retry.',
   'subscription.guardUnknown':
     'Codex login state could not be read. Confirm it in the terminal first, then retry; otherwise clearing the config can leave Codex unable to load your account.',
   'subscription.guardRetry': 'I signed in — retry',
@@ -66,7 +66,7 @@ export const en: Record<TranslationKey, string> = {
   'subscription.conflictRemove': 'Remove and switch',
   'subscription.successTitle': 'Switched to the official Codex subscription',
   'subscription.successBody':
-    "If Codex shows couldn't load your account, run codex login in a terminal to sign in.",
+    "If Codex shows couldn't load your account, copy the command above into a terminal to sign in.",
   'update.check': 'Check for updates',
   'update.checking': 'Checking…',
   'update.checkHint': 'Check for and download the latest version',

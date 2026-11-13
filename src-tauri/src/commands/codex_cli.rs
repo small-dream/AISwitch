@@ -17,6 +17,20 @@ pub struct CodexCliOutput {
     pub stdout: String,
     pub stderr: String,
     pub exit_code: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub executable: Option<String>,
+}
+
+/// 只有 macOS 需要回传绝对路径：ChatGPT 桌面端自带的 CLI 不在用户终端 PATH 中。
+/// 其他平台继续让用户执行 `codex login`，避免 Windows 终端不认 POSIX 单引号路径。
+#[cfg(target_os = "macos")]
+fn executable_path(executable: &Path) -> Option<String> {
+    Some(executable.display().to_string())
+}
+
+#[cfg(not(target_os = "macos"))]
+fn executable_path(_executable: &Path) -> Option<String> {
+    None
 }
 
 fn executable_name() -> &'static str {
@@ -91,6 +105,7 @@ fn run_candidate(executable: &Path) -> io::Result<CodexCliOutput> {
         stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
         stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
         exit_code: output.status.code(),
+        executable: executable_path(executable),
     })
 }
 

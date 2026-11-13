@@ -13,18 +13,21 @@ const CHATGPT: CodexCliResult = {
   stdout: '',
   stderr: 'Logged in using ChatGPT',
   exitCode: 0,
+  executable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
 }
 const API_KEY: CodexCliResult = {
   status: 'ran',
   stdout: '',
   stderr: 'API key configured - oc_sk_***',
   exitCode: 0,
+  executable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
 }
 const LOGGED_OUT: CodexCliResult = {
   status: 'ran',
   stdout: '',
   stderr: 'Not logged in',
   exitCode: 1,
+  executable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
 }
 const UNAVAILABLE: CodexCliResult = { status: 'unavailable', reason: 'missing' }
 
@@ -36,6 +39,7 @@ describe('detectCodexAuth', () => {
 
     expect(await detectCodexAuth(fs, cli(CHATGPT))).toEqual({
       tool: 'codex',
+      cliExecutable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
       state: 'logged-in',
       plan: undefined,
       hasSubscriptionCredentials: true,
@@ -45,6 +49,7 @@ describe('detectCodexAuth', () => {
   it('没有 auth.json 但 CLI 已 ChatGPT 登录（钥匙串）→ 已登录', async () => {
     expect(await detectCodexAuth(createMemoryFs(), cli(CHATGPT))).toEqual({
       tool: 'codex',
+      cliExecutable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
       state: 'logged-in',
     })
   })
@@ -56,6 +61,7 @@ describe('detectCodexAuth', () => {
 
     expect(await detectCodexAuth(fs, cli(API_KEY))).toEqual({
       tool: 'codex',
+      cliExecutable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
       state: 'logged-out',
       hasSubscriptionCredentials: true,
     })
@@ -64,6 +70,7 @@ describe('detectCodexAuth', () => {
   it('CLI 明确未登录 → 未订阅登录', async () => {
     expect(await detectCodexAuth(createMemoryFs(), cli(LOGGED_OUT))).toEqual({
       tool: 'codex',
+      cliExecutable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
       state: 'logged-out',
     })
   })
@@ -89,6 +96,10 @@ describe('detectCodexAuth · CLI 不可用时的辅助证据', () => {
     const fs: MemoryFs = createMemoryFs({ '.codex/auth.json': '{"tokens":{}}' })
     fs.readTextFile = () => Promise.reject(new Error('EACCES'))
 
-    expect(await detectCodexAuth(fs, cli(CHATGPT))).toEqual({ tool: 'codex', state: 'logged-in' })
+    expect(await detectCodexAuth(fs, cli(CHATGPT))).toEqual({
+      tool: 'codex',
+      cliExecutable: '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex',
+      state: 'logged-in',
+    })
   })
 })

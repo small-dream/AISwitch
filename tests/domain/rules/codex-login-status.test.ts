@@ -4,7 +4,7 @@ import { resolveCodexLoginState } from '@/domain/rules/codex-login-status'
 import type { CodexCliResult } from '@/types/codex-cli-port'
 
 function ran(stderr: string, exitCode = 0): CodexCliResult {
-  return { status: 'ran', stdout: '', stderr, exitCode }
+  return { status: 'ran', stdout: '', stderr, exitCode, executable: '/usr/local/bin/codex' }
 }
 
 describe('resolveCodexLoginState', () => {

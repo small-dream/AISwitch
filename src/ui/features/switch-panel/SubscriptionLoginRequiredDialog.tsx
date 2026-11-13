@@ -36,7 +36,9 @@ function LoginCommand({ command }: { command: string }) {
   const { copied, copy } = useCopyCommand(command)
   return (
     <div className="mt-3 flex items-center gap-2 rounded-lg border border-app-border bg-app-sunken px-3 py-2">
-      <code className="min-w-0 flex-1 truncate font-mono text-xs text-app">{command}</code>
+      <code title={command} className="min-w-0 flex-1 truncate font-mono text-xs text-app">
+        {command}
+      </code>
       <button
         type="button"
         onClick={copy}
@@ -76,17 +78,20 @@ export function SubscriptionLoginRequiredDialog({
   tool,
   state,
   pending,
+  command,
   onRetry,
   onClose,
 }: {
   tool: TargetTool
   state: SubscriptionSwitchBlockState
   pending: boolean
+  command?: string
   onRetry: () => void
   onClose: () => void
 }) {
   const t = useT()
   const guide = SUBSCRIPTION_LOGIN[tool]
+  const resolved = command ?? guide.command
   return createPortal(
     <div
       className="animate-overlay-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
@@ -100,7 +105,7 @@ export function SubscriptionLoginRequiredDialog({
         <p id={BODY_ID} className="mt-3 text-sm leading-relaxed text-app-muted">
           {t(state === 'unknown' ? 'subscription.guardUnknown' : 'subscription.guardLoggedOut')}
         </p>
-        <LoginCommand command={guide.command} />
+        <LoginCommand command={resolved} />
         <GuardActions pending={pending} onRetry={onRetry} onClose={onClose} />
       </div>
     </div>,

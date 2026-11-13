@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [Unreleased]
+
+### Fixed
+
+- Codex login guidance now uses the CLI path resolved by the login-status probe instead of always copying `codex login`. Users who only installed the ChatGPT desktop app no longer copy a command that fails with `command not found` because `codex` is not on their terminal `PATH`; macOS uses the resolved absolute path, while other platforms keep the `codex login` fallback.
+
 ## [0.1.25] - 2026-11-13
 
 ### Fixed

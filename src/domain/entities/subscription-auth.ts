@@ -20,4 +20,6 @@ export interface SubscriptionAuthStatus {
   account?: string
   /** OAuth 凭据过期时间（ISO） */
   expiresAt?: string
+  /** 探测时实际使用的 CLI 可执行文件路径（仅 Codex），用于生成不依赖 PATH 的登录命令 */
+  cliExecutable?: string
 }

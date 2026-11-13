@@ -6,6 +6,7 @@ interface CodexCliCommandOutput {
   stdout: string
   stderr: string
   exitCode: number | null
+  executable?: string
 }
 
 function failureReason(error: unknown): string {

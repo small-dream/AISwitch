@@ -93,4 +93,13 @@ describe('SubscriptionStatusBadge · 登录命令', () => {
 
     expect(screen.getByText('codex login')).toBeInTheDocument()
   })
+
+  it('Codex 探测到 CLI 路径时使用绝对路径登录与状态命令', () => {
+    const executable = '/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex'
+    renderBadge({ tool: 'codex', state: 'logged-out', cliExecutable: executable }, 'codex')
+    fireEvent.mouseEnter(badge('未登录'))
+
+    expect(screen.getByText(`${executable} login`)).toBeInTheDocument()
+    expect(screen.getByText(`${executable} login status`)).toBeInTheDocument()
+  })
 })

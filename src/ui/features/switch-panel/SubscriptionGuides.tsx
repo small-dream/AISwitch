@@ -10,6 +10,7 @@ export function SubscriptionGuides({
   gate,
   successGuide,
   pending,
+  loginCommand,
   onRetry,
   onConfirmConflict,
   onClose,
@@ -19,6 +20,7 @@ export function SubscriptionGuides({
   gate: SubscriptionSwitchGate | null
   successGuide: boolean
   pending: boolean
+  loginCommand?: string
   onRetry: () => void
   onConfirmConflict: () => void
   onClose: () => void
@@ -31,6 +33,7 @@ export function SubscriptionGuides({
           tool={tool}
           state={gate.state}
           pending={pending}
+          command={loginCommand}
           onRetry={onRetry}
           onClose={onClose}
         />
@@ -42,7 +45,9 @@ export function SubscriptionGuides({
           onClose={onClose}
         />
       ) : null}
-      {successGuide ? <SubscriptionSuccessGuideDialog onClose={onCloseSuccess} /> : null}
+      {successGuide ? (
+        <SubscriptionSuccessGuideDialog command={loginCommand} onClose={onCloseSuccess} />
+      ) : null}
     </>
   )
 }

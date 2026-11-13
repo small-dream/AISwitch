@@ -33,7 +33,7 @@ export const zhCN = {
   'subscriptionPreset.unknown': '登录态未知',
   'subscriptionPreset.loginRequired': '切换前请先登录官方账号，否则 Codex 会无法加载账号。',
   'subscriptionPreset.loginUnknown':
-    '无法确认 Codex 登录态，请先在终端运行 codex login status 确认。',
+    '无法确认 Codex 登录态，请先展开登录态徽标，在终端运行其中的状态命令确认。',
   'subscription.title': '官方订阅登录',
   'subscription.loggedIn': '已检测到官方订阅登录态，可直接切换到「官方订阅」。',
   'subscription.loggedInAs': '已检测到官方订阅登录态（{detail}），可直接切换到「官方订阅」。',
@@ -45,11 +45,10 @@ export const zhCN = {
   'subscription.doc': '官方登录说明',
   'subscription.hintClaudeCode':
     '在终端执行 claude，进入后输入 /login 完成浏览器登录；/status 可查看当前账号与订阅类型。',
-  'subscription.hintCodex':
-    '在终端执行 codex login 完成浏览器登录；codex login status 可查看当前账号。',
+  'subscription.hintCodex': '复制上方登录命令到终端完成浏览器登录；状态命令可查看当前账号。',
   'subscription.guardTitle': '请先登录 Codex 官方账号',
   'subscription.guardLoggedOut':
-    '官方订阅会移除第三方 API Key。当前没有检测到 ChatGPT 登录态，直接切换会让 Codex 无法加载账号。请先在终端完成登录，再重试切换。',
+    '官方订阅会移除第三方 API Key。当前没有检测到 ChatGPT 登录态，直接切换会让 Codex 无法加载账号。请先在终端运行上方命令完成登录，再重试切换。',
   'subscription.guardUnknown':
     '无法读取 Codex 的登录态。请先在终端确认登录状态，再重试切换，避免清空配置后 Codex 无法加载账号。',
   'subscription.guardRetry': '我已登录，重试',
@@ -59,7 +58,7 @@ export const zhCN = {
   'subscription.conflictRemove': '移除并切换',
   'subscription.successTitle': '已切换到 Codex 官方订阅',
   'subscription.successBody':
-    "如 Codex 提示 couldn't load your account，请在终端运行 codex login 完成登录。",
+    "如 Codex 提示 couldn't load your account，请把上方命令复制到终端完成登录。",
   'update.check': '检查更新',
   'update.checking': '检查更新中…',
   'update.checkHint': '检查并下载最新版本',
