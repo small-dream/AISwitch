@@ -4,8 +4,8 @@ import { groupModelOptions, templateModelOptions } from '@/domain/rules/model-op
 
 describe('templateModelOptions · 按 Base URL 反查模板', () => {
   it('OpenCode Go：Codex 侧给 DeepSeek/Grok，Claude 侧给 MiniMax/Qwen', () => {
-    const codex = templateModelOptions('codex', 'https://opencode.ai/zen/go/v1')
-    const claude = templateModelOptions('claude-code', 'https://opencode.ai/zen/go')
+    const codex = templateModelOptions('codex', 'https://opencode.ai/inference/go/openai/v1')
+    const claude = templateModelOptions('claude-code', 'https://opencode.ai/inference/go/anthropic')
 
     expect(codex).toContain('deepseek-v4.1-flash')
     expect(codex).toContain('grok-4.7')
@@ -14,8 +14,8 @@ describe('templateModelOptions · 按 Base URL 反查模板', () => {
   })
 
   it('忽略大小写、结尾斜杠与 CLI 自行追加的 /v1', () => {
-    expect(templateModelOptions('codex', 'https://OpenCode.ai/zen/go/v1/')).toEqual(
-      templateModelOptions('codex', 'https://opencode.ai/zen/go')
+    expect(templateModelOptions('codex', 'https://OpenCode.ai/inference/go/openai/v1/')).toEqual(
+      templateModelOptions('codex', 'https://opencode.ai/inference/go/openai')
     )
   })
 

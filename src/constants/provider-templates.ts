@@ -43,10 +43,11 @@ export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
   {
     /** OpenCode Zen：按量计费的模型网关（opencode.ai/auth 取 Key） */
     id: 'opencode-zen',
-    label: 'OpenCode Zen（套餐）',
+    label: 'OpenCode Zen',
     variants: {
       'claude-code': {
-        baseUrl: 'https://opencode.ai/zen',
+        /** 官方 Anthropic 兼容基址；Claude Code 自行追加 /v1/messages */
+        baseUrl: 'https://opencode.ai/inference/anthropic',
         suggestModels: [
           'claude-sonnet-5',
           'claude-opus-5-5',
@@ -57,11 +58,11 @@ export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
       },
       codex: {
         /**
-         * 实测（2026-09-26，POST /zen/v1/responses）：目录内模型均以 402 计费失败
+         * 实测（2026-09-26，POST /inference/openai/v1/responses）：目录内模型均以 402 计费失败
          * 应答，说明协议被接受；gpt-5.2-codex / gpt-5.6-sol 返回
          * 403 Model access is disabled，故不预填。
          */
-        baseUrl: 'https://opencode.ai/zen/v1',
+        baseUrl: 'https://opencode.ai/inference/openai/v1',
         suggestModels: ['gpt-5.3-codex', 'gpt-5.3-codex-spark', 'gpt-5.5', 'gpt-6-sol'],
       },
     },
@@ -69,23 +70,23 @@ export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
   {
     /** OpenCode Go：$10/月订阅，主打开源编码模型（与 Zen 同一把 Key） */
     id: 'opencode-go',
-    label: 'OpenCode Go（订阅）',
+    label: 'OpenCode Go',
     variants: {
       'claude-code': {
-        baseUrl: 'https://opencode.ai/zen/go',
+        baseUrl: 'https://opencode.ai/inference/go/anthropic',
         suggestModels: ['minimax-m3', 'qwen3.8-max', 'qwen3.7-max', 'qwen3.8-flash'],
         smallFastModel: 'qwen3.8-flash',
       },
       codex: {
         /**
          * Codex 只支持 responses 协议，故只预填 Go 网关在 `/responses` 上支持的模型。
-         * 实测（2026-09-26，`POST /zen/go/v1/responses`）：
+         * 实测（2026-09-26，`POST /inference/go/openai/v1/responses`）：
          * - 通过：DeepSeek 全系、Grok 4.7 / 4.6；
          * - 400 ModelProtocolUnsupported：GLM / Kimi / MiniMax / Qwen / MiMo / LongCat / Hy，
          *   这些模型只有在 Claude Code 侧（`/messages`）才可用；
          * - GPT Luna 系列返回 403 unsupported_country_region_territory（部分地区不可用），故不预填。
          */
-        baseUrl: 'https://opencode.ai/zen/go/v1',
+        baseUrl: 'https://opencode.ai/inference/go/openai/v1',
         suggestModels: [
           'deepseek-v4.1-flash',
           'deepseek-v4-pro',
@@ -138,7 +139,7 @@ export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
   },
   {
     id: 'kimi',
-    label: 'Kimi（月之暗面）',
+    label: 'Kimi',
     variants: {
       'claude-code': {
         baseUrl: 'https://api.moonshot.cn/anthropic',
@@ -167,7 +168,7 @@ export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
   {
     /** 火山方舟只有 OpenAI 兼容端点，故只出现在 Codex 侧 */
     id: 'doubao',
-    label: '豆包（火山方舟）',
+    label: '豆包',
     variants: {
       codex: {
         baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
@@ -179,7 +180,7 @@ export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
   {
     /** Ollama 没有 Anthropic 兼容端点，只出现在 Codex 侧 */
     id: 'ollama',
-    label: 'Ollama（本地）',
+    label: 'Ollama',
     local: true,
     variants: {
       codex: {
@@ -191,7 +192,7 @@ export const PROVIDER_TEMPLATES: readonly ProviderTemplate[] = [
   {
     /** LM Studio 同样只有 OpenAI 兼容端点，只出现在 Codex 侧 */
     id: 'lm-studio',
-    label: 'LM Studio（本地）',
+    label: 'LM Studio',
     local: true,
     variants: {
       codex: {

@@ -56,41 +56,47 @@ describe('applyProviderTemplate', () => {
 })
 
 describe('applyProviderTemplate · OpenCode 套餐（工具感知）', () => {
-  it('Zen：Claude Code 用 /zen + Claude 模型，Codex 用 /zen/v1 + GPT 模型', () => {
+  it('Zen：Claude Code 用 /inference/anthropic + Claude 模型，Codex 用 /inference/openai/v1 + GPT 模型', () => {
     const template = findProviderTemplate('opencode-zen')
     const claude = template ? applyProviderTemplate(template, 'claude-code') : null
     const codex = template ? applyProviderTemplate(template, 'codex') : null
 
-    expect(claude?.baseUrl).toBe('https://opencode.ai/zen')
+    expect(claude?.baseUrl).toBe('https://opencode.ai/inference/anthropic')
     expect(claude?.model).toMatch(/^claude-/)
     expect(claude?.smallFastModel).toBe('claude-haiku-4-5')
-    expect(codex?.baseUrl).toBe('https://opencode.ai/zen/v1')
+    expect(codex?.baseUrl).toBe('https://opencode.ai/inference/openai/v1')
     expect(codex?.model).toMatch(/^gpt-5/)
   })
 
-  it('Go：Claude Code 用 /zen/go + Qwen/MiniMax，Codex 用 /zen/go/v1 + DeepSeek/Grok', () => {
+  it('Go：Claude Code 用 /inference/go/anthropic + Qwen/MiniMax，Codex 用 /inference/go/openai/v1 + DeepSeek/Grok', () => {
     const template = findProviderTemplate('opencode-go')
     const claude = template ? applyProviderTemplate(template, 'claude-code') : null
     const codex = template ? applyProviderTemplate(template, 'codex') : null
 
-    expect(claude?.baseUrl).toBe('https://opencode.ai/zen/go')
+    expect(claude?.baseUrl).toBe('https://opencode.ai/inference/go/anthropic')
     expect(claude?.model).toBe('minimax-m3')
     expect(claude?.smallFastModel).toBe('qwen3.8-flash')
-    expect(codex?.baseUrl).toBe('https://opencode.ai/zen/go/v1')
+    expect(codex?.baseUrl).toBe('https://opencode.ai/inference/go/openai/v1')
     // 实测 Go 网关在 /responses 上支持 DeepSeek 与 Grok，故 Codex 侧预填 DeepSeek
     expect(codex?.model).toBe('deepseek-v4.1-flash')
   })
 
-  it('Claude 侧与 Codex 侧地址不同，且 Codex 侧为 Claude 侧 + /v1', () => {
-    for (const id of ['opencode-zen', 'opencode-go']) {
+  it('Claude 侧走 /anthropic、Codex 侧走 /openai/v1，两侧地址不同', () => {
+    const expected = {
+      'opencode-zen': {
+        claude: 'https://opencode.ai/inference/anthropic',
+        codex: 'https://opencode.ai/inference/openai/v1',
+      },
+      'opencode-go': {
+        claude: 'https://opencode.ai/inference/go/anthropic',
+        codex: 'https://opencode.ai/inference/go/openai/v1',
+      },
+    }
+    for (const [id, urls] of Object.entries(expected)) {
       const template = findProviderTemplate(id)
-      const claude = template?.variants['claude-code']?.baseUrl
-      const codex = template?.variants.codex?.baseUrl
-      if (!claude || !codex) {
-        throw new Error(`模板 ${id} 缺少某一侧的 Base URL`)
-      }
-      expect(claude).not.toBe(codex)
-      expect(codex).toBe(`${claude}/v1`)
+      expect(template?.variants['claude-code']?.baseUrl).toBe(urls.claude)
+      expect(template?.variants.codex?.baseUrl).toBe(urls.codex)
+      expect(urls.claude).not.toBe(urls.codex)
     }
   })
 })
