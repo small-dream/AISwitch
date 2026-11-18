@@ -2,6 +2,13 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.28] - 2026-11-18
+
+### Fixed
+
+- Provider templates now use OpenCode's current gateway base URLs instead of the retired `/zen` paths: Claude Code gets `https://opencode.ai/inference/anthropic` (Go: `/inference/go/anthropic`) and Codex gets `https://opencode.ai/inference/openai/v1` (Go: `/inference/go/openai/v1`). Claude Code still appends `/v1/messages` itself, so the base URL deliberately omits it.
+- Provider template labels no longer carry parenthetical suffixes such as 「套餐」, 「订阅」, 「月之暗面」 or 「本地」, so the "fill from provider template" menu shows clean names.
+
 ## [0.1.27] - 2026-11-13
 
 ### Added
