@@ -206,7 +206,7 @@ export const en: Record<TranslationKey, string> = {
     'Advanced: model catalog entry (optional; only needed for Codex third-party models)',
   'presetForm.metadataInvalid': 'Invalid metadata',
   'presetForm.metadataHint':
-    'Paste a single entry from the provider, or a whole models.json file (stored as-is; after switching, all models of the family appear in the Codex picker). Codex uses it for context window and other model metadata; leave empty to fall back to the built-in catalog. It must contain an entry matching the model name (a missing slug is filled in automatically on save).',
+    'Paste a single entry from the provider, or a whole models.json file (after switching, all models of the family appear in the Codex picker). A single entry only needs the fields you want to override; the rest are filled from the fallback entry — for example, to enable max effort, set supported_reasoning_levels and default_reasoning_level. Codex uses it for context window and reasoning levels; leave empty to generate a default entry. It must contain an entry matching the model name (a missing slug is filled in automatically on save).',
   'presetForm.metadataLabel': 'Model metadata JSON',
   'presetForm.draftKeyNotice':
     'The API key was read from your local config. On save it will be written to ~/.aiswitch/presets.json (readable only by the current user).',

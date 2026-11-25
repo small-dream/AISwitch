@@ -72,7 +72,11 @@ export function resolveCatalogEntry(
   return null
 }
 
-/** 补齐 Codex 反序列化必填的 slug 与 display_name（缺失将导致整个目录加载失败） */
+/**
+ * 用户可只覆盖关心的字段（如 supported_reasoning_levels），其余由兜底条目补齐：
+ * Codex 缺任一必需字段都会让整份目录加载失败，部分条目不能原样落盘。
+ * 若用户给了档位但没给默认值（或默认值不在档位里），默认到 medium / 第一档。
+ */
 function normalizeEntry(entry: Record<string, unknown>, model: string): Record<string, unknown> {
   if (typeof entry.slug === 'string' && entry.slug !== model) {
     throw new AppError('E_VALIDATION_FAILED', '元数据条目 slug 与预设模型不一致', {
@@ -82,7 +86,31 @@ function normalizeEntry(entry: Record<string, unknown>, model: string): Record<s
   }
   const displayName =
     typeof entry.display_name === 'string' && entry.display_name ? entry.display_name : model
-  return { ...entry, slug: model, display_name: displayName }
+  return withReasoningDefaults({
+    ...buildCatalogEntry(model),
+    ...entry,
+    slug: model,
+    display_name: displayName,
+  })
+}
+
+/** 默认推理档位必须落在 supported_reasoning_levels 内，否则 Codex 选择器会指向不存在的档位 */
+function withReasoningDefaults(entry: Record<string, unknown>): Record<string, unknown> {
+  const levels = entry.supported_reasoning_levels
+  if (!Array.isArray(levels) || levels.length === 0) {
+    return entry
+  }
+  const efforts = levels
+    .map((level) => (isRecord(level) && typeof level.effort === 'string' ? level.effort : null))
+    .filter((effort): effort is string => effort !== null)
+  if (efforts.length === 0) {
+    return entry
+  }
+  const current = entry.default_reasoning_level
+  if (typeof current === 'string' && efforts.includes(current)) {
+    return entry
+  }
+  return { ...entry, default_reasoning_level: efforts.includes('medium') ? 'medium' : efforts[0] }
 }
 
 /** 姊妹条目（同文件其他模型）原样保留，仅缺失必填 display_name 时以 slug 补齐 */

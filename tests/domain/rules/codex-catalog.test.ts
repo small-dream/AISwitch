@@ -49,9 +49,15 @@ describe('replaceModelCatalog', () => {
     const replaced = replaceModelCatalog({ ...CATALOG, version: 1 }, preset)
 
     expect(replaced.version).toBe(1)
-    expect(replaced.models).toEqual([
-      { slug: 'glm-4.6', context_window: 128000, display_name: 'glm-4.6' },
-    ])
+    expect(replaced.models).toHaveLength(1)
+    expect(replaced.models[0]).toMatchObject({
+      slug: 'glm-4.6',
+      context_window: 128000,
+      display_name: 'glm-4.6',
+    })
+    // 部分条目会与兜底字段合并，保证 Codex 能解析整份目录
+    expect(replaced.models[0]).toHaveProperty('base_instructions')
+    expect(replaced.models[0]).toHaveProperty('supported_reasoning_levels')
   })
 
   it('slug 与预设模型不一致时报错（条目永远不会生效）', () => {
@@ -64,14 +70,65 @@ describe('replaceModelCatalog', () => {
 
   it('非对象基线按空目录处理；元数据非对象报错', () => {
     const preset = makePreset({ tool: 'codex', modelMetadata: { context_window: 1 } })
-    expect(replaceModelCatalog(null, preset).models).toEqual([
-      { slug: 'glm-4.6', context_window: 1, display_name: 'glm-4.6' },
-    ])
+    expect(replaceModelCatalog(null, preset).models[0]).toMatchObject({
+      slug: 'glm-4.6',
+      context_window: 1,
+      display_name: 'glm-4.6',
+    })
     const bad = makePreset({
       tool: 'codex',
       modelMetadata: 'nope' as unknown as Preset['modelMetadata'],
     })
     expect(() => replaceModelCatalog(CATALOG, bad)).toThrow(AppError)
+  })
+})
+
+describe('replaceModelCatalog · 部分覆盖与推理档位', () => {
+  it('只覆盖推理档位时与兜底字段合并；缺省档位取第一档/medium', () => {
+    const noMedium = makePreset({
+      tool: 'codex',
+      modelMetadata: {
+        supported_reasoning_levels: [
+          { effort: 'low', description: 'low' },
+          { effort: 'max', description: 'max' },
+        ],
+      },
+    })
+    expect(replaceModelCatalog(null, noMedium).models[0]).toMatchObject({
+      default_reasoning_level: 'low',
+      supported_reasoning_levels: [
+        { effort: 'low', description: 'low' },
+        { effort: 'max', description: 'max' },
+      ],
+    })
+    const withMedium = makePreset({
+      tool: 'codex',
+      modelMetadata: {
+        supported_reasoning_levels: [
+          { effort: 'low', description: 'low' },
+          { effort: 'medium', description: 'medium' },
+        ],
+      },
+    })
+    expect(replaceModelCatalog(null, withMedium).models[0]).toMatchObject({
+      default_reasoning_level: 'medium',
+    })
+  })
+
+  it('显式默认档位不在档位列表时回落到有效档位', () => {
+    const preset = makePreset({
+      tool: 'codex',
+      modelMetadata: {
+        default_reasoning_level: 'max',
+        supported_reasoning_levels: [
+          { effort: 'low', description: 'low' },
+          { effort: 'high', description: 'high' },
+        ],
+      },
+    })
+    expect(replaceModelCatalog(null, preset).models[0]).toMatchObject({
+      default_reasoning_level: 'low',
+    })
   })
 })
 
@@ -86,10 +143,18 @@ describe('replaceModelCatalog · 整份文件粘贴', () => {
   it('同族条目全部保留进选单；当前模型条目归一化，姊妹条目仅补 display_name', () => {
     const preset = makePreset({ tool: 'codex', modelMetadata: FILE })
     const replaced = replaceModelCatalog(CATALOG, preset)
-    expect(replaced.models).toEqual([
-      { slug: 'glm-5-turbo', context_window: 100000, display_name: 'GLM-5-Turbo' },
-      { slug: 'glm-4.6', context_window: 200000, display_name: 'glm-4.6' },
-    ])
+    expect(replaced.models).toHaveLength(2)
+    expect(replaced.models[0]).toEqual({
+      slug: 'glm-5-turbo',
+      context_window: 100000,
+      display_name: 'GLM-5-Turbo',
+    })
+    expect(replaced.models[1]).toMatchObject({
+      slug: 'glm-4.6',
+      context_window: 200000,
+      display_name: 'glm-4.6',
+    })
+    expect(replaced.models[1]).toHaveProperty('base_instructions')
   })
 
   it('文件中无与模型名匹配的条目 → 报错；单条缺失 display_name 以模型名补齐', () => {
@@ -99,9 +164,11 @@ describe('replaceModelCatalog · 整份文件粘贴', () => {
     })
     expect(() => replaceModelCatalog(CATALOG, noMatch)).toThrow(AppError)
     const bare = makePreset({ tool: 'codex', modelMetadata: { context_window: 5 } })
-    expect(replaceModelCatalog(null, bare).models).toEqual([
-      { slug: 'glm-4.6', context_window: 5, display_name: 'glm-4.6' },
-    ])
+    expect(replaceModelCatalog(null, bare).models[0]).toMatchObject({
+      slug: 'glm-4.6',
+      context_window: 5,
+      display_name: 'glm-4.6',
+    })
   })
 })
 
@@ -140,9 +207,11 @@ describe('planCodexCatalog · 元数据与内置目录', () => {
     const preset = makePreset({ tool: 'codex', modelMetadata: { context_window: 1 } })
     const plan = planCodexCatalog({ catalog: CATALOG, preset, absCatalogPath: ABS_PATH })
     expect(plan.keyAction).toEqual({ type: 'point', path: ABS_PATH })
-    expect(plan.modelsFile?.models).toEqual([
-      { slug: 'glm-4.6', context_window: 1, display_name: 'glm-4.6' },
-    ])
+    expect(plan.modelsFile?.models[0]).toMatchObject({
+      slug: 'glm-4.6',
+      context_window: 1,
+      display_name: 'glm-4.6',
+    })
   })
 
   it('内置目录已认识该模型 → 移除托管指向，回落内置元数据', () => {

@@ -186,7 +186,7 @@ describe('CodexConfigTarget · 模型目录（models.json）', () => {
 
     expect(readToml(fs).model_catalog_json).toBe(MANAGED_CATALOG)
     const catalog: unknown = JSON.parse(fs.files().get(MODELS_PATH) ?? '{}')
-    expect(findCatalogEntry(catalog, 'glm-4.6')).toEqual({
+    expect(findCatalogEntry(catalog, 'glm-4.6')).toMatchObject({
       slug: 'glm-4.6',
       context_window: 128000,
       display_name: 'glm-4.6',
@@ -271,7 +271,7 @@ describe('CodexConfigTarget · 整份文件元数据（同族模型）', () => {
     await target.apply(preset)
 
     const catalog: unknown = JSON.parse(fs.files().get(MODELS_PATH) ?? '{}')
-    expect(findCatalogEntry(catalog, 'glm-4.6')).toEqual({
+    expect(findCatalogEntry(catalog, 'glm-4.6')).toMatchObject({
       slug: 'glm-4.6',
       context_window: 128000,
       display_name: 'glm-4.6',

@@ -193,7 +193,7 @@ export const zhCN = {
   'presetForm.metadataSectionTitle': '高级：模型目录条目（可选，仅 Codex 第三方模型需要）',
   'presetForm.metadataInvalid': '元数据有误',
   'presetForm.metadataHint':
-    '粘贴厂商提供的单条条目，或整份 models.json 文件（原样保存，切换后同族模型都出现在 Codex 选单）。Codex 依靠它获取上下文窗口等模型元数据；留空则回落内置目录。需包含与模型名一致的条目（slug 缺失时保存自动补齐）。',
+    '粘贴厂商提供的单条条目，或整份 models.json 文件（切换后同族模型都出现在 Codex 选单）。单条条目只需写要覆盖的字段，其余由兜底字段补齐；例如模型支持 max 时，写 supported_reasoning_levels 与 default_reasoning_level 即可。Codex 依靠它获取上下文窗口与推理档位；留空则自动生成默认条目。需包含与模型名一致的条目（slug 缺失时保存自动补齐）。',
   'presetForm.metadataLabel': '模型元数据 JSON',
   'presetForm.draftKeyNotice':
     '已从本机配置读取 API Key，保存后将写入 ~/.aiswitch/presets.json（仅当前用户可读）。',
