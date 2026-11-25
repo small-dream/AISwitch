@@ -3,6 +3,7 @@ import { AppError } from '@/domain/errors'
 import type { Preset } from '@/domain/entities/preset'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import { isRecord } from '@/utils/guards'
+import { buildCatalogEntry } from './codex-catalog-entry'
 
 /** ~/.codex/models.json 根结构：{ models: [条目...] }，其余根字段原样保留 */
 export interface CodexModelCatalogFile {
@@ -131,27 +132,61 @@ export function replaceModelCatalog(catalog: unknown, preset: Preset): CodexMode
   return { ...base, models: resolveCatalogEntries(preset) }
 }
 
+/** 目录重写为仅含一条兜底条目（无元数据的自定义模型，保证桌面端能显示/选择它） */
+export function withSingleEntry(catalog: unknown, model: string): CodexModelCatalogFile {
+  const base = isCatalogFile(catalog) ? catalog : {}
+  return { ...base, models: [buildCatalogEntry(model)] }
+}
+
+export interface CodexCatalogPlanInput {
+  /** 托管目录 ~/.codex/models.json 的当前内容 */
+  catalog: unknown
+  preset: Preset
+  /** 托管目录的绝对路径（写入 config.toml 的值） */
+  absCatalogPath: string
+  /** Codex 内置目录缓存（~/.codex/models_cache.json），用于判断模型是否已内置 */
+  builtinCatalog?: unknown
+  /** config.toml 里现有的 model_catalog_json；非托管路径视为用户自维护指针 */
+  currentPointer?: string
+}
+
+/** 用户自己指向的目录文件（不是托管 models.json）不能被静默改写 */
+function isUserPointer(pointer: string | undefined, managedPath: string): boolean {
+  return pointer !== undefined && pointer !== managedPath
+}
+
 /**
  * 切换时的目录决策（纯函数）：
  * 1. 预设携带元数据 → 目录重写为该预设的条目集并指向它（选单只含当前供应商的模型）；
- * 2. 无元数据但目录已有该模型条目 → 全部保持现状（用户/厂商自维护场景）；
- * 3. 无元数据且目录无条目 → 移除指向键，回落内置目录（官方模型恢复元数据）。
+ * 2. 内置目录已认识该模型 → 移除托管指向（回落内置元数据）；用户自维护指针不动；
+ * 3. 托管目录已有该模型条目 → 确保指向托管目录（补回曾被移除的键）；
+ * 4. 其余 → 生成一条最小可用条目并指向托管目录，避免桌面端把它当未知模型回退。
  */
-export function planCodexCatalog(
-  catalog: unknown,
-  preset: Preset,
-  absCatalogPath: string
-): CodexCatalogPlan {
+export function planCodexCatalog(input: CodexCatalogPlanInput): CodexCatalogPlan {
+  const { catalog, preset, absCatalogPath, builtinCatalog, currentPointer } = input
   if (preset.modelMetadata) {
     return {
       modelsFile: replaceModelCatalog(catalog, preset),
       keyAction: { type: 'point', path: absCatalogPath },
     }
   }
-  if (catalogHasEntry(catalog, preset.model)) {
-    return { modelsFile: null, keyAction: { type: 'keep' } }
+  const userPointer = isUserPointer(currentPointer, absCatalogPath)
+  if (catalogHasEntry(builtinCatalog, preset.model)) {
+    return {
+      modelsFile: null,
+      keyAction: userPointer ? { type: 'keep' } : { type: 'remove' },
+    }
   }
-  return { modelsFile: null, keyAction: { type: 'remove' } }
+  if (catalogHasEntry(catalog, preset.model)) {
+    return {
+      modelsFile: null,
+      keyAction: userPointer ? { type: 'keep' } : { type: 'point', path: absCatalogPath },
+    }
+  }
+  return {
+    modelsFile: withSingleEntry(catalog, preset.model),
+    keyAction: { type: 'point', path: absCatalogPath },
+  }
 }
 
 /** 将目录键动作应用到合并后的 config.toml 结构 */

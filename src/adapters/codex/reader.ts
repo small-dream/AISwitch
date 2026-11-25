@@ -29,3 +29,19 @@ export async function readCodexModels(fs: FileSystemPort): Promise<unknown> {
   const text = await fs.readTextFile(PATHS.codexModels)
   return parseCodexModels(text)
 }
+
+/**
+ * 读取 Codex 客户端缓存的官方模型目录（只读提示，用于判断模型是否已内置）。
+ * 缓存由客户端维护、结构可能随版本变化，解析失败按「未内置」处理，绝不阻断切换。
+ */
+export async function readCodexModelsCache(fs: FileSystemPort): Promise<unknown> {
+  if (!(await fs.exists(PATHS.codexModelsCache))) {
+    return null
+  }
+  try {
+    return JSON.parse(await fs.readTextFile(PATHS.codexModelsCache)) as unknown
+  } catch (error) {
+    console.warn('读取 Codex 官方模型目录缓存失败，按未内置模型处理', error)
+    return null
+  }
+}

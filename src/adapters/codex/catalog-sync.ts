@@ -6,10 +6,11 @@ import {
   codexCatalogAbsolutePath,
   planCodexCatalog,
   type CatalogKeyAction,
+  type CodexCatalogPlan,
 } from '@/domain/rules/codex-catalog'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import type { FileSystemPort } from '@/types/fs-port'
-import { readCodexModels } from './reader'
+import { readCodexModels, readCodexModelsCache } from './reader'
 import { writeCodexModels } from './writer'
 
 /**
@@ -23,6 +24,27 @@ export interface CodexCatalogSync {
   modelsBackupName: string | null
 }
 
+/** 读取托管目录 + 官方目录缓存，按当前 config 指针计算目录计划 */
+async function resolvePlan(
+  fs: FileSystemPort,
+  preset: Preset,
+  currentPointer?: string
+): Promise<{ plan: CodexCatalogPlan; catalog: unknown }> {
+  const [catalog, builtinCatalog, home] = await Promise.all([
+    readCodexModels(fs),
+    readCodexModelsCache(fs),
+    fs.homeDir(),
+  ])
+  const plan = planCodexCatalog({
+    catalog,
+    preset,
+    absCatalogPath: codexCatalogAbsolutePath(home),
+    builtinCatalog,
+    currentPointer,
+  })
+  return { plan, catalog }
+}
+
 /**
  * 切换时同步模型目录：按计划合并 models.json（修改前先备份），返回目录键动作，
  * 由调用方在写 config.toml 时应用（point/remove/keep，见 codex-catalog.ts）。
@@ -30,11 +52,10 @@ export interface CodexCatalogSync {
 export async function syncCodexCatalog(
   fs: FileSystemPort,
   backups: BackupManager,
-  preset: Preset
+  preset: Preset,
+  currentPointer?: string
 ): Promise<CodexCatalogSync> {
-  const catalog = await readCodexModels(fs)
-  const home = await fs.homeDir()
-  const plan = planCodexCatalog(catalog, preset, codexCatalogAbsolutePath(home))
+  const { plan } = await resolvePlan(fs, preset, currentPointer)
   if (!plan.modelsFile) {
     return { keyAction: plan.keyAction, modelsTouched: false, modelsBackupName: null }
   }
@@ -49,9 +70,8 @@ export async function verifyCodexCatalog(
   preset: Preset,
   config: CodexConfig
 ): Promise<boolean> {
-  const catalog = await readCodexModels(fs)
-  const home = await fs.homeDir()
-  const { keyAction } = planCodexCatalog(catalog, preset, codexCatalogAbsolutePath(home))
+  const { plan, catalog } = await resolvePlan(fs, preset, config.model_catalog_json)
+  const { keyAction } = plan
   if (keyAction.type === 'keep') {
     return true
   }

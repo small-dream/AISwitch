@@ -126,21 +126,29 @@ flowchart TD
 
 **表 B · Codex CLI**（写入 `~/.codex/config.toml` 与 `~/.codex/auth.json`）：
 
-| 文件          | 配置键                                                     | 来源                   | 规则                                                                                                                                                                                   |
-| ------------- | ---------------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `config.toml` | 顶层 `model`                                               | `preset.model`         | —（clearManaged 时移除该键，模型由 CLI 自选）                                                                                                                                          |
-| `config.toml` | 顶层 `model_provider`                                      | —                      | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块；**clearManaged → 移除该键**（回落 Codex 内置默认）                                                                             |
-| `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl`       | 第三方时写入；切回官方时移除该块                                                                                                                                                       |
-| `config.toml` | `[model_providers.jake_current].name`                      | `preset.providerName`  | 第三方时必写；Codex 要求块内 `name` 非空，缺失将导致整个 config.toml 加载失败、CLI/插件退回安装引导                                                                                    |
-| `config.toml` | `[model_providers.jake_current].wire_api`                  | 固定 `"responses"`     | 第三方时必写；**Codex 已彻底移除 `chat/completions` 协议**（openai/codex discussions/7782：2025-12 弃用，2026-02 起硬报错），写入 `chat` 会使 CLI 每次提交消息报 invalid configuration |
-| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时写入（DeepSeek 官方脚本模式）；apiKey 为空时**删除该键**（不写空串，与 auth.json 的删除语义一致）                                                                              |
-| `config.toml` | 顶层 `model_catalog_json`                                  | —                      | 预设携带元数据 → 指向 `~/.codex/models.json`；目录无当前模型条目 → 移除该键回落内置目录；clearManaged → 仅在指向托管 `~/.codex/models.json` 时移除（用户自维护指向不动）；其余保持现状 |
-| `models.json` | `models[]` 条目                                            | `preset.modelMetadata` | 切换时重写为**当前预设的条目集**——整份厂商文件粘贴时保留全部同族模型（选单只显示当前供应商），单条粘贴仅该条；切回其他预设时由其自带元数据重建                                         |
-| `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`        | 有 Key 时写入，无 Key 时**删除该键**（与块内 token 双通道兼容）                                                                                                                        |
+| 文件          | 配置键                                                     | 来源                   | 规则                                                                                                                                                                                                                                                                                                 |
+| ------------- | ---------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config.toml` | 顶层 `model`                                               | `preset.model`         | —（clearManaged 时移除该键，模型由 CLI 自选）                                                                                                                                                                                                                                                        |
+| `config.toml` | 顶层 `model_provider`                                      | —                      | 官方 → `"openai"`；第三方 → 注入的 `"jake_current"` 块；**clearManaged → 移除该键**（回落 Codex 内置默认）                                                                                                                                                                                           |
+| `config.toml` | `[model_providers.jake_current].base_url`                  | `preset.baseUrl`       | 第三方时写入；切回官方时移除该块                                                                                                                                                                                                                                                                     |
+| `config.toml` | `[model_providers.jake_current].name`                      | `preset.providerName`  | 第三方时必写；Codex 要求块内 `name` 非空，缺失将导致整个 config.toml 加载失败、CLI/插件退回安装引导                                                                                                                                                                                                  |
+| `config.toml` | `[model_providers.jake_current].wire_api`                  | 固定 `"responses"`     | 第三方时必写；**Codex 已彻底移除 `chat/completions` 协议**（openai/codex discussions/7782：2025-12 弃用，2026-02 起硬报错），写入 `chat` 会使 CLI 每次提交消息报 invalid configuration                                                                                                               |
+| `config.toml` | `[model_providers.jake_current].experimental_bearer_token` | `preset.apiKey`        | 第三方时写入（DeepSeek 官方脚本模式）；apiKey 为空时**删除该键**（不写空串，与 auth.json 的删除语义一致）                                                                                                                                                                                            |
+| `config.toml` | 顶层 `model_catalog_json`                                  | —                      | 预设携带元数据 → 指向 `~/.codex/models.json`；模型已被 Codex 内置目录识别 → 移除该键回落内置；托管目录已有该模型 → 确保指向托管目录（补回曾被移除的键）；其余（自定义模型）→ 生成最小条目并指向托管目录；clearManaged → 仅在指向托管 `~/.codex/models.json` 时移除（用户自维护指向不动）             |
+| `models.json` | `models[]` 条目                                            | `preset.modelMetadata` | 有元数据时重写为**当前预设的条目集**——整份厂商文件粘贴时保留全部同族模型（选单只显示当前供应商），单条粘贴仅该条；**无元数据且模型未内置时写入一条最小可用条目**（`slug` / `display_name` + Codex 必需字段），保证桌面端选单能显示和选择该模型；模型已内置时不改写；切回其他预设时由其自带元数据重建 |
+| `auth.json`   | `OPENAI_API_KEY`                                           | `preset.apiKey`        | 有 Key 时写入，无 Key 时**删除该键**（与块内 token 双通道兼容）                                                                                                                                                                                                                                      |
 
 **Codex 读取语义（导入/探测）**：供应商 = `model_provider` 指向的 `[model_providers.<id>]` 块（不猜测其他块）；供应商展示名优先块内 `name`；**Key 读取链 = 块内 `experimental_bearer_token` → `auth.json` 的 `OPENAI_API_KEY`**（DeepSeek 官方安装脚本将 Key 内嵌于 provider 块）。
 
-**模型目录语义（models.json）**：`model_catalog_json` 是**整体替换** Codex 内置目录而非叠加（实测 codex 0.147）——目录里没有当前模型时必须移除该键，否则官方模型元数据被遮蔽（回落兜底元数据并告警）。导入时若该键已设且目录含当前模型条目，整条捕获为 `preset.modelMetadata` 供切换回写。
+**模型目录语义（models.json）**：`model_catalog_json` 是**整体替换** Codex 内置目录而非叠加（实测 codex 0.147）。因此切换时必须保证「当前模型要么被内置目录认识，要么在托管目录里有条目」：
+
+- 模型已内置（可用 `~/.codex/models_cache.json` 作只读提示）→ 移除指向键，保留官方元数据；
+- 模型未内置且预设带 `modelMetadata` → 写入用户提供的条目并指向托管目录；
+- 模型未内置且预设无元数据 → 由 `domain/rules/codex-catalog-entry.ts` 生成一条 Codex 必需字段齐全的最小条目（缺失字段会导致整份目录加载失败，而不是回落内置目录）。
+
+**为什么必须兜底**：Codex Desktop（0.171 起）把 config.toml 的 `model` 当作自己的默认模型配置，模型选择器只列 `model/list` 返回的条目。目录里没有当前模型时，桌面端会退回自己的默认官方模型并通过 `config/batchWrite` 把 `model` 写回 config.toml，而 `model_provider` 仍指向第三方 provider——最终表现为「第三方供应商 + 官方模型名」的错配（2026-11 实测：写入 `deepseek-v4.1-flash` 后数分钟被改写为 `gpt-6.2-sol`，请求带官方模型名打到第三方端点）。生成兜底条目后该模型进入选择器，桌面端可正常显示与选择，不再回退。
+
+导入时若该键已设且目录含当前模型条目，整条捕获为 `preset.modelMetadata` 供切换回写。
 
 ### 5.2 预设字段定义
 

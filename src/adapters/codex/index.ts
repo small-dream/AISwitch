@@ -102,7 +102,7 @@ async function applyCodex(
   const written: string[] = [PATHS.codexConfig, PATHS.codexAuth]
   // 写 + 校验整体进 try：任何一步失败仅回滚本次实际改写的文件（models.json 未改写则不触碰）
   try {
-    const sync = await syncCodexCatalog(fs, backups, preset)
+    const sync = await syncCodexCatalog(fs, backups, preset, config?.model_catalog_json)
     if (sync.modelsTouched) {
       managed.push({ path: PATHS.codexModels, backupName: sync.modelsBackupName })
       written.push(PATHS.codexModels)

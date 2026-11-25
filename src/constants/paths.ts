@@ -13,6 +13,8 @@ export const PATHS = {
   codexConfig: '.codex/config.toml',
   codexAuth: '.codex/auth.json',
   codexModels: '.codex/models.json',
+  /** Codex 客户端拉取的官方模型目录缓存（只读，用于判断模型是否已内置） */
+  codexModelsCache: '.codex/models_cache.json',
   appDir: '.aiswitch',
   presetsFile: '.aiswitch/presets.json',
   projectConfigsFile: '.aiswitch/project-configs.json',

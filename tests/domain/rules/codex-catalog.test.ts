@@ -9,6 +9,7 @@ import {
   planCodexCatalog,
   replaceModelCatalog,
   withCatalogKey,
+  withSingleEntry,
 } from '@/domain/rules/codex-catalog'
 import type { CodexConfig } from '@/domain/schemas/codex-config'
 import { makePreset } from '../../helpers/make-preset'
@@ -104,33 +105,91 @@ describe('replaceModelCatalog · 整份文件粘贴', () => {
   })
 })
 
-describe('planCodexCatalog', () => {
+describe('withSingleEntry', () => {
+  it('目录重写为一条可被 Codex 解析的最小条目，根字段保留', () => {
+    const entry = withSingleEntry({ ...CATALOG, version: 1 }, 'deepseek-v4.1-flash')
+    expect(entry.version).toBe(1)
+    expect(entry.models).toHaveLength(1)
+    const model = entry.models[0]
+    expect(model).toMatchObject({
+      slug: 'deepseek-v4.1-flash',
+      display_name: 'deepseek-v4.1-flash',
+      visibility: 'list',
+      supported_in_api: true,
+      shell_type: 'shell_command',
+      truncation_policy: { mode: 'tokens', limit: 10000 },
+    })
+    expect(model).toHaveProperty('base_instructions')
+    expect(model).toHaveProperty('supported_reasoning_levels')
+    expect(model).toHaveProperty('experimental_supported_tools')
+  })
+
+  it('非目录基线按空目录处理', () => {
+    expect(withSingleEntry(null, 'm').models).toHaveLength(1)
+  })
+})
+
+describe('planCodexCatalog · 元数据与内置目录', () => {
   it('预设携带元数据 → 重写为仅当前条目并指向托管目录', () => {
     const preset = makePreset({ tool: 'codex', modelMetadata: { context_window: 1 } })
-    const plan = planCodexCatalog(CATALOG, preset, ABS_PATH)
+    const plan = planCodexCatalog({ catalog: CATALOG, preset, absCatalogPath: ABS_PATH })
     expect(plan.keyAction).toEqual({ type: 'point', path: ABS_PATH })
     expect(plan.modelsFile?.models).toEqual([
       { slug: 'glm-4.6', context_window: 1, display_name: 'glm-4.6' },
     ])
   })
 
-  it('无元数据但目录已有条目 → 文件与键全部保持现状', () => {
+  it('内置目录已认识该模型 → 移除托管指向，回落内置元数据', () => {
+    const preset = makePreset({ tool: 'codex', model: 'gpt-5.5' })
+    const plan = planCodexCatalog({
+      catalog: CATALOG,
+      preset,
+      absCatalogPath: ABS_PATH,
+      builtinCatalog: { models: [{ slug: 'gpt-5.5' }] },
+    })
+    expect(plan).toEqual({ modelsFile: null, keyAction: { type: 'remove' } })
+  })
+
+  it('内置目录已认识但用户自维护指针 → 保持指针不动', () => {
+    const preset = makePreset({ tool: 'codex', model: 'gpt-5.5' })
+    const plan = planCodexCatalog({
+      catalog: CATALOG,
+      preset,
+      absCatalogPath: ABS_PATH,
+      builtinCatalog: { models: [{ slug: 'gpt-5.5' }] },
+      currentPointer: 'C:/custom/catalog.json',
+    })
+    expect(plan.keyAction).toEqual({ type: 'keep' })
+  })
+})
+
+describe('planCodexCatalog · 托管目录与兜底', () => {
+  it('托管目录已有条目 → 重新指向托管目录（补回被移除的键）', () => {
     const preset = makePreset({ tool: 'codex', model: 'glm-4.6' })
-    expect(planCodexCatalog(CATALOG, preset, ABS_PATH)).toEqual({
+    expect(planCodexCatalog({ catalog: CATALOG, preset, absCatalogPath: ABS_PATH })).toEqual({
       modelsFile: null,
-      keyAction: { type: 'keep' },
+      keyAction: { type: 'point', path: ABS_PATH },
     })
   })
 
-  it('无元数据且目录无条目 → 移除指向键回落内置目录', () => {
-    const preset = makePreset({ tool: 'codex', model: 'gpt-5.5' })
-    expect(planCodexCatalog(CATALOG, preset, ABS_PATH)).toEqual({
-      modelsFile: null,
-      keyAction: { type: 'remove' },
+  it('托管目录已有条目但指针是用户自维护路径 → 不动', () => {
+    const preset = makePreset({ tool: 'codex', model: 'glm-4.6' })
+    const plan = planCodexCatalog({
+      catalog: CATALOG,
+      preset,
+      absCatalogPath: ABS_PATH,
+      currentPointer: 'C:/custom/catalog.json',
     })
-    expect(planCodexCatalog(null, makePreset({ tool: 'codex' }), ABS_PATH).keyAction).toEqual({
-      type: 'remove',
-    })
+    expect(plan.keyAction).toEqual({ type: 'keep' })
+  })
+
+  it('目录无条目且非内置模型 → 生成最小条目并指向托管目录', () => {
+    const preset = makePreset({ tool: 'codex', model: 'deepseek-v4.1-flash' })
+    const plan = planCodexCatalog({ catalog: CATALOG, preset, absCatalogPath: ABS_PATH })
+    expect(plan.keyAction).toEqual({ type: 'point', path: ABS_PATH })
+    expect(plan.modelsFile?.models).toEqual([
+      expect.objectContaining({ slug: 'deepseek-v4.1-flash', display_name: 'deepseek-v4.1-flash' }),
+    ])
   })
 })
 

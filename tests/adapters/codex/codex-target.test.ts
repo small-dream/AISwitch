@@ -207,9 +207,13 @@ describe('CodexConfigTarget · 模型目录（models.json）', () => {
     expect(fs.files().get(MODELS_PATH)).toBe(MODELS_FIXTURE)
     expect(await target.verify(preset)).toBe(true)
   })
+})
 
-  it('无元数据且目录无条目 → 移除指向键回落内置目录', async () => {
-    const fs = seededFs({ '.codex/config.toml': configWithCatalogKey('C:/custom/catalog.json') })
+describe('CodexConfigTarget · 自定义模型目录兜底', () => {
+  it('无元数据且模型已内置 → 移除托管指向，回落内置目录', async () => {
+    const fs = seededFs({
+      '.codex/models_cache.json': JSON.stringify({ models: [{ slug: 'brand-new-model' }] }),
+    })
     const target = createCodexTarget(fs)
     const preset = makePreset({
       tool: 'codex',
@@ -221,6 +225,30 @@ describe('CodexConfigTarget · 模型目录（models.json）', () => {
 
     expect(readToml(fs).model_catalog_json).toBeUndefined()
     expect(fs.files().get(MODELS_PATH)).toBe(MODELS_FIXTURE)
+    expect(await target.verify(preset)).toBe(true)
+  })
+
+  it('无元数据且模型未内置 → 生成最小条目并指向托管目录（桌面端仍能显示/选择）', async () => {
+    const fs = seededFs({
+      '.codex/models_cache.json': JSON.stringify({ models: [{ slug: 'gpt-6.2-sol' }] }),
+    })
+    const target = createCodexTarget(fs)
+    const preset = makePreset({
+      tool: 'codex',
+      baseUrl: 'https://relay.example.com/v1',
+      model: 'deepseek-v4.1-flash',
+    })
+
+    await target.apply(preset)
+
+    expect(readToml(fs).model_catalog_json).toBe(MANAGED_CATALOG)
+    const catalog: unknown = JSON.parse(fs.files().get(MODELS_PATH) ?? '{}')
+    expect(findCatalogEntry(catalog, 'deepseek-v4.1-flash')).toMatchObject({
+      slug: 'deepseek-v4.1-flash',
+      display_name: 'deepseek-v4.1-flash',
+      supported_in_api: true,
+    })
+    expect(findCatalogEntry(catalog, 'glm-4.6')).toBeNull()
     expect(await target.verify(preset)).toBe(true)
   })
 })
