@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.30] - 2026-11-25
+
+### Fixed
+
+- Generated Codex model-catalog entries now advertise low / medium / high reasoning levels with medium as the default, so Codex's effort selector is populated for custom third-party models instead of showing an empty menu.
+
 ## [0.1.29] - 2026-11-25
 
 ### Fixed
