@@ -1,7 +1,7 @@
 {
   "name": "aiswitch",
   "private": true,
-  "version": "0.1.30",
+  "version": "0.1.31",
   "description": "One-click model switching for Claude Code and Codex CLI",
   "type": "module",
   "packageManager": "pnpm@10.33.0",

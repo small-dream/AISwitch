@@ -2,6 +2,12 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.31] - 2026-11-25
+
+### Fixed
+
+- Codex model metadata now merges partial entries with the generated fallback entry, so a preset can override only the fields it needs — for example `supported_reasoning_levels` with `max` and a matching `default_reasoning_level` — without supplying every required catalog field. An invalid or missing default level now falls back to `medium` or the first advertised level.
+
 ## [0.1.30] - 2026-11-25
 
 ### Fixed
