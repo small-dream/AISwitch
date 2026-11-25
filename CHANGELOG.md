@@ -2,6 +2,14 @@
 
 All notable changes are documented here. Every release must add a version section before its tag is pushed.
 
+## [0.1.29] - 2026-11-25
+
+### Fixed
+
+- Codex presets without `modelMetadata` now get a generated model-catalog entry, so custom third-party models such as `deepseek-v4.1-flash` appear in Codex's model picker with the correct name. Previously Codex Desktop could not resolve the slug, fell back to its own default official model, and wrote it back to `config.toml` while `model_provider` still pointed at the third-party provider — leaving a mismatched provider/model pair and failing requests.
+- Codex catalog decisions now re-point the managed catalog when its entry still exists, preserve user-maintained `model_catalog_json` pointers, and defer to Codex's built-in catalog when the model is already known there.
+- Switching between the official subscription and third-party presets now keeps the managed `models.json` pointer consistent in both directions.
+
 ## [0.1.28] - 2026-11-18
 
 ### Fixed
