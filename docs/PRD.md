@@ -144,7 +144,7 @@ flowchart TD
 
 - 模型已内置（可用 `~/.codex/models_cache.json` 作只读提示）→ 移除指向键，保留官方元数据；
 - 模型未内置且预设带 `modelMetadata` → 写入用户提供的条目并指向托管目录；
-- 模型未内置且预设无元数据 → 由 `domain/rules/codex-catalog-entry.ts` 生成一条 Codex 必需字段齐全的最小条目（缺失字段会导致整份目录加载失败，而不是回落内置目录）。
+- 模型未内置且预设无元数据 → 由 `domain/rules/codex-catalog-entry.ts` 生成一条 Codex 必需字段齐全的最小条目（缺失字段会导致整份目录加载失败，而不是回落内置目录），并声明 low / medium / high 推理档位、默认 medium，否则 Codex 的 effort 选择器为空、无法设置。
 
 **为什么必须兜底**：Codex Desktop（0.171 起）把 config.toml 的 `model` 当作自己的默认模型配置，模型选择器只列 `model/list` 返回的条目。目录里没有当前模型时，桌面端会退回自己的默认官方模型并通过 `config/batchWrite` 把 `model` 写回 config.toml，而 `model_provider` 仍指向第三方 provider——最终表现为「第三方供应商 + 官方模型名」的错配（2026-11 实测：写入 `deepseek-v4.1-flash` 后数分钟被改写为 `gpt-6.2-sol`，请求带官方模型名打到第三方端点）。生成兜底条目后该模型进入选择器，桌面端可正常显示与选择，不再回退。
 

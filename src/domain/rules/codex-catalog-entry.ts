@@ -15,7 +15,18 @@
 export const DEFAULT_CATALOG_INSTRUCTIONS =
   'You are Codex, a coding agent. You and the user share one workspace, and your job is to collaborate with them until their goal is handled. Follow the tool instructions provided in each turn.'
 
-/** 以模型名生成一条 Codex 可识别的目录条目（display_name 缺省即模型名） */
+/** 兜底条目的推理档位：OpenAI 兼容端点最通用的 low / medium / high */
+const REASONING_LEVELS = [
+  { effort: 'low', description: 'Fast responses with lighter reasoning' },
+  { effort: 'medium', description: 'Balances speed and reasoning depth' },
+  { effort: 'high', description: 'Greater reasoning depth for complex problems' },
+] as const
+
+/**
+ * 以模型名生成一条 Codex 可识别的目录条目（display_name 缺省即模型名）。
+ * 没有 supported_reasoning_levels 时 Codex 的 effort 选择器为空、无法设置，
+ * 因此兜底声明 low / medium / high 并把 medium 设为默认。
+ */
 export function buildCatalogEntry(model: string): Record<string, unknown> {
   return {
     slug: model,
@@ -25,7 +36,9 @@ export function buildCatalogEntry(model: string): Record<string, unknown> {
     priority: 100,
     support_verbosity: true,
     shell_type: 'shell_command',
-    supported_reasoning_levels: [],
+    supported_reasoning_levels: REASONING_LEVELS.map((level) => ({ ...level })),
+    default_reasoning_level: 'medium',
+    supports_reasoning_effort_updates: true,
     truncation_policy: { mode: 'tokens', limit: 10000 },
     experimental_supported_tools: [],
     base_instructions: DEFAULT_CATALOG_INSTRUCTIONS,

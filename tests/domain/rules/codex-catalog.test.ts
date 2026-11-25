@@ -117,10 +117,16 @@ describe('withSingleEntry', () => {
       visibility: 'list',
       supported_in_api: true,
       shell_type: 'shell_command',
+      default_reasoning_level: 'medium',
+      supports_reasoning_effort_updates: true,
       truncation_policy: { mode: 'tokens', limit: 10000 },
+      supported_reasoning_levels: [
+        { effort: 'low', description: 'Fast responses with lighter reasoning' },
+        { effort: 'medium', description: 'Balances speed and reasoning depth' },
+        { effort: 'high', description: 'Greater reasoning depth for complex problems' },
+      ],
     })
     expect(model).toHaveProperty('base_instructions')
-    expect(model).toHaveProperty('supported_reasoning_levels')
     expect(model).toHaveProperty('experimental_supported_tools')
   })
 
